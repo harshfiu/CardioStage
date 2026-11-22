@@ -24,21 +24,26 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 - [x] Phase 5: Calibration & uncertainty
 - [x] Phase 6: Cross-hospital & fairness evaluation
 - [x] Phase 7: Explanations (SHAP)
-- [ ] Phase 8: Streamlit app
+- [x] Phase 8: Streamlit app
 - [ ] Phase 9: Polish
 
 ## Setup
 ```bash
 python -m venv .venv
-.venv\Scripts\activate          # Windows  (Mac/Linux: source .venv/bin/activate)
+.venv\Scriptsctivate          # Windows  (Mac/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
 pip install -e .
-pytest                          # verify everything is in place
+python -m cardiostage.train_all # build the models (~10 minutes, once)
+pytest                          # verify everything (58 tests)
+streamlit run app/streamlit_app.py
 ```
+
+## The app
+Enter a patient's basic check-up details and CardioStage returns a calibrated risk, a plausible range, an unusual-patient warning when relevant, and a plain-English explanation. It then recommends clearing, referring, or taking the next test. Treadmill and imaging results can be added step by step. Four example patients include one that deliberately demonstrates a known limitation. Results and About pages present the evidence and the caveats.
 
 ## Project structure
 ```
-├── app/                 Streamlit app (Phase 8)
+├── app/                 Streamlit app (entry point + views/)
 ├── data/
 │   ├── raw/             original dataset, never edited
 │   └── processed/       cleaned data (generated)
