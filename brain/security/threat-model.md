@@ -11,7 +11,7 @@
 > **Severity:** Critical / High / Medium / Low / Info, rated for the current deployment (local app).
 > **Status:** ✅ Remediated (verified) · 🟡 Partly remediated / residual risk · 🔵 Open: owner action · ⚪ Accepted for current scope.
 
-**Result:** no confirmed vulnerabilities were found. Of the 11 findings (SEC-01–10, SEC-12), **5 are remediated and verified** (SEC-01, 03, 04, 06, 12), **3 are partly remediated** with residual risk documented (SEC-02, 05, 07), **1 needs owner action** (SEC-08), and **2 are accepted** for local use (SEC-09, 10). See §6.
+**Result:** no confirmed vulnerabilities were found. Of the 11 findings (SEC-01–10, SEC-12), **5 are remediated and verified** (SEC-01, 03, 04, 06, 12), **4 are partly remediated** with residual risk documented (SEC-02, 05, 07, 08), and **2 are accepted** for local use (SEC-09, 10). See §6.
 
 ---
 
@@ -44,7 +44,7 @@
 | **Local malware / other local user** | Write access to the project folder | Can replace bundles; the manifest catches swapped files unless the attacker also rewrites the manifest |
 | **Supply-chain attacker** | Compromises a PyPI package or GitHub Action | Code execution at install/CI time |
 | **Third-party service** (`checkip.amazonaws.com`) | **No longer contacted** (non-wildcard address skips the lookup) | Previously received an HTTP request at each start |
-| **GitHub viewers** | Read the remote repo (visibility not verified) | Can read commit metadata (A6) |
+| **GitHub viewers** | Read the remote repo (**public**: confirmed via the unauthenticated GitHub API) | Can read commit metadata (A6) |
 
 ## 4. Trust boundaries
 | ID | Boundary | Crossed by | Current state |
@@ -79,7 +79,7 @@
 | T5 / **SEC-05** | Tampering → code execution via pickle | Replaced/corrupted `stage*.joblib` executes on load | Arbitrary code execution | Low | **Low** | `integrity.load` verifies SHA-256 vs `manifest.json` before every unpickle (app + all scripts); unlisted/mismatched/missing manifest → refused (tested incl. "refuse before unpickling"); bundles self-built, git-ignored | Attacker able to rewrite both bundle and manifest isn't stopped; pickle format remains | 🟡 Partly remediated |
 | T6 / **SEC-06** | Crafted widget values | Websocket message with out-of-option selectbox values | Previously: traceback in own session | Very low | **Info** (was Low) | `to_frame` validates categories, coded values (`ALLOWED_CODES`), finiteness and `PLAUSIBLE_RANGES` → `InvalidInputError` → friendly message; Streamlit clamps number inputs | – | ✅ Remediated |
 | T7 / **SEC-07** | Supply chain | Vulnerable/compromised (transitive) dependency | Code execution | Low | **Low** | `pip-audit`: no known vulnerabilities (requirements + full env, 2026-11-23); `constraints.txt` pins all 76 packages; CI audit on every push; Dependabot weekly | No hash pinning; GitHub Actions pinned by major tag, not commit SHA | 🟡 Partly remediated |
-| T8 / **SEC-08** | Privacy: email in commit metadata | Repo viewers harvest the personal Gmail on all commits | Spam/phishing | Medium if repo is public | **Low** | – | Owner must switch to a GitHub noreply email (instructions in [secrets.md](secrets.md#5-git-and-history-exposure-risks)) | 🔵 Open: owner action |
+| T8 / **SEC-08** | Privacy: email in commit metadata | Viewers of the **public** repo harvest the personal Gmail from the earlier commits | Spam/phishing | Medium (repo confirmed public) | **Low** | Global Git email switched to the GitHub noreply address (2026-11-23): new commits no longer expose it | Earlier commits (up to `09225ff`) still contain the Gmail address; removal needs a destructive history rewrite (not recommended). Optional: enable GitHub's "Block command line pushes that expose my email" | 🟡 Partly remediated |
 | T9 / **SEC-09** | No authentication | Anyone who can reach the server can use it | Unauthorised use | Very low (localhost) | **Info** (High if publicly deployed) | Localhost binding | Auth + TLS required before any shared deployment | ⚪ Accepted (local scope) |
 | T10 / **SEC-10** | Repudiation / no monitoring | Abuse not recorded | No forensics | Low | **Info** | Assessment failures logged to the server console (`logging.getLogger("cardiostage.app")`), without patient inputs in the app's own messages | No access/audit logging | ⚪ Accepted (local scope) |
 | T11 | Safety: output misused as diagnosis | User treats estimate as medical advice | Harm | Low–Medium | **Medium** (product safety) | Disclaimers on every page, non-diagnostic wording, limitations page, labelled limitation example | – | ⚪ Accepted (educational) |
@@ -111,7 +111,7 @@
 | Safety messaging | `ui.DISCLAIMER` on all pages |
 
 ## 9. Remaining work
-- 🔵 **SEC-08:** switch commit email to the GitHub noreply address (owner).
+- 🟡 **SEC-08:** done for future commits (noreply email set); historical commits still show the old address. Optional owner step: GitHub → Settings → Emails → "Block command line pushes that expose my email".
 - 🟡 **SEC-02:** a proxy-level limit if the app is ever shared.
 - 🟡 **SEC-05:** move bundles to a non-executable format (e.g. skops) or a signed manifest stored outside `models/` if bundles are ever distributed.
 - 🟡 **SEC-07:** optional hash pinning; pin GitHub Actions to commit SHAs.

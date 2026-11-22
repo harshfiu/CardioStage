@@ -43,13 +43,14 @@
 - **Risk:** Public IP and start times disclosed; doc inaccuracy.
 - **Fix applied:** localhost binding (same change as SEC-01); docs updated.
 
-#### SEC-08: Personal email address in public commit metadata (🔵 Open: owner action)
+#### SEC-08: Personal email address in public commit metadata (🟡 Partly remediated)
 - **Severity:** Low
-- **Evidence:** one personal Gmail address on every commit (`git log --format='%ae'`), pushed to GitHub.
+- **Evidence:** one personal Gmail address on every commit up to `09225ff` (`git log --format='%ae'`); the repository is **public** (confirmed via the unauthenticated GitHub API).
 - **Risk:** Spam, phishing, profiling.
 - **Affected location:** Git history; global Git config.
-- **Why it matters:** Commit metadata is permanent and public on public repos.
-- **Recommended fix (owner):** GitHub → Settings → Emails → enable "Keep my email addresses private" and "Block command line pushes that expose my email"; then `git config --global user.email "<your-id>+<username>@users.noreply.github.com"`. History rewrite optional and destructive. See [secrets.md §5](secrets.md#5-git-and-history-exposure-risks).
+- **Why it matters:** Commit metadata is permanent and public.
+- **Fix applied:** global Git email set to the GitHub noreply address (verified; no repo-level override), so new commits no longer expose the Gmail address.
+- **Remaining:** optional GitHub setting "Block command line pushes that expose my email" (owner); historical commits keep the old address (rewrite is destructive and not recommended). See [secrets.md §5](secrets.md#5-git-and-history-exposure-risks).
 
 ### Missing controls
 
@@ -99,7 +100,7 @@
 | R-3 | Dependency audit + secret scanning in CI | ✅ Done (`pip-audit`, gitleaks) |
 | R-4 | Before any deployment: TLS, authentication, proxy rate limits, explicit `cookieSecret`, safer artefact format, hash-locked deps | ⚪ Not needed for local use |
 | R-5 | Keep XSRF/CORS on and the agent API off | ✅ Set explicitly; guarded by `test_framework_protections_explicitly_on` |
-| R-6 | Switch commit email to GitHub noreply (SEC-08) | 🔵 Owner action |
+| R-6 | Switch commit email to GitHub noreply (SEC-08) | ✅ Done for new commits; optional GitHub email-privacy setting (owner) |
 | R-7 | Enable GitHub secret scanning / push protection and Dependabot alerts in repo settings | 🔵 Owner action |
 | R-8 | Pin GitHub Actions to commit SHAs | 💡 Optional |
 
@@ -162,7 +163,7 @@
 - ✅ `.streamlit/secrets.toml` git-ignored
 - ✅ Remote URL contains no credentials
 - ✅ gitleaks secret scan on every push/PR (full history)
-- 🔵 Personal email in commit metadata (SEC-08)
+- ⚠️ Personal email in earlier commit metadata (SEC-08, 🟡); new commits use the noreply address
 - 🔵 Optional: GitHub push protection (R-7)
 
 ### Encryption
@@ -201,7 +202,7 @@
 - ✅ Traffic stays on the local machine
 - ✅ Training data public and de-identified
 - ✅ Disclaimer against real-patient use on every page
-- 🔵 Developer email in public history (SEC-08)
+- ⚠️ Developer email in earlier public commits (SEC-08, 🟡); new commits private
 
 ### Error handling
 - ✅ `showErrorDetails = "none"`

@@ -14,9 +14,9 @@
 | Category | Result |
 |---|---|
 | Confirmed vulnerabilities | **None** |
-| Security weaknesses | **SEC-08** (Low, 🔵 open, owner action): personal email address in commit metadata |
+| Security weaknesses | **SEC-08** (Low, 🟡 partly remediated): personal email address in the metadata of earlier commits; new commits use the GitHub noreply address |
 | Missing controls | ✅ *Resolved:* automated secret scanning added (gitleaks CI job). Optional: GitHub push protection (owner setting) |
-| Potential risks requiring verification | GitHub repository visibility (sizes SEC-08 exposure) |
+| Potential risks requiring verification | ✅ *Resolved:* the repository is **public** (the unauthenticated GitHub API returns its workflow runs) |
 
 ## 1. Where secrets are expected
 | Location | Expected? | Evidence |
@@ -54,14 +54,16 @@
 |---|---|---|
 | Secrets in history | 0 pattern matches | ✅ None |
 | Model pickles | Never committed (`models/*` ignored) | ✅ |
-| **Commit author email** (**SEC-08**) | All commits authored with a personal Gmail address | 🔵 Open: owner action |
+| **Commit author email** (**SEC-08**) | Commits up to `09225ff` authored with a personal Gmail address; global Git email now the GitHub noreply address | 🟡 Partly remediated |
 | Author name | Commit metadata, `LICENSE` | Intentional |
 | Local paths | `docs/learning/01-setup.md` shows the project folder path (no username) | Informational |
 
-**SEC-08:** Severity **Low** → Evidence: `git log --format='%ae'` yields one personal Gmail address on every commit → Risk: spam, phishing, profiling → Affected: Git history on GitHub, global Git config → Why it matters: commit metadata is permanent and visible to anyone who can read the repo → Recommended fix (**owner action**):
-1. On GitHub: **Settings → Emails** → tick **"Keep my email addresses private"** and **"Block command line pushes that expose my email"**. Copy the address shown there, of the form `ID+username@users.noreply.github.com`.
-2. In a terminal: `git config --global user.email "ID+username@users.noreply.github.com"` (use the copied address).
-3. Future commits use the private address. Rewriting the existing commits is **optional and destructive** (force-push), and not recommended unless the email must be removed from history.
+**SEC-08:** Severity **Low** → Evidence: `git log --format='%ae'` showed one personal Gmail address on every commit up to `09225ff`; the repository is public → Risk: spam, phishing, profiling → Affected: Git history on GitHub, global Git config → Why it matters: commit metadata is permanent and visible to anyone → Fix:
+1. ✅ **Done (2026-11-23):** global Git email set to the GitHub noreply address (`<id>+harshfiu@users.noreply.github.com`); verified with `git config --get user.email`, with no repo-level override. All new commits use it.
+2. 🔵 **Optional owner step:** GitHub **Settings → Emails** → tick **"Keep my email addresses private"** and **"Block command line pushes that expose my email"** (stops any future push that would expose it, e.g. from another machine).
+3. ⚪ **Residual:** earlier commits still contain the Gmail address. Removing it requires rewriting and force-pushing history (destructive; not recommended).
+
+*Note for running Git commands:* type them directly in PowerShell/Terminal. The `!` prefix only works inside the Claude Code prompt.
 
 ## 6. Logging and error exposure risks
 | Source | What it logs | Secret exposure |
@@ -79,7 +81,7 @@
 ## 8. Recommendations
 | ID | Type | Recommendation | Status |
 |---|---|---|---|
-| R-S1 | Recommendation | Switch to a GitHub noreply email (SEC-08) | 🔵 Owner action (steps above) |
-| R-S2 | Potential risk requiring verification | Confirm repository visibility (GitHub repo page → public/private badge) | 🔵 Owner check |
+| R-S1 | Recommendation | Switch to a GitHub noreply email (SEC-08) | ✅ Done for new commits; optional GitHub email-privacy settings remain |
+| R-S2 | Potential risk requiring verification | Confirm repository visibility | ✅ Confirmed public |
 | R-S3 | Missing control | Automated secret scanning | ✅ gitleaks CI job added. Optional extra: GitHub **Settings → Code security → Secret Protection / Push protection** (available for public repos) |
 | R-S4 | Recommendation | If auth/hosting is added, set `server.cookieSecret` via `secrets.toml` | ⚪ Not needed yet |
