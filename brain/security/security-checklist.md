@@ -50,7 +50,8 @@
 - **Affected location:** Git history; global Git config.
 - **Why it matters:** Commit metadata is permanent and public.
 - **Fix applied:** global Git email set to the GitHub noreply address (verified; no repo-level override), so new commits no longer expose the Gmail address.
-- **Remaining:** optional GitHub setting "Block command line pushes that expose my email" (owner); historical commits keep the old address (rewrite is destructive and not recommended). See [secrets.md §5](secrets.md#5-git-and-history-exposure-risks).
+- **Also done:** GitHub "Block command line pushes that expose my email" enabled by the owner on 2026-11-23 (account/repo settings; not verifiable via the public API).
+- **Remaining:** historical commits keep the old address (rewrite is destructive and not recommended). See [secrets.md §5](secrets.md#5-git-and-history-exposure-risks).
 
 ### Missing controls
 
@@ -101,7 +102,7 @@
 | R-4 | Before any deployment: TLS, authentication, proxy rate limits, explicit `cookieSecret`, safer artefact format, hash-locked deps | ⚪ Not needed for local use |
 | R-5 | Keep XSRF/CORS on and the agent API off | ✅ Set explicitly; guarded by `test_framework_protections_explicitly_on` |
 | R-6 | Switch commit email to GitHub noreply (SEC-08) | ✅ Done for new commits; optional GitHub email-privacy setting (owner) |
-| R-7 | Enable GitHub secret scanning / push protection and Dependabot alerts in repo settings | 🔵 Owner action |
+| R-7 | Enable GitHub secret scanning / push protection and Dependabot alerts in repo settings | ✅ Done (enabled by the owner on 2026-11-23 (account/repo settings; not verifiable via the public API)) |
 | R-8 | Pin GitHub Actions to commit SHAs | 💡 Optional |
 
 ---
@@ -164,7 +165,7 @@
 - ✅ Remote URL contains no credentials
 - ✅ gitleaks secret scan on every push/PR (full history)
 - ⚠️ Personal email in earlier commit metadata (SEC-08, 🟡); new commits use the noreply address
-- 🔵 Optional: GitHub push protection (R-7)
+- ✅ GitHub push protection and Dependabot alerts enabled by the owner (R-7)
 
 ### Encryption
 - ➖ TLS: not needed while traffic stays on loopback; ❌ required if ever shared

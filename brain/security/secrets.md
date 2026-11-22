@@ -15,7 +15,7 @@
 |---|---|
 | Confirmed vulnerabilities | **None** |
 | Security weaknesses | **SEC-08** (Low, 🟡 partly remediated): personal email address in the metadata of earlier commits; new commits use the GitHub noreply address |
-| Missing controls | ✅ *Resolved:* automated secret scanning added (gitleaks CI job). Optional: GitHub push protection (owner setting) |
+| Missing controls | ✅ *Resolved:* automated secret scanning added (gitleaks CI job). GitHub **push protection** also enabled by the owner on 2026-11-23 (account/repo settings; not verifiable via the public API) |
 | Potential risks requiring verification | ✅ *Resolved:* the repository is **public** (the unauthenticated GitHub API returns its workflow runs) |
 
 ## 1. Where secrets are expected
@@ -60,7 +60,7 @@
 
 **SEC-08:** Severity **Low** → Evidence: `git log --format='%ae'` showed one personal Gmail address on every commit up to `09225ff`; the repository is public → Risk: spam, phishing, profiling → Affected: Git history on GitHub, global Git config → Why it matters: commit metadata is permanent and visible to anyone → Fix:
 1. ✅ **Done (2026-11-23):** global Git email set to the GitHub noreply address (`<id>+harshfiu@users.noreply.github.com`); verified with `git config --get user.email`, with no repo-level override. All new commits use it.
-2. 🔵 **Optional owner step:** GitHub **Settings → Emails** → tick **"Keep my email addresses private"** and **"Block command line pushes that expose my email"** (stops any future push that would expose it, e.g. from another machine).
+2. ✅ **Done:** GitHub **Settings → Emails** → **"Block command line pushes that expose my email"** enabled by the owner on 2026-11-23 (account/repo settings; not verifiable via the public API). Any future push that would expose the address (e.g. from another machine) is rejected by GitHub.
 3. ⚪ **Residual:** earlier commits still contain the Gmail address. Removing it requires rewriting and force-pushing history (destructive; not recommended).
 
 *Note for running Git commands:* type them directly in PowerShell/Terminal. The `!` prefix only works inside the Claude Code prompt.
@@ -83,5 +83,5 @@
 |---|---|---|---|
 | R-S1 | Recommendation | Switch to a GitHub noreply email (SEC-08) | ✅ Done for new commits; optional GitHub email-privacy settings remain |
 | R-S2 | Potential risk requiring verification | Confirm repository visibility | ✅ Confirmed public |
-| R-S3 | Missing control | Automated secret scanning | ✅ gitleaks CI job added. Optional extra: GitHub **Settings → Code security → Secret Protection / Push protection** (available for public repos) |
+| R-S3 | Missing control | Automated secret scanning | ✅ gitleaks CI job added, and GitHub **push protection** enabled by the owner on 2026-11-23 (account/repo settings; not verifiable via the public API) |
 | R-S4 | Recommendation | If auth/hosting is added, set `server.cookieSecret` via `secrets.toml` | ⚪ Not needed yet |
