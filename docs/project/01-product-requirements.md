@@ -100,11 +100,11 @@ It is a **portfolio and learning project**, not a medical device.
 ## 8. Non-functional requirements
 | ID | Category | Requirement | Achieved |
 |---|---|---|---|
-| NFR1 | Performance | Assessment with explanation ≤ 5 s per stage on a laptop | ~0.3 s (stage 1), ~3–5 s (stages 2–3) |
+| NFR1 | Performance | Risk and decision visible within 1 s; full result (range + explanation) within ~6 s per stage on a laptop | ✅ decision ~0.1 s (all stages); full card incl. plausible range (~2 s) and explanation (~3 s) ~0.3 s for stage 1, ~5.5 s for stages 2–3, shown progressively |
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
 | NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`, `requirements.txt` pinned |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow and security controls | ✅ 84 tests (run in CI) |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow and security controls | ✅ 87 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes | ✅ see [Design system](03-design-system.md) |
@@ -195,5 +195,6 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | UI polish: NFR1 restated (decision first, details progressively; measured latencies corrected), NFR5 87 tests |
 | 2026-11-23 | Security hardening: NFR3/5/6 updated, NFR10 and safety/security requirements S7–S12 added, decision logged |
 | 2026-11-23 | Document created at v1.0 completion (all 9 phases) |

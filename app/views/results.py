@@ -9,6 +9,26 @@ from ui import DISCLAIMER
 FIG = config.FIGURES_DIR
 REP = config.REPORTS_DIR
 
+# Chart PNGs are drawn at 150 dpi, so shown at full container width their text
+# becomes larger than the page's own headings. Single-panel charts get a fixed
+# readable width; wide multi-panel charts may use more space.
+SINGLE_PANEL_WIDTH = 720
+MULTI_PANEL_WIDTH = 1100
+MULTI_PANEL = {
+    "10_calibration_curves.png",
+    "12_external_auc.png",
+    "13_external_calibration.png",
+    "14_fairness.png",
+    "15_global_importance.png",
+    "17_case_study.png",
+}
+
+
+def figure(name: str, caption: str | None = None):
+    width = MULTI_PANEL_WIDTH if name in MULTI_PANEL else SINGLE_PANEL_WIDTH
+    st.image(str(FIG / name), caption=caption, width=width)
+
+
 st.title("📊 How well does CardioStage work?")
 st.caption(
     "All numbers are honest estimates on patients the models never trained on "
@@ -67,7 +87,7 @@ with tab0:
         "Need invasive",
     ]
     st.dataframe(show_final, width="stretch")
-    st.image(str(FIG / "18_final_test.png"))
+    figure("18_final_test.png")
     st.markdown(
         "No sick patient was missed (28 of 28), and the staged policy needed invasive "
         "tests for only half of the patients. Catching 28 of 28 does **not** prove 100% "
@@ -78,7 +98,7 @@ with tab0:
 
 with tab1:
     st.markdown("#### The staged policy matches all-tests accuracy with far fewer invasive tests")
-    st.image(str(FIG / "09_staged_policy_flow.png"))
+    figure("09_staged_policy_flow.png")
     st.markdown(
         "Every patient starts with a basic check-up. Low-risk patients are cleared and "
         "high-risk patients referred; only uncertain patients go on to the treadmill and "
@@ -106,14 +126,14 @@ with tab1:
         ),
         width="stretch",
     )
-    st.image(
-        str(FIG / "07_auc_by_stage.png"),
+    figure(
+        "07_auc_by_stage.png",
         caption="Ranking quality (ROC-AUC) by stage: invasive imaging adds the most.",
     )
 
 with tab2:
     st.markdown("#### Predicted risk matches observed disease rates")
-    st.image(str(FIG / "10_calibration_curves.png"))
+    figure("10_calibration_curves.png")
     st.markdown(
         "Points near the diagonal mean honest probabilities: of patients told "
         '"30%", about 30% had heart disease. Average error: 3–5 percentage points.'
@@ -121,7 +141,7 @@ with tab2:
 
 with tab3:
     st.markdown("#### Tested unchanged at three hospitals it never saw")
-    st.image(str(FIG / "12_external_auc.png"))
+    figure("12_external_auc.png")
     st.markdown(
         "- **Hungary:** performance transfers fully.\n"
         "- **VA Long Beach:** clear drop (different population, ~28% of values missing).\n"
@@ -129,11 +149,11 @@ with tab3:
         "Probabilities under-predict at high-disease hospitals; adjusting for the local "
         "disease rate fixes this (below). Decision cutoffs should be re-checked locally."
     )
-    st.image(str(FIG / "13_external_calibration.png"))
+    figure("13_external_calibration.png")
 
 with tab4:
     st.markdown("#### Performance by sex and age")
-    st.image(str(FIG / "14_fairness.png"))
+    figure("14_fairness.png")
     st.markdown(
         "Ranking is equally good for women and men. Recall for women looks lower, but "
         "rests on 2 missed women out of 18: one with atypical chest pain cleared early "
@@ -143,12 +163,12 @@ with tab4:
 
 with tab5:
     st.markdown("#### What drives each stage's predictions")
-    st.image(str(FIG / "15_global_importance.png"))
+    figure("15_global_importance.png")
     st.markdown(
         "As test results arrive, the model relies less on demographics: the "
         "influence of sex falls from 13 → 7 → 4 percentage points."
     )
-    st.image(str(FIG / "17_case_study.png"))
+    figure("17_case_study.png")
 
 st.divider()
 st.caption(DISCLAIMER)

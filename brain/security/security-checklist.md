@@ -58,7 +58,7 @@
 #### SEC-02: No rate limiting or resource limits (🟡 Partly remediated)
 - **Severity:** Medium → now **Low**
 - **Evidence (after):** `src/cardiostage/ratelimit.py` sliding window; `config.RATE_LIMIT_MAX_ASSESSMENTS = 20`, `RATE_LIMIT_WINDOW_SECONDS = 60`; enforced in `screener.run_stage` with a "please wait" warning; 3 tests. Localhost binding removes network abusers.
-- **Risk:** CPU exhaustion via repeated assessments (~3–5 s CPU each).
+- **Risk:** CPU exhaustion via repeated assessments (~5.5 s CPU each at stages 2–3).
 - **Residual:** limit is per browser session; many parallel sessions aren't capped (needs a reverse proxy if shared).
 
 #### SEC-07: No dependency scanning; transitive dependencies unpinned (🟡 Partly remediated)
@@ -126,7 +126,7 @@
 - 💡 Explicit `cookieSecret` via secrets if auth is added
 
 ### Input validation
-- ✅ UI bounds + Streamlit server-side number clamping
+- ✅ UI bounds (sliders limited to the plausible ranges); server-side bounds are enforced by the engine (`PLAUSIBLE_RANGES`), not by the widget
 - ✅ Engine validation of every input: categories, coded values, finiteness, plausible ranges (`predictor.to_frame`)
 - ✅ Missing values handled explicitly and disclosed
 - ✅ Out-of-training-range inputs flagged by the novelty detector

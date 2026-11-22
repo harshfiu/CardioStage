@@ -69,6 +69,7 @@ Single-hue **Blues** (light → dark) for magnitudes, e.g. the missing-data heat
 | Reference lines | Dashed `#b5b4ae` (chance, perfect calibration, zero); dotted `#52514e` for targets (e.g. 97% recall) |
 | Log scales | Only when the range spans orders of magnitude; never hide the starting point (loss curve starts at step 1 = initial guess) |
 | Output | PNG, 150 dpi, `bbox_inches="tight"`, saved to `reports/figures/NN_name.png` |
+| In-app display | Results page shows single-panel charts at **720 px** and multi-panel charts at **1100 px** (`views/results.py` `figure()`), so chart text never outgrows the page's headings |
 | Verification | Every chart is rendered and visually inspected before committing (clipping, overlaps, collisions) |
 
 ### 3.1 Figure inventory
@@ -99,7 +100,7 @@ Single-hue **Blues** (light → dark) for magnitudes, e.g. the missing-data heat
 | **Screener** (default) | 🫀 | Title + tagline + caption → disclaimer box → Stage 1 form → result card → next-stage form ("➡️ Recommended next step" when uncertain, otherwise an "add … anyway (optional)" expander) → … → "🏁 Screening complete" |
 | **Results** | 📊 | Title + method caption → 3 headline metrics → tabs: Sealed test set · Staged screening · Calibration · New hospitals · Fairness · Explanations → disclaimer |
 | **About** | ℹ️ | Disclaimer → idea (stage table) → how it was built → known limitations → link to repo |
-| **Sidebar** (Screener) | | "Try an example" selector → limitation note (when that example is chosen) → "Reset all inputs" → short disclaimer |
+| **Sidebar** (Screener) | | "Try an example" selector with **short names** (Low risk · Uncertain, then cleared · High risk · Known limitation) → one-line patient description (caption) → limitation note (only for that example) → "Reset all inputs" (also clears the example and its note) → short disclaimer |
 
 Layout: `layout="wide"`; forms use 3 columns (stage 1–2) or 2 columns (stage 3).
 
@@ -108,17 +109,17 @@ Layout: `layout="wide"`; forms use 3 columns (stage 1–2) or 2 columns (stage 3
 - Bordered `st.form`; heading `Stage N · Name`; caption saying what the stage requires ("Needs an ECG and a supervised exercise test").
 - Every input has a `help=` tooltip in plain English with normal ranges where useful.
 - "Not measured" is available wherever real data is often missing (cholesterol checkbox; blood sugar, ECG, slope, vessels, thallium options).
-- Numeric bounds: age 18–100, BP 60–250, cholesterol 80–700, heart rate 60–230, ST depression −3.0–7.0 (step 0.1).
+- **Measurements use sliders**, not number boxes: age 18–100, BP 60–250, cholesterol 80–700, heart rate 60–230, ST depression −3.0–7.0 (step 0.1). Streamlit's number input blocks mouse-wheel page scrolling (`preventDefault()` on wheel); sliders don't, and they make the valid range visible. The Stage 1 caption tells users they can click a slider and use the arrow keys for exact values.
 - One primary button per form: "Assess risk" / "Add treadmill results" / "Add imaging results".
 
 ### 5.2 Result card (`ui.render_assessment`)
 Bordered container, top to bottom:
 1. Subheader `Stage N result · Name`.
-2. Row: **Estimated risk** metric (`34%`) · **Plausible range** metric (`28% – 39%`) · decision box (2× width).
+2. Row: **Estimated risk** metric (`34%`) · **Plausible range** metric (`28% – 39%`) · decision box (2× width). **Rendered progressively:** risk and decision box appear immediately; the range shows a spinner ("Checking how stable this estimate is…") until ready (~2 s at stages 2–3).
 3. Threshold caption ("This stage clears below 9.0% and refers from 83.0%…").
 4. Unusual-patient warning (only when triggered).
 5. "Not measured" caption (only when inputs are missing).
-6. **Why this estimate?** summary sentence + contribution chart (top 8).
+6. **Why this estimate?** spinner ("Working out which measurements drove this estimate…", ~3 s at stages 2–3), then summary sentence + contribution chart (top 8). If an add-on fails: "The … couldn't be computed. The risk and decision above are unaffected." (🚫)
 7. Expander "Full breakdown and how to read it": table + caveat.
 
 ### 5.3 Decision boxes
@@ -143,7 +144,7 @@ Bordered container, top to bottom:
 **Error-message rules:** say what happened and what to do next, in plain English; never show stack traces, file paths or internal values (`client.showErrorDetails = "none"`); no result is shown when an assessment fails.
 
 ### 5.5 Contribution chart (`ui.contribution_chart`, Plotly)
-Horizontal bars, labels `Measurement = value`, orange positive / blue negative, values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background.
+Horizontal bars, labels `Measurement = value`, orange positive / blue negative, values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background. **Text:** measurement labels 15 px in primary ink `#1a1a19` (they're content, not axis decoration); value labels 14 px primary ink; axis ticks/title 13–14 px `#52514e`; 44 px per row, bar gap 0.35.
 
 ## 6. Content and voice
 | Rule | Do | Don't |
@@ -169,5 +170,6 @@ Horizontal bars, labels `Measurement = value`, orange positive / blue negative, 
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | UI polish: sliders for measurements, short example names + description, reset clears example, progressive result card, larger/darker chart text, Results figure widths |
 | 2026-11-23 | Added error, rate-limit and integrity callouts and error-message rules (security hardening) |
 | 2026-11-23 | Document created at v1.0 |

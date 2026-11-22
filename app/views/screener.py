@@ -49,9 +49,17 @@ FBS = {0.0: "Normal (120 mg/dl or below)", 1.0: "High (above 120 mg/dl)", None: 
 YES_NO = {0.0: "No", 1.0: "Yes"}
 CA = {0: "0", 1: "1", 2: "2", 3: "3", None: "Not measured"}
 
-# Example patients (made up for demonstration; not real people).
+# Example patients (made up for demonstration; not real people). Names are
+# kept short so they fit the sidebar; the description is shown underneath.
+EXAMPLE_DESCRIPTIONS = {
+    "Low risk": "42-year-old woman, chest pain that doesn't seem heart-related.",
+    "Uncertain, then cleared": "54-year-old man; reassuring treadmill and imaging results.",
+    "High risk": "63-year-old man, no chest pain, abnormal treadmill and imaging.",
+    "Known limitation": "57-year-old woman with atypical chest pain.",
+}
+NO_EXAMPLE = "(enter my own)"
 EXAMPLES = {
-    "Low risk: 42-year-old woman, non-heart-like chest pain": dict(
+    "Low risk": dict(
         age=42,
         sex="Female",
         cp="non-anginal",
@@ -67,7 +75,7 @@ EXAMPLES = {
         ca=0,
         thal="normal",
     ),
-    "Uncertain, then cleared: 54-year-old man, non-heart-like chest pain": dict(
+    "Uncertain, then cleared": dict(
         age=54,
         sex="Male",
         cp="non-anginal",
@@ -83,7 +91,7 @@ EXAMPLES = {
         ca=0,
         thal="normal",
     ),
-    "High risk: 63-year-old man, no chest pain": dict(
+    "High risk": dict(
         age=63,
         sex="Male",
         cp="asymptomatic",
@@ -101,7 +109,7 @@ EXAMPLES = {
     ),
     # Deliberately included: reproduces the known limitation from Phase 6. She's
     # cleared at the check-up, yet imaging would show 2 blocked vessels.
-    "Known limitation: 57-year-old woman, atypical chest pain": dict(
+    "Known limitation": dict(
         age=57,
         sex="Female",
         cp="atypical angina",
@@ -148,6 +156,15 @@ def load_example():
         set_inputs(EXAMPLES[choice])
 
 
+def reset_all():
+    # Runs as a button callback, i.e. BEFORE the page is redrawn. That's the
+    # only point where Streamlit lets us change the example selector's value
+    # (changing a widget after it's drawn raises an error), so the selector
+    # and its note are cleared together with the form.
+    set_inputs(DEFAULTS)
+    st.session_state.example = NO_EXAMPLE
+
+
 if "results" not in st.session_state:
     set_inputs(DEFAULTS)
 
@@ -158,12 +175,14 @@ with st.sidebar:
     st.markdown("### Try an example")
     st.selectbox(
         "Example patient",
-        ["(enter my own)"] + list(EXAMPLES),
+        [NO_EXAMPLE] + list(EXAMPLES),
         key="example",
         on_change=load_example,
         label_visibility="collapsed",
     )
-    if st.session_state.example.startswith("Known limitation"):
+    if st.session_state.example in EXAMPLE_DESCRIPTIONS:
+        st.caption(EXAMPLE_DESCRIPTIONS[st.session_state.example])
+    if st.session_state.example == "Known limitation":
         st.info(
             "This example shows a known weakness. At the basic check-up, 'female' and "
             "'atypical chest pain' both lower the estimate, so she's cleared, but "
@@ -171,9 +190,7 @@ with st.sidebar:
             "to see it. (See the About page.)",
             icon="🧪",
         )
-    if st.button("Reset all inputs", width="stretch"):
-        set_inputs(DEFAULTS)
-        st.rerun()
+    st.button("Reset all inputs", width="stretch", on_click=reset_all)
     st.divider()
     st.caption(DISCLAIMER)
 
@@ -227,8 +244,12 @@ def run_stage(stage: int):
     # Re-assessing a stage invalidates any later stages built on old inputs.
     st.session_state.results = {k: v for k, v in st.session_state.results.items() if k < stage}
     try:
-        with st.spinner(f"Assessing stage {stage} and explaining the result..."):
-            st.session_state.results[stage] = predictor.assess(patient(), stage)
+        # Core result only (~0.1 s): the plausible range and the explanation are
+        # filled in progressively by render_assessment, so the decision shows
+        # immediately instead of after ~6 seconds.
+        st.session_state.results[stage] = predictor.assess(
+            patient(), stage, explain=False, with_range=False
+        )
     except InvalidInputError as e:
         st.error(f"Some inputs aren't valid, so no assessment was made: {e}", icon="🚫")
     except Exception:
@@ -248,9 +269,12 @@ def run_stage(stage: int):
 def stage1_form():
     with st.form("stage1"):
         st.markdown("#### Stage 1 · Basic check-up")
-        st.caption("Available from a routine clinic visit and blood test.")
+        st.caption(
+            "Available from a routine clinic visit and blood test. Tip: drag a slider, "
+            "or click it and use the arrow keys for an exact value."
+        )
         c1, c2, c3 = st.columns(3)
-        c1.number_input("Age (years)", 18, 100, key="age")
+        c1.slider("Age (years)", 18, 100, key="age")
         c1.radio("Sex", ["Female", "Male"], key="sex", horizontal=True)
         c2.selectbox(
             "Chest pain type",
@@ -260,14 +284,14 @@ def stage1_form():
             help="How the chest pain behaves. 'Typical angina' is the textbook "
             "pattern of heart-related pain.",
         )
-        c2.number_input(
+        c2.slider(
             "Resting blood pressure (mm Hg, top number)",
             60,
             250,
             key="trestbps",
             help="Normal is about 120; 140 or above is high.",
         )
-        c3.number_input(
+        c3.slider(
             "Cholesterol (mg/dl)",
             80,
             700,
@@ -292,7 +316,7 @@ def stage2_form():
         st.caption("Needs an ECG and a supervised exercise test.")
         c1, c2, c3 = st.columns(3)
         c1.selectbox("Resting ECG", list(RESTECG), format_func=RESTECG.get, key="restecg")
-        c1.number_input(
+        c1.slider(
             "Max heart rate reached (bpm)",
             60,
             230,
@@ -302,7 +326,7 @@ def stage2_form():
         c2.selectbox(
             "Chest pain during exercise?", list(YES_NO), format_func=YES_NO.get, key="exang"
         )
-        c2.number_input(
+        c2.slider(
             "ST depression (mm)",
             -3.0,
             7.0,
@@ -352,7 +376,7 @@ for stage in (1, 2, 3):
     results = st.session_state.results
     if stage not in results:
         break
-    render_assessment(results[stage])
+    render_assessment(results[stage], predictor)
     if stage == 3:
         st.success("Screening complete: all three stages assessed.", icon="🏁")
         break

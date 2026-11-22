@@ -87,9 +87,7 @@ def test_app_runs_full_flow():
     app = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
     at = AppTest.from_file(str(app), default_timeout=180).run()
     assert not at.exception
-    at.selectbox(key="example").set_value(
-        "Uncertain, then cleared: 54-year-old man, non-heart-like chest pain"
-    ).run()
+    at.selectbox(key="example").set_value("Uncertain, then cleared").run()
     assert at.session_state.age == 54  # example loaded into the form
 
     def click(label):
@@ -102,3 +100,39 @@ def test_app_runs_full_flow():
     assert at.session_state.results[2].zone == "uncertain"  # -> imaging suggested
     click("Add imaging results")
     assert at.session_state.results[3].zone == "clear"  # reassuring tests: cleared
+
+
+@needs_models
+def test_fast_path_then_progressive_details(predictor):
+    """The app gets the decision first, then adds range and explanation."""
+    r = predictor.assess(PATIENT, 3, explain=False, with_range=False)
+    assert r.zone in {"refer", "clear"} and 0 <= r.risk <= 1
+    assert not r.has_range and not r.has_explanation
+    predictor.add_range(r)
+    predictor.add_explanation(r)
+    assert r.has_range and r.has_explanation
+    full = predictor.assess(PATIENT, 3)
+    assert r.risk == full.risk and r.range_low == full.range_low
+
+
+@needs_models
+def test_explanations_are_reproducible(predictor):
+    """Same patient twice -> identical explanation (SHAP re-seeded per call)."""
+    a = predictor.assess(PATIENT, 2, with_range=False)
+    b = predictor.assess(PATIENT, 2, with_range=False)
+    assert a.explanation["contribution"].tolist() == b.explanation["contribution"].tolist()
+
+
+@needs_models
+def test_reset_clears_example_and_inputs():
+    from streamlit.testing.v1 import AppTest
+
+    app = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
+    at = AppTest.from_file(str(app), default_timeout=180).run()
+    at.selectbox(key="example").set_value("Known limitation").run()
+    assert at.session_state.age == 57 and any("known weakness" in i.value for i in at.info)
+    next(b for b in at.button if b.label == "Reset all inputs").click().run()
+    assert not at.exception
+    assert at.session_state.example == "(enter my own)"
+    assert at.session_state.age == 55
+    assert not any("known weakness" in i.value for i in at.info)

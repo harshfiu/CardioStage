@@ -41,7 +41,7 @@ All arrive as widget values over `/_stcore/stream` (`app/views/screener.py`). Th
 | Input | Widget constraint | Engine validation (`predictor.py`) |
 |---|---|---|
 | Example patient | 5 options | Acts only if value `in EXAMPLES` |
-| Age | 18–100 (Streamlit clamps server-side) | finite, 18–100 (`PLAUSIBLE_RANGES`) |
+| Age | slider 18–100 | finite, 18–100 (`PLAUSIBLE_RANGES`) |
 | Sex | Female / Male | mapped to 0.0/1.0; checked ∈ {0, 1} (`ALLOWED_CODES`) |
 | Chest pain type | 4 options | ∈ `CHOICES["cp"]` |
 | Resting BP | 60–250 | finite, 60–250 |

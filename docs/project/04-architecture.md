@@ -57,7 +57,7 @@ CardioStage/
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      84 pytest tests (see §7)
+├── tests/                      87 pytest tests (see §7)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
 ├── constraints.txt             exact versions of all 76 installed packages (transitive pinning)
 ├── pyproject.toml              package metadata, pytest + ruff config
@@ -81,7 +81,7 @@ CardioStage/
 | `ratelimit.py` | Pure sliding-window limiter (per browser session) | `check_and_record(timestamps, now)` | config |
 | `stats.py` | Bootstrap CIs, exact proportion CIs, prior shift | `bootstrap_ci`, `exact_proportion_ci`, `prior_shift` | scipy, numpy |
 | `explain.py` | SHAP permutation explainer on original features, text formatting | `StageExplainer`, `explanation_text`, `format_value` | shap |
-| `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment | `CardioStagePredictor.load()`, `.assess(patient, stage)` → `Assessment`; `InvalidInputError` | data, explain, integrity |
+| `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment in a fast core + optional add-ons | `CardioStagePredictor.load()`, `.assess(patient, stage, explain=, with_range=)` → `Assessment`; `.add_range()`, `.add_explanation()`; `InvalidInputError` | data, explain, integrity |
 | `external_validation.py` | Phase 6a analysis | `main` | stats, calibration, integrity |
 | `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging, integrity |
 | `explanations.py` | Phase 7 analysis | `main` | explain, integrity |
@@ -110,18 +110,23 @@ app start ─► ui.get_predictor()  (@st.cache_resource, once per server proces
 
 user submits form ─► screener.run_stage(stage)
    1. ratelimit.check_and_record(session timestamps, now)  ── over 20/60 s → st.warning, stop
-   2. predictor.assess(patient_dict, stage)      (wrapped in try/except)
+   2. predictor.assess(patient_dict, stage, explain=False, with_range=False)   (try/except; ~0.1 s)
         a. to_frame(): categories ∈ CHOICES · codes ∈ ALLOWED_CODES (sex/fbs/exang/ca)
            · numbers finite and within PLAUSIBLE_RANGES · missing → NaN   ── else InvalidInputError
         b. bundle.model.predict_proba → risk
-        c. bundle.uncertainty.predict_interval → range (10th–90th pct of 20 copies)
-        d. zone(stage, risk) using frozen bundle.zones → headline + recommendation
-        e. bundle.novelty.check → unusual reasons;  not_measured list
-        f. StageExplainer(stage) (built once, cached) → SHAP → summary text
+        c. zone(stage, risk) using frozen bundle.zones → headline + recommendation
+        d. bundle.novelty.check → unusual reasons;  not_measured list
+      (range and explanation are NOT computed here)
    3. InvalidInputError → st.error("inputs aren't valid…")
       any other exception → logged to server console; generic st.error (no traceback to user)
    └► Assessment stored in st.session_state.results[stage]
-render_assessment(result) ─► metrics, decision box, warnings, Plotly chart, breakdown table
+render_assessment(result, predictor) ─► progressive:
+   risk metric + decision box  (drawn immediately)
+   → spinner → predictor.add_range(result)        (~2 s; stored on the Assessment)
+   → threshold caption, unusual/not-measured notes
+   → spinner → predictor.add_explanation(result)  (~3 s; SHAP re-seeded per call → reproducible)
+   → summary text, Plotly chart, breakdown table
+   (each add-on wrapped: failure → friendly st.error; never a traceback)
 ```
 
 ## 5. State, caching and performance
@@ -132,7 +137,7 @@ render_assessment(result) ─► metrics, decision box, warnings, Plotly chart, 
 | Session state | `st.session_state`: input widget keys, `results` {stage: Assessment}, `example`, `assessment_times` (rate limiter) | per browser session |
 | Forms | `st.form` so predictions run only on submit | – |
 | Rate limit | `RATE_LIMIT_MAX_ASSESSMENTS = 20` per `RATE_LIMIT_WINDOW_SECONDS = 60` per session | a full screening uses 3 |
-| Assessment latency | validation + prediction + interval + SHAP | ~0.3 s (stage 1), ~3–5 s (stages 2–3) |
+| Assessment latency | core (validation + risk + zone + novelty) / + range / + SHAP | core ~0.1 s; range ~2.2 s and SHAP ~2.5–3 s at stages 2–3 (≈5.5 s total), rendered **progressively** so the decision shows at once |
 | Training | parallel grid search (`n_jobs=-1`), parallel replicas/SHAP chunks (joblib) | full rebuild ~10 min on 20 cores |
 
 ## 6. Configuration
@@ -163,9 +168,9 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_uncertainty.py` | 7 | ECE, calibration wrapper, intervals, novelty detection | no |
 | `test_stats.py` | 7 | bootstrap CI, exact CI, prior shift, fairness helpers | no |
 | `test_explain.py` | 5 | encode/decode, SHAP additivity, baseline, text | no |
-| `test_predictor.py` | 7 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest** | yes |
+| `test_predictor.py` | 10 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example | yes |
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
-| **Total** | **84** | 74 run without models; 10 skip with a "trained models missing" reason | |
+| **Total** | **87** | 74 run without models; 13 skip with a "trained models missing" reason | |
 
 Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`; audit: `pip-audit -r requirements.txt`.
 
@@ -187,7 +192,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | Network exposure | Listens on `127.0.0.1` only (verified: not reachable via the LAN address); no startup third-party IP lookup |
 | Request forgery / origins | XSRF and CORS protection explicitly enabled (unauthenticated upload PUT → 403) |
 | Framework surfaces | Agent API off (default; 403); static serving off; developer toolbar only for localhost |
-| Input validation | Categories, coded values, finite numbers and plausible ranges enforced in `predictor.to_frame`; Streamlit also clamps number inputs server-side |
+| Input validation | Categories, coded values, finite numbers and plausible ranges enforced in `predictor.to_frame`; measurements entered with sliders bounded to the same ranges |
 | Error handling | `showErrorDetails = "none"`; assessments wrapped in try/except with friendly messages; details only in the server console |
 | Abuse | Per-session rate limit (20 assessments / 60 s) |
 | Deserialisation | SHA-256 manifest verified before any pickle is loaded (`integrity.load`) |
@@ -214,6 +219,8 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-13 | SHA-256 manifest before unpickling | trust files; switch to skops | Cheap tamper/corruption detection with joblib; skops reserved for distribution |
 | ADR-14 | Validation duplicated in engine (not only UI) | trust widget constraints | Defence in depth: crafted websocket values can bypass UI options |
 | ADR-15 | Per-session in-app rate limit | proxy limits only | No proxy exists for local use; pure function is testable |
+| ADR-17 | Progressive result rendering instead of speeding up inference | threads, all-core forests, fewer replicas | Measured: per-call overhead dominates, parallelism was slower; changing replicas/background would alter validated outputs |
+| ADR-18 | Sliders for measurements | number inputs | Streamlit's number input calls `preventDefault()` on wheel events (`NumberInput.js`), blocking page scroll; sliders don't, and show the valid range |
 | ADR-16 | Constraints file instead of hash lockfile | `pip-compile --generate-hashes` | Cross-platform safe pinning of transitive deps without per-platform hash maintenance |
 
 ## 11. Known technical debt
@@ -238,6 +245,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | UI polish: progressive rendering (`assess` fast core + `add_range`/`add_explanation`), sliders, reproducible SHAP, reset fix; latencies corrected; 87 tests; ADR-17/18 |
 | 2026-11-23 | Merged Dependabot updates: ruff 0.17.6, actions/checkout v7, actions/setup-python v7, gitleaks-action v3 (lint, 84 tests and pip-audit re-verified locally) |
 | 2026-11-23 | Security hardening: localhost binding, hidden error details, input validation, rate limiting, integrity manifest, constraints file, CI (ruff/pytest/pip-audit/gitleaks), Dependabot; 84 tests; ADR-12–16; corrected the network-call statement in §1 |
 | 2026-11-23 | Document created at v1.0 |

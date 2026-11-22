@@ -162,7 +162,8 @@ Config: `SCREENING_RECALL = 0.97`, `RULE_OUT_RECALL = 0.99`, `RULE_IN_PRECISION 
 - **Method:** SHAP `PermutationExplainer` (model-agnostic) in probability units, over the **13 original features**. Categoricals are integer-coded for SHAP and decoded before prediction.
 - **Background:** 50 training patients, stratified by diagnosis (baselines 46–48% vs true 46%).
 - **Guarantee:** baseline + contributions = predicted risk (additivity error ~1e-15).
-- **Speed:** ~0.2 s (stage 1), ~3 s (stages 2–3) per patient.
+- **Speed:** ~0.2 s (stage 1), ~3 s (stages 2–3) per patient (measured: ~2.5–3.0 s); the plausible range adds ~2.2 s at stages 2–3. Cost is per-call overhead (pandas preprocessing in each sub-model, per-tree prediction calls), so threading or all-core forests made it *slower* in tests.
+- **Reproducible:** NumPy's generator is re-seeded (`RANDOM_SEED`) before every explanation, because SHAP seeds it only once at explainer creation; the same patient always gets the same bars (test `test_explanations_are_reproducible`).
 - **Global importance** (mean |SHAP|, percentage points): stage 1 cp 21.9, sex 13.3, age 6.7 · stage 2 cp 13.1, sex 7.0, oldpeak 5.3, slope 5.3 · stage 3 thal 11.8, ca 10.0, cp 8.6. fbs ≈ 0 at all stages.
 - **Direction checks:** 12/12 pass (e.g. higher thalch → lower risk, corr −0.96).
 
@@ -268,5 +269,6 @@ python -m cardiostage.final_evaluation     # figure 18 (sealed test)
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | §9: explanation speed measured, reproducibility (per-call re-seeding) documented |
 | 2026-11-23 | Added integrity manifest (§12) and the inference input contract (§12.1) after security hardening; models and metrics unchanged |
 | 2026-11-23 | Document created at v1.0 (all phases complete) |

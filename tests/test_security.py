@@ -182,7 +182,7 @@ def test_app_shows_friendly_errors_not_tracebacks(monkeypatch, error, expected_t
     """
     from streamlit.testing.v1 import AppTest
 
-    def failing_assess(self, patient, stage, explain=True):
+    def failing_assess(self, patient, stage, **kwargs):
         raise error
 
     monkeypatch.setattr(CardioStagePredictor, "assess", failing_assess)

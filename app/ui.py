@@ -1,13 +1,17 @@
 """Shared pieces for the CardioStage Streamlit pages."""
 
+import logging
+
 import plotly.graph_objects as go
 import streamlit as st
 
 from cardiostage import config
+from cardiostage.explain import LABELS
 from cardiostage.integrity import IntegrityError
 from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
 
 UP, DOWN = "#eb6834", "#2a78d6"
+TEXT_PRIMARY, TEXT_SECONDARY = "#1a1a19", "#52514e"
 
 DISCLAIMER = (
     "**Educational project, not a medical device.** CardioStage was trained on 243 patients "
@@ -52,24 +56,32 @@ def contribution_chart(explanation, top: int = 8) -> go.Figure:
             marker_color=[UP if v > 0 else DOWN for v in values],
             text=[f"{v:+.1f}" for v in values],
             textposition="outside",
+            textfont=dict(size=14, color=TEXT_PRIMARY),
             hovertemplate="%{y}<br>%{x:+.1f} percentage points<extra></extra>",
         )
     )
     limit = max(abs(values).max() * 1.35, 5)
     fig.update_layout(
-        height=40 * len(t) + 80,
-        margin=dict(l=10, r=10, t=10, b=40),
+        height=44 * len(t) + 90,
+        margin=dict(l=10, r=10, t=10, b=50),
         xaxis=dict(
-            title="Contribution to risk (percentage points)",
+            title=dict(
+                text="Contribution to risk (percentage points)",
+                font=dict(size=14, color=TEXT_SECONDARY),
+            ),
+            tickfont=dict(size=13, color=TEXT_SECONDARY),
             range=[-limit, limit],
             zeroline=True,
-            zerolinecolor="#52514e",
+            zerolinecolor=TEXT_SECONDARY,
             gridcolor="#ebeae6",
         ),
-        yaxis=dict(automargin=True),
+        # Measurement labels: same size and ink as body text, so they read as
+        # content, not as faint axis decoration.
+        yaxis=dict(automargin=True, tickfont=dict(size=15, color=TEXT_PRIMARY)),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(size=13),
+        font=dict(size=14, color=TEXT_PRIMARY),
+        bargap=0.35,
         showlegend=False,
     )
     return fig
@@ -84,8 +96,30 @@ ZONE_STYLE = {
 }
 
 
-def render_assessment(result):
-    """The result card for one stage."""
+def _compute_safely(step, result, what: str) -> bool:
+    """Run a slow add-on step; on failure show a friendly message (never a traceback)."""
+    try:
+        step(result)
+        return True
+    except Exception:
+        logging.getLogger("cardiostage.app").exception("Computing %s failed", what)
+        st.error(
+            f"The {what} couldn't be computed. The risk and decision above are unaffected.",
+            icon="🚫",
+        )
+        return False
+
+
+def render_assessment(result, predictor):
+    """
+    The result card for one stage.
+
+    Progressive: the risk and decision (already computed, ~0.1 s) render first;
+    the plausible range (~2 s) and explanation (~3 s) are then computed in place
+    with their own spinners. Streamlit sends each element to the browser as soon
+    as it's drawn, so the answer appears immediately and the details fill in
+    underneath. Results are stored on the Assessment, so this only happens once.
+    """
     with st.container(border=True):
         st.subheader(f"Stage {result.stage} result · {config.STAGE_NAMES[result.stage]}")
         c1, c2, c3 = st.columns([1, 1, 2])
@@ -96,16 +130,21 @@ def render_assessment(result):
             "major artery on angiography), for a patient like this in the "
             "training data.",
         )
-        c2.metric(
-            "Plausible range",
-            f"{result.range_low:.0%} – {result.range_high:.0%}",
-            help="Spread of predictions from 20 versions of the model, each trained "
-            "on a different 80% of patients. Shown for transparency only: it "
-            "proved a weak error detector, so it does not change decisions.",
-        )
         with c3:
             box, icon = ZONE_STYLE[result.zone]
             box(f"**{result.headline}**  \n{result.recommendation}", icon=icon)
+        with c2:
+            if not result.has_range:
+                with st.spinner("Checking how stable this estimate is..."):
+                    _compute_safely(predictor.add_range, result, "plausible range")
+            if result.has_range:
+                st.metric(
+                    "Plausible range",
+                    f"{result.range_low:.0%} – {result.range_high:.0%}",
+                    help="Spread of predictions from 20 versions of the model, each trained "
+                    "on a different 80% of patients. Shown for transparency only: it "
+                    "proved a weak error detector, so it does not change decisions.",
+                )
 
         z = result.thresholds
         if result.stage < 3:
@@ -127,12 +166,14 @@ def render_assessment(result):
                 icon="🧭",
             )
         if result.not_measured:
-            names = ", ".join(
-                result.explanation.set_index("feature").loc[result.not_measured, "label"]
-            )
+            names = ", ".join(LABELS[f] for f in result.not_measured)
             st.caption(f"Not measured: {names}. The model assumed a typical value.")
 
         st.markdown("**Why this estimate?**")
+        if not result.has_explanation:
+            with st.spinner("Working out which measurements drove this estimate..."):
+                if not _compute_safely(predictor.add_explanation, result, "explanation"):
+                    return
         st.write(result.summary)
         st.plotly_chart(
             contribution_chart(result.explanation),

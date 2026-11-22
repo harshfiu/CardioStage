@@ -4,7 +4,7 @@
 
 CardioStage estimates heart-disease risk in three stages: a basic check-up, then a treadmill stress test, then invasive imaging. At each stage it decides whether the patient can be **cleared**, should be **referred**, or needs the **next test**. Every estimate is calibrated, explained in plain English, and flagged when the patient is unlike anyone the model has seen.
 
-![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-84%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-87%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 > ⚕️ **Educational project, not a medical device.** Trained on 243 patients from a 1980s dataset. Not for diagnosis or treatment decisions.
 
@@ -48,7 +48,7 @@ At stages 1–2, risk below a **rule-out** level (keeps ≥99% of sick patients 
 | **Explanations** | Per-patient SHAP breakdown that adds up exactly to the risk shown. All 12 medical sanity checks pass |
 | **External validation** | Tested unchanged at three hospitals it never saw |
 | **Fairness analysis** | Performance by sex and age, with an honest account of the cases it misses |
-| **Rigour** | Sealed test set, nested cross-validation, bootstrap and exact confidence intervals, 84 automated tests, CI |
+| **Rigour** | Sealed test set, nested cross-validation, bootstrap and exact confidence intervals, 87 automated tests, CI |
 
 ## Key findings
 
@@ -97,7 +97,7 @@ python -m venv .venv
 pip install -r requirements.txt -c constraints.txt
 pip install -e .
 python -m cardiostage.train_all     # build all models (~10 minutes, once)
-pytest                              # 84 tests
+pytest                              # 87 tests
 streamlit run app/streamlit_app.py
 ```
 
@@ -125,7 +125,7 @@ Reproduce any phase's analysis, e.g. `python -m cardiostage.external_validation`
 │   ├── explain.py          SHAP explanations in plain English
 │   ├── predictor.py        the app's decision engine
 │   └── from_scratch.py     logistic regression in pure numpy
-└── tests/                  84 automated tests (incl. security)
+└── tests/                  87 automated tests (incl. security)
 ```
 
 ## Security

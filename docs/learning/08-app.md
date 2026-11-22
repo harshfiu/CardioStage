@@ -88,10 +88,10 @@ A `@dataclass` is a Python class that mainly holds data. You list the fields and
 ### The example patients
 | Example | Stage 1 | Stage 2 | Stage 3 |
 |---|---|---|---|
-| Low risk: 42-year-old woman | 2% low | 9% low | 6% clear |
-| **Uncertain, then cleared**: 54-year-old man | 33% uncertain | 15% uncertain | **8% clear** |
-| High risk: 63-year-old man | 92% high | 91% high | 94% refer |
-| **Known limitation**: 57-year-old woman, atypical pain | 8% **low (cleared)** | 17% uncertain | **25% refer** |
+| Low risk (42-year-old woman) | 2% low | 9% low | 6% clear |
+| **Uncertain, then cleared** (54-year-old man) | 33% uncertain | 15% uncertain | **8% clear** |
+| High risk (63-year-old man) | 92% high | 91% high | 94% refer |
+| **Known limitation** (57-year-old woman, atypical pain) | 8% **low (cleared)** | 17% uncertain | **25% refer** |
 
 The "uncertain" example was **checked, not assumed**. My first candidate turned out to be cleared at stage 1, reproducing the Phase 6 limitation. Rather than hide that, it became a fourth, clearly labelled example, with a sidebar note explaining the weakness. Showing a tool's failure modes builds more trust than hiding them.
 

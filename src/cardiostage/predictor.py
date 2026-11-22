@@ -97,21 +97,34 @@ class ModelsNotFoundError(FileNotFoundError):
 class Assessment:
     stage: int
     risk: float  # calibrated probability of heart disease
-    range_low: float  # plausible range from the 20 model copies
-    range_high: float
-    baseline: float  # "typical patient" risk used by the explanation
     zone: str  # low / high / uncertain (stages 1-2) or refer / clear (stage 3)
     headline: str
     recommendation: str
     unusual: list = field(default_factory=list)  # reasons this patient is atypical
     not_measured: list = field(default_factory=list)
+    thresholds: dict = field(default_factory=dict)
+    # The validated one-row input, kept so the slower parts below can be
+    # computed after the core result is already on screen.
+    frame: pd.DataFrame = None
+    # Filled by add_range() (~2 s for stages 2-3):
+    range_low: float = None  # plausible range from the 20 model copies
+    range_high: float = None
+    # Filled by add_explanation() (~3 s for stages 2-3):
+    baseline: float = None  # "typical patient" risk used by the explanation
     explanation: pd.DataFrame = None  # per-measurement contributions
     summary: str = ""  # plain-English explanation
-    thresholds: dict = field(default_factory=dict)
 
     @property
     def suggests_next_test(self) -> bool:
         return self.zone == "uncertain"
+
+    @property
+    def has_range(self) -> bool:
+        return self.range_low is not None
+
+    @property
+    def has_explanation(self) -> bool:
+        return self.explanation is not None
 
 
 class CardioStagePredictor:
@@ -189,12 +202,22 @@ class CardioStagePredictor:
             return "low"
         return "uncertain"
 
-    def assess(self, patient: dict, stage: int, explain: bool = True) -> Assessment:
-        """Full assessment of one patient using the measurements of `stage`."""
+    def assess(
+        self, patient: dict, stage: int, explain: bool = True, with_range: bool = True
+    ) -> Assessment:
+        """
+        Assessment of one patient using the measurements of `stage`.
+
+        The core result (validation, risk, decision zone, unusual-patient
+        warnings) takes ~0.1 s. The plausible range (~2 s) and the explanation
+        (~3 s) are the slow parts; pass with_range=False / explain=False to get
+        the core result immediately and add them later with add_range() and
+        add_explanation(). The app does exactly that, so the decision appears
+        at once and the details fill in underneath.
+        """
         b = self.bundles[stage]
         X = self.to_frame(patient, b["features"])
         risk = float(b["model"].predict_proba(X)[0, 1])
-        low, high = b["uncertainty"].predict_interval(X)
         zone = self.zone(stage, risk)
         headline, detail = ZONE_TEXT[zone]
         recommendation = detail
@@ -204,20 +227,31 @@ class CardioStagePredictor:
         result = Assessment(
             stage=stage,
             risk=risk,
-            range_low=float(low[0]),
-            range_high=float(high[0]),
-            baseline=float("nan"),
             zone=zone,
             headline=headline,
             recommendation=recommendation,
             unusual=b["novelty"].check(X)[0],
             not_measured=[f for f in b["features"] if pd.isna(X.iloc[0][f])],
             thresholds=dict(b["zones"]),
+            frame=X,
         )
+        if with_range:
+            self.add_range(result)
         if explain:
-            explainer = self.explainer(stage)
-            e = explainer.explain(X)
-            result.baseline = float(e.base_values[0])
-            result.explanation = explainer.describe(X.iloc[0], e[0])
-            result.summary = explanation_text(result.explanation, result.baseline, risk)
+            self.add_explanation(result)
+        return result
+
+    def add_range(self, result: Assessment) -> Assessment:
+        """Fill in the plausible range (10th-90th percentile of the 20 model copies)."""
+        low, high = self.bundles[result.stage]["uncertainty"].predict_interval(result.frame)
+        result.range_low, result.range_high = float(low[0]), float(high[0])
+        return result
+
+    def add_explanation(self, result: Assessment) -> Assessment:
+        """Fill in the SHAP explanation and its plain-English summary."""
+        explainer = self.explainer(result.stage)
+        e = explainer.explain(result.frame)
+        result.baseline = float(e.base_values[0])
+        result.explanation = explainer.describe(result.frame.iloc[0], e[0])
+        result.summary = explanation_text(result.explanation, result.baseline, result.risk)
         return result

@@ -136,7 +136,14 @@ class StageExplainer:
         """
         SHAP values in PROBABILITY units: a value of 0.12 means this
         measurement raised the risk by 12 percentage points.
+
+        Reproducible: the permutation method tries random orderings of the
+        measurements. SHAP only seeds NumPy's generator once (when the
+        explainer is created), so without re-seeding the same patient could
+        get slightly different bars on each request. Re-seeding here makes
+        identical inputs always give identical explanations.
         """
+        np.random.seed(config.RANDOM_SEED)
         return self.explainer(self.encode(df), silent=True)
 
     def describe(self, patient: pd.Series, explanation_row) -> pd.DataFrame:
