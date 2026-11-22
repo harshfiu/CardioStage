@@ -22,7 +22,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 - [x] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
 - [x] Phase 4: Staged screening
 - [x] Phase 5: Calibration & uncertainty
-- [ ] Phase 6: Cross-hospital & fairness evaluation
+- [x] Phase 6: Cross-hospital & fairness evaluation
 - [ ] Phase 7: Explanations (SHAP)
 - [ ] Phase 8: Streamlit app
 - [ ] Phase 9: Polish
@@ -74,6 +74,23 @@ Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive
 - **Unusual-patient warning:** flags out-of-range values or unusual combinations. It fires on ~1% of training patients but up to 13% at hospitals with very different populations.
 
 ![Calibration](reports/figures/10_calibration_curves.png)
+
+## External validation (unseen hospitals)
+Stage models trained only on Cleveland, applied unchanged to three other hospitals:
+
+| Hospital | Disease rate | Stage 1 AUC | Stage 2 AUC |
+|---|---|---|---|
+| Cleveland (internal, out-of-fold) | 46% | 0.837 | 0.855 |
+| Hungary | 36% | 0.840 [0.79, 0.89] | 0.892 [0.85, 0.93] |
+| VA Long Beach | 74% | 0.718 [0.63, 0.80] | 0.741 [0.66, 0.83] |
+| Switzerland | 93% | 0.767 [0.48, 0.95]* | 0.776 [0.58, 0.96]* |
+
+\*Only 8 healthy Swiss patients, so performance there is undetermined. Ranking transfers well to Hungary and degrades at VA. Probabilities under-predict at high-prevalence hospitals, which a one-number **prior shift** corrects (Switzerland ECE 0.26 → 0.04). Decision cutoffs need local re-checking: the stage-1 clear zone was less safe at Hungary (NPV 90% vs 96%).
+
+![External validation](reports/figures/12_external_auc.png)
+
+## Fairness
+Ranking quality is equal for women and men, both internally and externally. Recall for women was 0.89 [0.72, 1.00] vs 0.98 for men, based on 2 missed women out of 18. One case reflects the known under-diagnosis of atypical presentations; the other sat exactly on the threshold. This is documented as a limitation rather than "fixed" with a rule fitted to two patients.
 
 ## Model comparison
 Nested cross-validation (5 folds × 3 repeats, tuning inside each fold) on 243 Cleveland training patients, using all features:
