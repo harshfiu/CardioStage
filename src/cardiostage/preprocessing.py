@@ -44,17 +44,21 @@ def build_preprocessor(stage: int) -> ColumnTransformer:
     # Why: logistic regression is sensitive to scale. Cholesterol (~200) would
     # otherwise dwarf ST depression (~1) in its calculations. Tree models
     # (random forest, XGBoost) don't care, and scaling doesn't hurt them.
-    numeric_pipeline = Pipeline([
-        ("impute", SimpleImputer(strategy="median")),
-        ("scale", StandardScaler()),
-    ])
+    numeric_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="median")),
+            ("scale", StandardScaler()),
+        ]
+    )
 
     # --- Binary columns: fill gaps with the most common value ---------------
     # They're already 0/1, so no scaling needed. A median of 0/1 data isn't
     # meaningful, so we use the most frequent value instead.
-    binary_pipeline = Pipeline([
-        ("impute", SimpleImputer(strategy="most_frequent")),
-    ])
+    binary_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="most_frequent")),
+        ]
+    )
 
     # --- Categorical columns: fill gaps, then one-hot encode ----------------
     # One-hot encoding turns a column like cp (4 chest-pain types) into four
@@ -66,10 +70,12 @@ def build_preprocessor(stage: int) -> ColumnTransformer:
     # in training, encode it as all-zeros instead of crashing.
     # sparse_output=False: return a normal table rather than a compressed one,
     # which keeps things simple and readable at our small data size.
-    categorical_pipeline = Pipeline([
-        ("impute", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ])
+    categorical_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
 
     preprocessor = ColumnTransformer(
         transformers=[

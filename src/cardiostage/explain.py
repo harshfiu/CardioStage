@@ -31,12 +31,19 @@ from cardiostage import config
 
 # Plain-English names and value formatting for explanations.
 LABELS = {
-    "age": "Age", "sex": "Sex", "cp": "Chest pain type",
-    "trestbps": "Resting blood pressure", "chol": "Cholesterol",
-    "fbs": "Fasting blood sugar", "restecg": "Resting ECG",
-    "thalch": "Max heart rate (treadmill)", "exang": "Chest pain during exercise",
-    "oldpeak": "ST depression (treadmill ECG)", "slope": "ST segment slope",
-    "ca": "Blocked vessels (fluoroscopy)", "thal": "Thallium scan",
+    "age": "Age",
+    "sex": "Sex",
+    "cp": "Chest pain type",
+    "trestbps": "Resting blood pressure",
+    "chol": "Cholesterol",
+    "fbs": "Fasting blood sugar",
+    "restecg": "Resting ECG",
+    "thalch": "Max heart rate (treadmill)",
+    "exang": "Chest pain during exercise",
+    "oldpeak": "ST depression (treadmill ECG)",
+    "slope": "ST segment slope",
+    "ca": "Blocked vessels (fluoroscopy)",
+    "thal": "Thallium scan",
 }
 
 CATEGORY_TEXT = {
@@ -90,9 +97,9 @@ class StageExplainer:
         n = min(n_background, len(background))
         if config.TARGET_COLUMN in background.columns:
             frac = n / len(background)
-            sample = (background.groupby(config.TARGET_COLUMN, group_keys=False)
-                                .apply(lambda g: g.sample(n=round(len(g) * frac),
-                                                          random_state=config.RANDOM_SEED)))
+            sample = background.groupby(config.TARGET_COLUMN, group_keys=False).apply(
+                lambda g: g.sample(n=round(len(g) * frac), random_state=config.RANDOM_SEED)
+            )
         else:
             sample = background.sample(n=n, random_state=config.RANDOM_SEED)
         background = background[self.features]
@@ -107,7 +114,7 @@ class StageExplainer:
         out = df[self.features].copy()
         for c in self.categorical:
             codes = {cat: i for i, cat in enumerate(self.categories[c])}
-            out[c] = out[c].map(codes)          # unknown or missing -> NaN
+            out[c] = out[c].map(codes)  # unknown or missing -> NaN
         return out.astype(float).to_numpy()
 
     def decode(self, arr: np.ndarray) -> pd.DataFrame:
@@ -137,9 +144,15 @@ class StageExplainer:
         One patient's explanation as a readable table, biggest effects first:
             feature | value | contribution (percentage points)
         """
-        rows = [{"feature": f, "label": LABELS[f], "value": format_value(f, patient[f]),
-                 "contribution": float(v)}
-                for f, v in zip(self.features, explanation_row.values)]
+        rows = [
+            {
+                "feature": f,
+                "label": LABELS[f],
+                "value": format_value(f, patient[f]),
+                "contribution": float(v),
+            }
+            for f, v in zip(self.features, explanation_row.values)
+        ]
         table = pd.DataFrame(rows)
         return table.reindex(table["contribution"].abs().sort_values(ascending=False).index)
 
@@ -154,9 +167,19 @@ def explanation_text(table: pd.DataFrame, base: float, risk: float, top: int = 4
     down = table[table["contribution"] < -0.005].head(top)
     parts = [f"Estimated risk {risk:.0%} (typical patient: {base:.0%})."]
     if len(up):
-        parts.append("Raising it: " + "; ".join(
-            f"{r.label} = {r.value} (+{r.contribution * 100:.0f} pts)" for r in up.itertuples()) + ".")
+        parts.append(
+            "Raising it: "
+            + "; ".join(
+                f"{r.label} = {r.value} (+{r.contribution * 100:.0f} pts)" for r in up.itertuples()
+            )
+            + "."
+        )
     if len(down):
-        parts.append("Lowering it: " + "; ".join(
-            f"{r.label} = {r.value} ({r.contribution * 100:.0f} pts)" for r in down.itertuples()) + ".")
+        parts.append(
+            "Lowering it: "
+            + "; ".join(
+                f"{r.label} = {r.value} ({r.contribution * 100:.0f} pts)" for r in down.itertuples()
+            )
+            + "."
+        )
     return " ".join(parts)

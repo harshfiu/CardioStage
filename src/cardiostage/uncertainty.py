@@ -47,7 +47,8 @@ class SubsampleEnsemble:
         # Train the copies in parallel on all CPU cores.
         self.replicas_ = Parallel(n_jobs=-1)(
             delayed(_fit_on_subsample)(self.estimator, X, y, self.seed + i)
-            for i in range(self.n_replicas))
+            for i in range(self.n_replicas)
+        )
         return self
 
     def predict_all(self, X) -> np.ndarray:
@@ -84,10 +85,12 @@ class NoveltyDetector:
         self.features_ = list(X.columns)
         numeric = [c for c in config.NUMERIC_FEATURES if c in self.features_]
         self.ranges_ = {c: (X[c].min(), X[c].max()) for c in numeric}
-        self.forest_ = Pipeline([
-            ("preprocess", build_preprocessor(self.stage)),
-            ("forest", IsolationForest(n_estimators=300, random_state=config.RANDOM_SEED)),
-        ]).fit(X)
+        self.forest_ = Pipeline(
+            [
+                ("preprocess", build_preprocessor(self.stage)),
+                ("forest", IsolationForest(n_estimators=300, random_state=config.RANDOM_SEED)),
+            ]
+        ).fit(X)
         # Higher score = more typical. The cut-off is set so that the most
         # unusual NOVELTY_QUANTILE of TRAINING patients fall below it.
         scores = self.forest_.score_samples(X)
@@ -104,8 +107,9 @@ class NoveltyDetector:
             for column, (low, high) in self.ranges_.items():
                 value = row[column]
                 if pd.notna(value) and not (low <= value <= high):
-                    reasons.append(f"{column} = {value:g} is outside the training range "
-                                   f"({low:g} to {high:g})")
+                    reasons.append(
+                        f"{column} = {value:g} is outside the training range ({low:g} to {high:g})"
+                    )
             if score < self.score_threshold_:
                 reasons.append("unusual combination of values compared with training patients")
             results.append(reasons)

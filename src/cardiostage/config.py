@@ -21,8 +21,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_PATH = DATA_DIR / "raw" / "heart_disease_uci.csv"
-PROCESSED_DIR = DATA_DIR / "processed"   # cleaned data we create in Phase 2
-MODELS_DIR = PROJECT_ROOT / "models"     # trained models saved to disk
+PROCESSED_DIR = DATA_DIR / "processed"  # cleaned data we create in Phase 2
+MODELS_DIR = PROJECT_ROOT / "models"  # trained models saved to disk
 FIGURES_DIR = PROJECT_ROOT / "reports" / "figures"  # charts for README/app
 
 # ---------------------------------------------------------------------------
@@ -55,27 +55,27 @@ HOSPITAL_COLUMN = "dataset"
 
 # Stage 1: available at a normal clinic visit plus a routine blood test.
 STAGE_1_BASIC = [
-    "age",       # age in years
-    "sex",       # Male / Female
-    "cp",        # chest pain type (typical angina, atypical, non-anginal, none)
+    "age",  # age in years
+    "sex",  # Male / Female
+    "cp",  # chest pain type (typical angina, atypical, non-anginal, none)
     "trestbps",  # resting blood pressure (mm Hg)
-    "chol",      # serum cholesterol (mg/dl)
-    "fbs",       # fasting blood sugar > 120 mg/dl (a diabetes indicator)
+    "chol",  # serum cholesterol (mg/dl)
+    "fbs",  # fasting blood sugar > 120 mg/dl (a diabetes indicator)
 ]
 
 # Stage 2: needs an ECG and a supervised treadmill (exercise stress) test.
 STAGE_2_TREADMILL = [
-    "restecg",   # resting ECG result
-    "thalch",    # maximum heart rate reached during exercise
-    "exang",     # did exercise cause chest pain? (exercise-induced angina)
-    "oldpeak",   # ST depression: how much the ECG signal dips under stress
-    "slope",     # shape of the ST segment at peak exercise
+    "restecg",  # resting ECG result
+    "thalch",  # maximum heart rate reached during exercise
+    "exang",  # did exercise cause chest pain? (exercise-induced angina)
+    "oldpeak",  # ST depression: how much the ECG signal dips under stress
+    "slope",  # shape of the ST segment at peak exercise
 ]
 
 # Stage 3: invasive / imaging tests done in a hospital.
 STAGE_3_INVASIVE = [
-    "ca",        # number of major vessels coloured by fluoroscopy (dye + X-ray)
-    "thal",      # thallium stress scan result (nuclear imaging)
+    "ca",  # number of major vessels coloured by fluoroscopy (dye + X-ray)
+    "thal",  # thallium stress scan result (nuclear imaging)
 ]
 
 # Each stage INCLUDES everything from the stages before it, because a patient

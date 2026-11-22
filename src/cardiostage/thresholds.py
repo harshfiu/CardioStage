@@ -43,9 +43,9 @@ def threshold_for_precision(y_true, proba, target_precision: float) -> float:
     """
     y_true = np.asarray(y_true)
     proba = np.asarray(proba)
-    order = np.argsort(-proba)                 # highest probability first
+    order = np.argsort(-proba)  # highest probability first
     sorted_p, sorted_y = proba[order], y_true[order]
-    true_pos = np.cumsum(sorted_y)             # sick patients flagged so far
+    true_pos = np.cumsum(sorted_y)  # sick patients flagged so far
     flagged = np.arange(1, len(sorted_y) + 1)  # total patients flagged so far
     precision = true_pos / flagged
 
@@ -76,7 +76,11 @@ def decision_metrics(y_true, y_pred) -> dict:
     npv                      : of the cleared, how many are truly healthy
     """
     c = confusion_counts(y_true, y_pred)
-    safe = lambda a, b: a / b if b else float("nan")
+
+    def safe(a, b):
+        # Avoid dividing by zero (e.g. specificity when there are no healthy patients).
+        return a / b if b else float("nan")
+
     return {
         "recall": safe(c["tp"], c["tp"] + c["fn"]),
         "specificity": safe(c["tn"], c["tn"] + c["fp"]),

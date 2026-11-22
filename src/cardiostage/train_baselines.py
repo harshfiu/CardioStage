@@ -31,8 +31,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import (GridSearchCV, RepeatedStratifiedKFold,
-                                     StratifiedKFold, cross_validate)
+from sklearn.model_selection import (
+    GridSearchCV,
+    RepeatedStratifiedKFold,
+    StratifiedKFold,
+    cross_validate,
+)
 
 from cardiostage import config
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
@@ -61,20 +65,20 @@ def make_grid_search(name: str) -> GridSearchCV:
     return GridSearchCV(
         estimator=build_pipeline(name, STAGE),
         param_grid=PARAM_GRIDS[name],
-        scoring="roc_auc",          # pick the settings that rank best
-        cv=StratifiedKFold(n_splits=config.CV_FOLDS, shuffle=True,
-                           random_state=config.RANDOM_SEED),
-        n_jobs=-1,                  # use all CPU cores
+        scoring="roc_auc",  # pick the settings that rank best
+        cv=StratifiedKFold(n_splits=config.CV_FOLDS, shuffle=True, random_state=config.RANDOM_SEED),
+        n_jobs=-1,  # use all CPU cores
     )
 
 
 def nested_cv(name: str, X: pd.DataFrame, y: pd.Series) -> dict:
     """Outer loop: grade the whole 'tune-then-train' procedure honestly."""
-    outer_cv = RepeatedStratifiedKFold(n_splits=config.CV_FOLDS,
-                                       n_repeats=config.CV_REPEATS,
-                                       random_state=config.RANDOM_SEED)
-    results = cross_validate(make_grid_search(name), X, y, cv=outer_cv,
-                             scoring=SCORING, return_estimator=True)
+    outer_cv = RepeatedStratifiedKFold(
+        n_splits=config.CV_FOLDS, n_repeats=config.CV_REPEATS, random_state=config.RANDOM_SEED
+    )
+    results = cross_validate(
+        make_grid_search(name), X, y, cv=outer_cv, scoring=SCORING, return_estimator=True
+    )
     # Which settings did the inner search pick on each outer fold?
     # If they vary wildly, the choice of settings is fragile.
     chosen = [str(est.best_params_) for est in results["estimator"]]
@@ -84,26 +88,42 @@ def nested_cv(name: str, X: pd.DataFrame, y: pd.Series) -> dict:
 def plot_comparison(summary: pd.DataFrame) -> None:
     """One panel per metric; dot = mean over 15 outer folds, bar = ±1 std."""
     metrics = ["roc_auc", "recall", "precision", "accuracy"]
-    titles = {"roc_auc": "ROC-AUC", "recall": "Recall (sick caught)",
-              "precision": "Precision (alarms correct)", "accuracy": "Accuracy"}
+    titles = {
+        "roc_auc": "ROC-AUC",
+        "recall": "Recall (sick caught)",
+        "precision": "Precision (alarms correct)",
+        "accuracy": "Accuracy",
+    }
     fig, axes = plt.subplots(1, len(metrics), figsize=(15, 3.4), sharey=True)
     names = list(summary.index)
     for ax, metric in zip(axes, metrics):
         for i, name in enumerate(names):
             mean, std = summary.loc[name, f"{metric}_mean"], summary.loc[name, f"{metric}_std"]
-            ax.errorbar(mean, i, xerr=std, fmt="o", color=MODEL_COLORS[name],
-                        markersize=9, capsize=4, linewidth=2)
+            ax.errorbar(
+                mean,
+                i,
+                xerr=std,
+                fmt="o",
+                color=MODEL_COLORS[name],
+                markersize=9,
+                capsize=4,
+                linewidth=2,
+            )
             ax.text(mean, i - 0.28, f"{mean:.3f}", ha="center", color="#52514e", fontsize=9)
         ax.set_title(titles[metric], fontweight="bold")
         ax.set_xlim(0.6, 1.0)
-        ax.grid(axis="x", color="#ebeae6"); ax.set_axisbelow(True)
+        ax.grid(axis="x", color="#ebeae6")
+        ax.set_axisbelow(True)
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
     axes[0].set_yticks(range(len(names)), [MODEL_LABELS[n] for n in names])
     axes[0].set_ylim(len(names) - 0.5, -0.7)
-    fig.suptitle("Model comparison: nested cross-validation on Cleveland (all features)\n"
-                 "dot = mean of 15 outer folds, bar = ±1 standard deviation",
-                 fontweight="bold", y=1.08)
+    fig.suptitle(
+        "Model comparison: nested cross-validation on Cleveland (all features)\n"
+        "dot = mean of 15 outer folds, bar = ±1 standard deviation",
+        fontweight="bold",
+        y=1.08,
+    )
     config.FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     path = config.FIGURES_DIR / "05_model_comparison.png"
     fig.savefig(path, dpi=150, bbox_inches="tight")
@@ -120,11 +140,16 @@ def main():
     for name in MODEL_NAMES:
         start = time.time()
         result = nested_cv(name, X, y)
-        rows[name] = {f"{m}_{stat}": getattr(np, stat)(v)
-                      for m, v in result["scores"].items() for stat in ("mean", "std")}
+        rows[name] = {
+            f"{m}_{stat}": getattr(np, stat)(v)
+            for m, v in result["scores"].items()
+            for stat in ("mean", "std")
+        }
         chosen_params[name] = pd.Series(result["chosen"]).value_counts()
-        print(f"{MODEL_LABELS[name]:<20} ROC-AUC {rows[name]['roc_auc_mean']:.3f} "
-              f"± {rows[name]['roc_auc_std']:.3f}   ({time.time() - start:.0f}s)")
+        print(
+            f"{MODEL_LABELS[name]:<20} ROC-AUC {rows[name]['roc_auc_mean']:.3f} "
+            f"± {rows[name]['roc_auc_std']:.3f}   ({time.time() - start:.0f}s)"
+        )
 
         # Final version of this model: tune on ALL training data and save it.
         final = make_grid_search(name).fit(X, y)

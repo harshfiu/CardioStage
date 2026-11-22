@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 
 from cardiostage.staging import simulate_policy
-from cardiostage.thresholds import (decision_metrics, threshold_for_precision,
-                                    threshold_for_recall)
+from cardiostage.thresholds import decision_metrics, threshold_for_precision, threshold_for_recall
 
 RNG = np.random.default_rng(0)
 
@@ -57,14 +56,18 @@ def test_decision_metrics_hand_example():
 
 
 def test_policy_routes_patients_correctly():
-    zones = {1: {"rule_out_below": 0.2, "rule_in_from": 0.8},
-             2: {"rule_out_below": 0.3, "rule_in_from": 0.7},
-             3: {"screening_threshold": 0.5}}
+    zones = {
+        1: {"rule_out_below": 0.2, "rule_in_from": 0.8},
+        2: {"rule_out_below": 0.3, "rule_in_from": 0.7},
+        3: {"screening_threshold": 0.5},
+    }
     # patient 0: stage-1 low; 1: stage-1 high; 2: decided at stage 2 (high);
     # 3: reaches stage 3 and is flagged; 4: reaches stage 3 and is cleared.
-    p = {1: np.array([0.1, 0.9, 0.5, 0.5, 0.5]),
-         2: np.array([0.9, 0.1, 0.75, 0.5, 0.5]),
-         3: np.array([0.9, 0.1, 0.1, 0.6, 0.4])}
+    p = {
+        1: np.array([0.1, 0.9, 0.5, 0.5, 0.5]),
+        2: np.array([0.9, 0.1, 0.75, 0.5, 0.5]),
+        3: np.array([0.9, 0.1, 0.1, 0.6, 0.4]),
+    }
     decision, stopped = simulate_policy(p, zones)
     assert list(decision) == [0, 1, 1, 1, 0]
     assert list(stopped) == [1, 1, 2, 3, 3]

@@ -133,31 +133,40 @@ def main():
     # tol: ask scikit-learn to converge just as precisely as ours does.
     sklearn_model = LogisticRegression(C=C, max_iter=5000, tol=1e-10).fit(X, y)
 
-    comparison = pd.DataFrame({
-        "from_scratch": ours.weights,
-        "scikit_learn": sklearn_model.coef_[0],
-    }, index=X.columns).sort_values("from_scratch")
+    comparison = pd.DataFrame(
+        {
+            "from_scratch": ours.weights,
+            "scikit_learn": sklearn_model.coef_[0],
+        },
+        index=X.columns,
+    ).sort_values("from_scratch")
     print(f"Converged after {len(ours.loss_history) - 1} steps\n")
     print("Learned weights (negative = lowers risk, positive = raises risk):")
     print(comparison.round(4).to_string())
     print(f"\nIntercept: scratch {ours.bias:.4f}  vs  sklearn {sklearn_model.intercept_[0]:.4f}")
     print(f"Largest weight difference: {np.abs(comparison.diff(axis=1).iloc[:, 1]).max():.6f}")
-    print(f"Training ROC-AUC: scratch {roc_auc_score(y, ours.predict_proba(X)):.4f}  vs  "
-          f"sklearn {roc_auc_score(y, sklearn_model.predict_proba(X)[:, 1]):.4f}")
+    print(
+        f"Training ROC-AUC: scratch {roc_auc_score(y, ours.predict_proba(X)):.4f}  vs  "
+        f"sklearn {roc_auc_score(y, sklearn_model.predict_proba(X)[:, 1]):.4f}"
+    )
 
     # Loss curve: watch the model learn.
     fig, ax = plt.subplots(figsize=(7, 3.4))
     # A log scale can't show step 0, so number steps from 1 (1 = starting guess).
     steps = np.arange(1, len(ours.loss_history) + 1)
     ax.plot(steps, ours.loss_history, color="#2a78d6", linewidth=2)
-    ax.annotate("start: every patient 50%\n(loss = 0.693)", xy=(1, ours.loss_history[0]),
-                xytext=(3, 0.66), color="#52514e", fontsize=9,
-                arrowprops={"arrowstyle": "->", "color": "#52514e"})
+    ax.annotate(
+        "start: every patient 50%\n(loss = 0.693)",
+        xy=(1, ours.loss_history[0]),
+        xytext=(3, 0.66),
+        color="#52514e",
+        fontsize=9,
+        arrowprops={"arrowstyle": "->", "color": "#52514e"},
+    )
     ax.set_xscale("log")
     ax.set_xlabel("Gradient-descent step (log scale, 1 = starting guess)")
     ax.set_ylabel("Loss (lower = better)")
-    ax.set_title("Logistic regression from scratch: the loss falls as it learns",
-                 fontweight="bold")
+    ax.set_title("Logistic regression from scratch: the loss falls as it learns", fontweight="bold")
     ax.grid(color="#ebeae6")
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)

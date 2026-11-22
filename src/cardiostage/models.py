@@ -40,9 +40,9 @@ def make_classifier(name: str):
         # Hundreds of decision trees, each trained on a random sample of
         # patients and features; the forest averages their votes.
         return RandomForestClassifier(
-            n_estimators=300,                # number of trees
+            n_estimators=300,  # number of trees
             random_state=config.RANDOM_SEED,
-            n_jobs=1,                        # parallelism happens one level up
+            n_jobs=1,  # parallelism happens one level up
         )
 
     if name == "xgboost":
@@ -77,24 +77,26 @@ PARAM_GRIDS = {
         "model__C": [0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0],
     },
     "random_forest": {
-        "model__max_depth": [3, 5, None],       # how many questions per tree
+        "model__max_depth": [3, 5, None],  # how many questions per tree
         "model__min_samples_leaf": [1, 5, 10],  # min patients per final group
-        "model__max_features": ["sqrt", 0.5],   # features considered per split
+        "model__max_features": ["sqrt", 0.5],  # features considered per split
     },
     "xgboost": {
-        "model__n_estimators": [100, 300],      # number of boosting rounds
-        "model__max_depth": [2, 3, 4],          # tree depth (shallow = simpler)
-        "model__learning_rate": [0.03, 0.1],    # size of each correction step
-        "model__min_child_weight": [1, 5],      # min evidence to make a split
-        "model__subsample": [0.8],              # each tree sees 80% of patients
-        "model__colsample_bytree": [0.8],       # ...and 80% of features
+        "model__n_estimators": [100, 300],  # number of boosting rounds
+        "model__max_depth": [2, 3, 4],  # tree depth (shallow = simpler)
+        "model__learning_rate": [0.03, 0.1],  # size of each correction step
+        "model__min_child_weight": [1, 5],  # min evidence to make a split
+        "model__subsample": [0.8],  # each tree sees 80% of patients
+        "model__colsample_bytree": [0.8],  # ...and 80% of features
     },
 }
 
 
 def build_pipeline(name: str, stage: int) -> Pipeline:
     """Preprocessor for `stage` + the named classifier, as one estimator."""
-    return Pipeline([
-        ("preprocess", build_preprocessor(stage)),
-        ("model", make_classifier(name)),
-    ])
+    return Pipeline(
+        [
+            ("preprocess", build_preprocessor(stage)),
+            ("model", make_classifier(name)),
+        ]
+    )

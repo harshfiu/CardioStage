@@ -41,7 +41,8 @@ def explain_all(bundle, train) -> tuple:
     chunks = np.array_split(np.arange(len(train)), 20)
     results = Parallel(n_jobs=-1)(
         delayed(_explain_chunk)(bundle["model"], bundle["features"], train, train.iloc[idx])
-        for idx in chunks)
+        for idx in chunks
+    )
     values = np.vstack([r[0] for r in results])
     base = np.concatenate([r[1] for r in results])
     return values, base
@@ -75,8 +76,14 @@ def direction_checks(train, shap_values: dict) -> pd.DataFrame:
         else:
             stat = s3.loc[train[feature] == value, feature].mean()
         ok = (stat > 0) if expected == "+" else (stat < 0)
-        rows.append({"check": meaning, "statistic": round(float(stat), 3),
-                     "expected": expected, "passes": bool(ok)})
+        rows.append(
+            {
+                "check": meaning,
+                "statistic": round(float(stat), 3),
+                "expected": expected,
+                "passes": bool(ok),
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -102,7 +109,8 @@ def _clean(ax):
 
 def _save(fig, name):
     path = config.FIGURES_DIR / name
-    fig.savefig(path, dpi=150, bbox_inches="tight"); plt.close(fig)
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
     print(f"saved {path.relative_to(config.PROJECT_ROOT)}")
 
 
@@ -117,8 +125,11 @@ def plot_importance(importance: dict):
         ax.set_xlabel("Average impact on risk (percentage points)")
         ax.set_xlim(0, max(imp_s.max() for imp_s in importance.values()) * 100 * 1.2)
         _clean(ax)
-    fig.suptitle("What drives each stage's predictions (mean |SHAP| over 243 training patients)",
-                 fontweight="bold", y=1.02)
+    fig.suptitle(
+        "What drives each stage's predictions (mean |SHAP| over 243 training patients)",
+        fontweight="bold",
+        y=1.02,
+    )
     fig.tight_layout()
     _save(fig, "15_global_importance.png")
 
@@ -132,10 +143,14 @@ def plot_effects(train, shap3):
         ax.scatter(x, s3[f] * 100, s=18, alpha=0.6, color="#2a78d6", edgecolor="none")
         ax.axhline(0, color="#b5b4ae", linewidth=1)
         ax.set_title(LABELS[f], fontweight="bold")
-        ax.grid(color="#ebeae6"); _clean(ax)
+        ax.grid(color="#ebeae6")
+        _clean(ax)
     axes[0].set_ylabel("Contribution to risk (pts)")
-    fig.suptitle("How each measurement's value changes the stage-3 prediction "
-                 "(one dot per patient)", fontweight="bold", y=1.04)
+    fig.suptitle(
+        "How each measurement's value changes the stage-3 prediction (one dot per patient)",
+        fontweight="bold",
+        y=1.04,
+    )
     _save(fig, "16_feature_effects.png")
 
 
@@ -147,16 +162,26 @@ def plot_case_study(cases: list):
         labels = [f"{r.label} = {r.value}" for r in t.itertuples()]
         ax.barh(labels, t["contribution"] * 100, color=colors, height=0.6)
         for i, v in enumerate(t["contribution"] * 100):
-            ax.text(v + (0.3 if v >= 0 else -0.3), i, f"{v:+.1f}", va="center",
-                    ha="left" if v >= 0 else "right", color=TEXT, fontsize=9)
+            ax.text(
+                v + (0.3 if v >= 0 else -0.3),
+                i,
+                f"{v:+.1f}",
+                va="center",
+                ha="left" if v >= 0 else "right",
+                color=TEXT,
+                fontsize=9,
+            )
         ax.axvline(0, color="#52514e", linewidth=1)
         lim = max(abs(t["contribution"]).max() * 100 * 1.5, 5)
         ax.set_xlim(-lim, lim)
         ax.set_title(f"{title}\nbaseline {base:.0%}  →  risk {risk:.0%}", fontweight="bold")
         ax.set_xlabel("Contribution (percentage points)")
         _clean(ax)
-    fig.suptitle("Case study: a sick woman with atypical chest pain, cleared at the basic check-up",
-                 fontweight="bold", y=1.06)
+    fig.suptitle(
+        "Case study: a sick woman with atypical chest pain, cleared at the basic check-up",
+        fontweight="bold",
+        y=1.06,
+    )
     fig.tight_layout()
     _save(fig, "17_case_study.png")
 
@@ -198,8 +223,10 @@ def main():
     plot_importance(importance)
     plot_effects(train, shap_values[3])
     plot_case_study(cases)
-    joblib.dump({"shap_values": shap_values, "index": train.index.to_numpy()},
-                config.MODELS_DIR / "phase7_shap.joblib")
+    joblib.dump(
+        {"shap_values": shap_values, "index": train.index.to_numpy()},
+        config.MODELS_DIR / "phase7_shap.joblib",
+    )
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ import streamlit as st
 
 from ui import DISCLAIMER
 
-
 st.title("ℹ️ About CardioStage")
 st.warning(DISCLAIMER, icon="⚕️")
 

@@ -14,17 +14,31 @@ import pytest
 from cardiostage import config
 
 MODELS_PRESENT = all((config.MODELS_DIR / f"stage{s}.joblib").exists() for s in config.STAGES)
-needs_models = pytest.mark.skipif(not MODELS_PRESENT,
-                                  reason="trained models missing: run python -m cardiostage.train_all")
+needs_models = pytest.mark.skipif(
+    not MODELS_PRESENT, reason="trained models missing: run python -m cardiostage.train_all"
+)
 
-PATIENT = dict(age=54, sex=1.0, cp="non-anginal", trestbps=135, chol=250, fbs=0.0,
-               restecg="normal", thalch=165, exang=0.0, oldpeak=0.4, slope="upsloping",
-               ca=0, thal="normal")
+PATIENT = dict(
+    age=54,
+    sex=1.0,
+    cp="non-anginal",
+    trestbps=135,
+    chol=250,
+    fbs=0.0,
+    restecg="normal",
+    thalch=165,
+    exang=0.0,
+    oldpeak=0.4,
+    slope="upsloping",
+    ca=0,
+    thal="normal",
+)
 
 
 @pytest.fixture(scope="module")
 def predictor():
     from cardiostage.predictor import CardioStagePredictor
+
     return CardioStagePredictor.load()
 
 
@@ -74,7 +88,8 @@ def test_app_runs_full_flow():
     at = AppTest.from_file(str(app), default_timeout=180).run()
     assert not at.exception
     at.selectbox(key="example").set_value(
-        "Uncertain, then cleared: 54-year-old man, non-heart-like chest pain").run()
+        "Uncertain, then cleared: 54-year-old man, non-heart-like chest pain"
+    ).run()
     assert at.session_state.age == 54  # example loaded into the form
 
     def click(label):
@@ -82,8 +97,8 @@ def test_app_runs_full_flow():
         assert not at.exception
 
     click("Assess risk")
-    assert at.session_state.results[1].zone == "uncertain"   # -> treadmill suggested
+    assert at.session_state.results[1].zone == "uncertain"  # -> treadmill suggested
     click("Add treadmill results")
-    assert at.session_state.results[2].zone == "uncertain"   # -> imaging suggested
+    assert at.session_state.results[2].zone == "uncertain"  # -> imaging suggested
     click("Add imaging results")
-    assert at.session_state.results[3].zone == "clear"       # reassuring tests: cleared
+    assert at.session_state.results[3].zone == "clear"  # reassuring tests: cleared

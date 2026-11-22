@@ -19,3 +19,14 @@ where = ["src"]          # our package code lives in src/cardiostage
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests", "app"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]   # long lines: some explanatory strings read better unbroken
+
+[tool.ruff.lint.isort]
+known-first-party = ["cardiostage", "ui"]

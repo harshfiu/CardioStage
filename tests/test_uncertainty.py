@@ -59,7 +59,7 @@ def test_novelty_flags_implausible_patient_but_not_typical(train):
     for c in ["age", "trestbps", "chol"]:
         patient[c] = typical[c]
     weird = patient.copy()
-    weird["age"], weird["chol"] = 19, 900          # far outside training data
+    weird["age"], weird["chol"] = 19, 900  # far outside training data
     reasons = detector.check(weird)[0]
     assert any("age" in r for r in reasons) and any("chol" in r for r in reasons)
     assert detector.check(patient)[0] == []

@@ -31,25 +31,37 @@ CHOICES = {
 }
 
 ZONE_TEXT = {
-    "low": ("Low estimated risk",
-            "Risk is below this stage's rule-out level. In the training data, further "
-            "tests rarely changed the outcome for patients in this range."),
-    "high": ("High estimated risk",
-             "Risk is above this stage's rule-in level, where at least 9 in 10 training "
-             "patients truly had heart disease. Referral to a cardiologist is suggested."),
-    "uncertain": ("Uncertain",
-                  "Risk is between the rule-out and rule-in levels. The next test is "
-                  "likely to clarify the picture."),
-    "refer": ("Above the screening threshold",
-              "Risk is above the final screening threshold, which was set to catch 97% "
-              "of sick patients. Referral to a cardiologist is suggested."),
-    "clear": ("Below the screening threshold",
-              "Risk is below the final screening threshold. In training, only about "
-              "3% of sick patients fell below it."),
+    "low": (
+        "Low estimated risk",
+        "Risk is below this stage's rule-out level. In the training data, further "
+        "tests rarely changed the outcome for patients in this range.",
+    ),
+    "high": (
+        "High estimated risk",
+        "Risk is above this stage's rule-in level, where at least 9 in 10 training "
+        "patients truly had heart disease. Referral to a cardiologist is suggested.",
+    ),
+    "uncertain": (
+        "Uncertain",
+        "Risk is between the rule-out and rule-in levels. The next test is "
+        "likely to clarify the picture.",
+    ),
+    "refer": (
+        "Above the screening threshold",
+        "Risk is above the final screening threshold, which was set to catch 97% "
+        "of sick patients. Referral to a cardiologist is suggested.",
+    ),
+    "clear": (
+        "Below the screening threshold",
+        "Risk is below the final screening threshold. In training, only about "
+        "3% of sick patients fell below it.",
+    ),
 }
 
-NEXT_TEST = {1: "a treadmill (exercise stress) test with ECG",
-             2: "invasive imaging (fluoroscopy and a thallium scan)"}
+NEXT_TEST = {
+    1: "a treadmill (exercise stress) test with ECG",
+    2: "invasive imaging (fluoroscopy and a thallium scan)",
+}
 
 
 class ModelsNotFoundError(FileNotFoundError):
@@ -59,17 +71,17 @@ class ModelsNotFoundError(FileNotFoundError):
 @dataclass
 class Assessment:
     stage: int
-    risk: float                 # calibrated probability of heart disease
-    range_low: float            # plausible range from the 20 model copies
+    risk: float  # calibrated probability of heart disease
+    range_low: float  # plausible range from the 20 model copies
     range_high: float
-    baseline: float             # "typical patient" risk used by the explanation
-    zone: str                   # low / high / uncertain (stages 1-2) or refer / clear (stage 3)
+    baseline: float  # "typical patient" risk used by the explanation
+    zone: str  # low / high / uncertain (stages 1-2) or refer / clear (stage 3)
     headline: str
     recommendation: str
-    unusual: list = field(default_factory=list)   # reasons this patient is atypical
+    unusual: list = field(default_factory=list)  # reasons this patient is atypical
     not_measured: list = field(default_factory=list)
-    explanation: pd.DataFrame = None               # per-measurement contributions
-    summary: str = ""                              # plain-English explanation
+    explanation: pd.DataFrame = None  # per-measurement contributions
+    summary: str = ""  # plain-English explanation
     thresholds: dict = field(default_factory=dict)
 
     @property
@@ -90,7 +102,8 @@ class CardioStagePredictor:
         if missing:
             raise ModelsNotFoundError(
                 f"Trained models not found ({', '.join(missing)}). "
-                "Build them with:  python -m cardiostage.train_all")
+                "Build them with:  python -m cardiostage.train_all"
+            )
         bundles = {s: joblib.load(p) for s, p in paths.items()}
         train, _ = split_cleveland(load_clean())
         return cls(bundles, train)
@@ -141,8 +154,13 @@ class CardioStagePredictor:
             recommendation += f" Suggested next step: {NEXT_TEST[stage]}."
 
         result = Assessment(
-            stage=stage, risk=risk, range_low=float(low[0]), range_high=float(high[0]),
-            baseline=float("nan"), zone=zone, headline=headline,
+            stage=stage,
+            risk=risk,
+            range_low=float(low[0]),
+            range_high=float(high[0]),
+            baseline=float("nan"),
+            zone=zone,
+            headline=headline,
             recommendation=recommendation,
             unusual=b["novelty"].check(X)[0],
             not_measured=[f for f in b["features"] if pd.isna(X.iloc[0][f])],

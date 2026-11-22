@@ -37,6 +37,27 @@ def bootstrap_ci(metric, *arrays, n_boot: int = 1000, need_both_classes: bool = 
     return estimate, float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))
 
 
+def exact_proportion_ci(successes: int, total: int, level: float = 0.95):
+    """
+    Clopper-Pearson ("exact") confidence interval for a proportion, such as
+    recall = sick patients caught / all sick patients.
+
+    Why not the bootstrap here? With 28 of 28 caught, every bootstrap resample
+    also has 0 misses, so the bootstrap claims [1.000, 1.000], i.e. certainty.
+    But a true recall of, say, 92% would still produce 28/28 fairly often. The
+    exact interval asks: "which true rates make the observed count plausible?"
+    For 28/28 the answer is roughly 88%-100%.
+
+    Returns (estimate, low, high).
+    """
+    from scipy.stats import beta
+
+    alpha = 1 - level
+    low = 0.0 if successes == 0 else beta.ppf(alpha / 2, successes, total - successes + 1)
+    high = 1.0 if successes == total else beta.ppf(1 - alpha / 2, successes + 1, total - successes)
+    return successes / total, float(low), float(high)
+
+
 def fmt_ci(estimate, low, high, digits: int = 3) -> str:
     if np.isnan(low):
         return f"{estimate:.{digits}f}"

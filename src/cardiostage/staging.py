@@ -35,19 +35,21 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import VotingClassifier
 from sklearn.metrics import roc_auc_score, roc_curve
-from sklearn.model_selection import (GridSearchCV, RepeatedStratifiedKFold,
-                                     StratifiedKFold)
+from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold, StratifiedKFold
 
 from cardiostage import config
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
 from cardiostage.models import MODEL_LABELS, MODEL_NAMES, PARAM_GRIDS, build_pipeline
-from cardiostage.thresholds import (decision_metrics, threshold_for_precision,
-                                    threshold_for_recall)
+from cardiostage.thresholds import decision_metrics, threshold_for_precision, threshold_for_recall
 
 CANDIDATES = MODEL_NAMES + ["ensemble"]
 LABELS = {**MODEL_LABELS, "ensemble": "Ensemble (average of 3)"}
-COLORS = {"logistic_regression": "#2a78d6", "random_forest": "#eb6834",
-          "xgboost": "#1baf7a", "ensemble": "#eda100"}
+COLORS = {
+    "logistic_regression": "#2a78d6",
+    "random_forest": "#eb6834",
+    "xgboost": "#1baf7a",
+    "ensemble": "#eda100",
+}
 STAGE_COLORS = {1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a"}
 TEXT = "#52514e"
 
@@ -56,16 +58,20 @@ TEXT = "#52514e"
 # 1. Out-of-fold predictions for every stage and model
 # ----------------------------------------------------------------------------
 def grid_search(name: str, stage: int) -> GridSearchCV:
-    return GridSearchCV(build_pipeline(name, stage), PARAM_GRIDS[name],
-                        scoring="roc_auc", n_jobs=-1,
-                        cv=StratifiedKFold(config.CV_FOLDS, shuffle=True,
-                                           random_state=config.RANDOM_SEED))
+    return GridSearchCV(
+        build_pipeline(name, stage),
+        PARAM_GRIDS[name],
+        scoring="roc_auc",
+        n_jobs=-1,
+        cv=StratifiedKFold(config.CV_FOLDS, shuffle=True, random_state=config.RANDOM_SEED),
+    )
 
 
 def outer_cv() -> RepeatedStratifiedKFold:
     # Same seed every time -> identical folds for every stage.
-    return RepeatedStratifiedKFold(n_splits=config.CV_FOLDS, n_repeats=config.CV_REPEATS,
-                                   random_state=config.RANDOM_SEED)
+    return RepeatedStratifiedKFold(
+        n_splits=config.CV_FOLDS, n_repeats=config.CV_REPEATS, random_state=config.RANDOM_SEED
+    )
 
 
 def collect_out_of_fold(train: pd.DataFrame):
@@ -75,8 +81,10 @@ def collect_out_of_fold(train: pd.DataFrame):
       fold_auc[stage][model] -> list of 15 outer-fold ROC-AUCs
     """
     y = train[config.TARGET_COLUMN].to_numpy()
-    oof = {s: {m: np.full((config.CV_REPEATS, len(y)), np.nan) for m in CANDIDATES}
-           for s in config.STAGES}
+    oof = {
+        s: {m: np.full((config.CV_REPEATS, len(y)), np.nan) for m in CANDIDATES}
+        for s in config.STAGES
+    }
     fold_auc = {s: {m: [] for m in CANDIDATES} for s in config.STAGES}
 
     for stage in config.STAGES:
@@ -92,8 +100,10 @@ def collect_out_of_fold(train: pd.DataFrame):
             for name, p in probs.items():
                 oof[stage][name][repeat, te] = p
                 fold_auc[stage][name].append(roc_auc_score(y[te], p))
-        print(f"Stage {stage}: done in {time.time() - start:.0f}s  " + "  ".join(
-            f"{m[:6]} {np.mean(fold_auc[stage][m]):.3f}" for m in CANDIDATES))
+        print(
+            f"Stage {stage}: done in {time.time() - start:.0f}s  "
+            + "  ".join(f"{m[:6]} {np.mean(fold_auc[stage][m]):.3f}" for m in CANDIDATES)
+        )
     return y, oof, fold_auc
 
 
@@ -111,8 +121,9 @@ def compute_zones(y, p_by_stage: dict) -> dict:
             "rule_out_below": threshold_for_recall(y, p_by_stage[stage], config.RULE_OUT_RECALL),
             "rule_in_from": threshold_for_precision(y, p_by_stage[stage], config.RULE_IN_PRECISION),
         }
-    zones[3] = {"screening_threshold": threshold_for_recall(y, p_by_stage[3],
-                                                            config.SCREENING_RECALL)}
+    zones[3] = {
+        "screening_threshold": threshold_for_recall(y, p_by_stage[3], config.SCREENING_RECALL)
+    }
     return zones
 
 
@@ -153,7 +164,9 @@ def strategy_decisions(y, p_by_stage, zones) -> dict:
     for stage in (1, 2, 3):
         t = threshold_for_recall(y, p_by_stage[stage], config.SCREENING_RECALL)
         out[f"Everyone: stage {stage} only"] = (
-            (p_by_stage[stage] >= t).astype(int), np.full(len(y), stage))
+            (p_by_stage[stage] >= t).astype(int),
+            np.full(len(y), stage),
+        )
     out[STAGED] = simulate_policy(p_by_stage, zones)
     return out
 
@@ -167,8 +180,12 @@ def _summarise(y, decision, reached) -> dict:
 
 def compare_strategies(y, p_by_stage, zones) -> pd.DataFrame:
     """CardioStage's staged policy vs giving everyone the same tests."""
-    return pd.DataFrame({name: _summarise(y, d, r) for name, (d, r)
-                         in strategy_decisions(y, p_by_stage, zones).items()}).T
+    return pd.DataFrame(
+        {
+            name: _summarise(y, d, r)
+            for name, (d, r) in strategy_decisions(y, p_by_stage, zones).items()
+        }
+    ).T
 
 
 def bootstrap_strategies(y, p_by_stage, zones, n_boot=2000) -> pd.DataFrame:
@@ -196,8 +213,16 @@ def bootstrap_strategies(y, p_by_stage, zones, n_boot=2000) -> pd.DataFrame:
         for m in metrics:
             diffs[m].append(summaries[STAGED][m] - summaries["Everyone: stage 3 only"][m])
 
-    fmt = lambda v: f"{np.mean(v):.3f} [{np.percentile(v, 2.5):.3f}, {np.percentile(v, 97.5):.3f}]"
-    table = pd.DataFrame({m: {name: fmt(samples[(name, m)]) for name in decisions} for m in metrics})
+    def fmt(values):
+        """'mean [2.5th percentile, 97.5th percentile]': a 95% bootstrap interval."""
+        return (
+            f"{np.mean(values):.3f} [{np.percentile(values, 2.5):.3f}, "
+            f"{np.percentile(values, 97.5):.3f}]"
+        )
+
+    table = pd.DataFrame(
+        {m: {name: fmt(samples[(name, m)]) for name in decisions} for m in metrics}
+    )
     table.loc["Difference: staged - all tests"] = {m: fmt(diffs[m]) for m in metrics}
     return table
 
@@ -208,7 +233,8 @@ def bootstrap_strategies(y, p_by_stage, zones, n_boot=2000) -> pd.DataFrame:
 def _clean_axes(ax):
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
-    ax.grid(color="#ebeae6"); ax.set_axisbelow(True)
+    ax.grid(color="#ebeae6")
+    ax.set_axisbelow(True)
 
 
 def _save(fig, name):
@@ -225,9 +251,20 @@ def plot_auc_by_stage(fold_auc):
         means = [np.mean(fold_auc[s][name]) for s in config.STAGES]
         stds = [np.std(fold_auc[s][name]) for s in config.STAGES]
         xs = np.array(list(config.STAGES)) + off
-        ax.errorbar(xs, means, yerr=stds, fmt="o-", color=COLORS[name], label=LABELS[name],
-                    markersize=8, capsize=3, linewidth=2)
-    ax.set_xticks(list(config.STAGES), [f"Stage {s}\n{config.STAGE_NAMES[s]}" for s in config.STAGES])
+        ax.errorbar(
+            xs,
+            means,
+            yerr=stds,
+            fmt="o-",
+            color=COLORS[name],
+            label=LABELS[name],
+            markersize=8,
+            capsize=3,
+            linewidth=2,
+        )
+    ax.set_xticks(
+        list(config.STAGES), [f"Stage {s}\n{config.STAGE_NAMES[s]}" for s in config.STAGES]
+    )
     ax.set_ylabel("ROC-AUC (nested CV)")
     ax.set_ylim(0.6, 1.0)
     ax.legend(frameon=False, loc="lower right", fontsize=9)
@@ -241,12 +278,23 @@ def plot_roc_by_stage(y, p_by_stage, chosen):
     for stage in config.STAGES:
         fpr, tpr, _ = roc_curve(y, p_by_stage[stage])
         auc = roc_auc_score(y, p_by_stage[stage])
-        ax.plot(fpr, tpr, color=STAGE_COLORS[stage], linewidth=2,
-                label=f"Stage {stage}: {config.STAGE_NAMES[stage]} (AUC {auc:.3f})")
+        ax.plot(
+            fpr,
+            tpr,
+            color=STAGE_COLORS[stage],
+            linewidth=2,
+            label=f"Stage {stage}: {config.STAGE_NAMES[stage]} (AUC {auc:.3f})",
+        )
     ax.plot([0, 1], [0, 1], linestyle="--", color="#b5b4ae", linewidth=1, label="Coin flip")
     ax.axhline(config.SCREENING_RECALL, color=TEXT, linewidth=1, linestyle=":")
-    ax.text(0.98, config.SCREENING_RECALL - 0.04, f"{config.SCREENING_RECALL:.0%} recall target",
-            ha="right", color=TEXT, fontsize=9)
+    ax.text(
+        0.98,
+        config.SCREENING_RECALL - 0.04,
+        f"{config.SCREENING_RECALL:.0%} recall target",
+        ha="right",
+        color=TEXT,
+        fontsize=9,
+    )
     ax.set_xlabel("False-alarm rate (1 - specificity)")
     ax.set_ylabel("Sick patients caught (recall)")
     ax.legend(frameon=False, loc="lower right", fontsize=8.5)
@@ -268,15 +316,29 @@ def plot_policy_flow(y, p_by_stage, zones):
         left = 0
         for count, color in [(cleared, "#2a78d6"), (referred, "#eb6834"), (onward, "#d0cfca")]:
             if count:
-                ax.barh(row, count, left=left, color=color, height=0.55,
-                        edgecolor="white", linewidth=2)
-                ax.text(left + count / 2, row, str(count), ha="center", va="center",
-                        color="white" if color != "#d0cfca" else TEXT, fontweight="bold")
+                ax.barh(
+                    row, count, left=left, color=color, height=0.55, edgecolor="white", linewidth=2
+                )
+                ax.text(
+                    left + count / 2,
+                    row,
+                    str(count),
+                    ha="center",
+                    va="center",
+                    color="white" if color != "#d0cfca" else TEXT,
+                    fontweight="bold",
+                )
             left += count
         remaining = onward
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in ("#2a78d6", "#eb6834", "#d0cfca")]
-    ax.legend(handles, ["Cleared (low risk)", "Referred (high risk)", "Needs next test"],
-              frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
+    ax.legend(
+        handles,
+        ["Cleared (low risk)", "Referred (high risk)", "Needs next test"],
+        frameon=False,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.12),
+        ncol=3,
+    )
     ax.set_yticks(range(3), [f"Stage {s}: {config.STAGE_NAMES[s]}" for s in config.STAGES])
     ax.invert_yaxis()
     ax.set_xlim(0, n)
@@ -304,9 +366,15 @@ def main():
     y, oof, fold_auc = collect_out_of_fold(train)
 
     # Table of ROC-AUC per stage and candidate.
-    auc_table = pd.DataFrame({
-        (LABELS[m]): {f"stage_{s}": f"{np.mean(fold_auc[s][m]):.3f} ± {np.std(fold_auc[s][m]):.3f}"
-                      for s in config.STAGES} for m in CANDIDATES}).T
+    auc_table = pd.DataFrame(
+        {
+            (LABELS[m]): {
+                f"stage_{s}": f"{np.mean(fold_auc[s][m]):.3f} ± {np.std(fold_auc[s][m]):.3f}"
+                for s in config.STAGES
+            }
+            for m in CANDIDATES
+        }
+    ).T
     config.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     auc_table.to_csv(config.REPORTS_DIR / "phase4_stage_auc.csv")
     print("\nROC-AUC by stage (mean ± std over 15 outer folds):\n", auc_table.to_string())
@@ -321,8 +389,16 @@ def main():
     strategies = compare_strategies(y, p_by_stage, zones)
     strategies.to_csv(config.REPORTS_DIR / "phase4_strategies.csv")
     print("\nZones:", json.dumps(zones, indent=1))
-    cols = ["recall", "specificity", "precision", "npv", "fn", "fp",
-            "needed_treadmill", "needed_invasive"]
+    cols = [
+        "recall",
+        "specificity",
+        "precision",
+        "npv",
+        "fn",
+        "fp",
+        "needed_treadmill",
+        "needed_invasive",
+    ]
     print("\nStrategy comparison (out-of-fold, 243 training patients):")
     print(strategies[cols].round(3).to_string())
 
@@ -340,15 +416,29 @@ def main():
     for stage in config.STAGES:
         X, _ = get_features_and_target(train, stage)
         model = fit_final_model(chosen[stage], stage, X, y)
-        joblib.dump({"model": model, "model_name": chosen[stage],
-                     "features": config.STAGES[stage], "zones": zones[stage]},
-                    config.MODELS_DIR / f"stage{stage}.joblib")
+        joblib.dump(
+            {
+                "model": model,
+                "model_name": chosen[stage],
+                "features": config.STAGES[stage],
+                "zones": zones[stage],
+            },
+            config.MODELS_DIR / f"stage{stage}.joblib",
+        )
     # Out-of-fold predictions are reused by Phase 5 (calibration).
-    joblib.dump({"y": y, "oof": oof, "fold_auc": fold_auc, "chosen": chosen},
-                config.MODELS_DIR / "phase4_oof.joblib")
+    joblib.dump(
+        {"y": y, "oof": oof, "fold_auc": fold_auc, "chosen": chosen},
+        config.MODELS_DIR / "phase4_oof.joblib",
+    )
     with open(config.REPORTS_DIR / "phase4_zones.json", "w") as f:
-        json.dump({"chosen": {str(s): m for s, m in chosen.items()},
-                   "zones": {str(s): z for s, z in zones.items()}}, f, indent=2)
+        json.dump(
+            {
+                "chosen": {str(s): m for s, m in chosen.items()},
+                "zones": {str(s): z for s, z in zones.items()},
+            },
+            f,
+            indent=2,
+        )
     print("saved final stage models to models/")
 
 

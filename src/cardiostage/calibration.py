@@ -36,8 +36,13 @@ from sklearn.model_selection import StratifiedKFold
 
 from cardiostage import config
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
-from cardiostage.staging import (LABELS, STAGED, bootstrap_strategies, compare_strategies,
-                                 compute_zones, fit_final_model, outer_cv, simulate_policy)
+from cardiostage.staging import (
+    bootstrap_strategies,
+    compare_strategies,
+    compute_zones,
+    fit_final_model,
+    outer_cv,
+)
 from cardiostage.thresholds import decision_metrics
 from cardiostage.uncertainty import NoveltyDetector, SubsampleEnsemble, straddles
 
@@ -62,8 +67,10 @@ def make_variant(base, variant: str):
     if variant == "uncalibrated":
         return clone(base)
     return CalibratedClassifierCV(
-        clone(base), method=variant,
-        cv=StratifiedKFold(config.CV_FOLDS, shuffle=True, random_state=config.RANDOM_SEED))
+        clone(base),
+        method=variant,
+        cv=StratifiedKFold(config.CV_FOLDS, shuffle=True, random_state=config.RANDOM_SEED),
+    )
 
 
 def expected_calibration_error(y, p, n_bins: int = 10) -> float:
@@ -92,8 +99,12 @@ def score_probabilities(y, p) -> dict:
     ece      : calibration gap (see above).
     roc_auc  : ranking quality, to check calibration didn't hurt it.
     """
-    return {"brier": brier_score_loss(y, p), "log_loss": log_loss(y, p),
-            "ece": expected_calibration_error(y, p), "roc_auc": roc_auc_score(y, p)}
+    return {
+        "brier": brier_score_loss(y, p),
+        "log_loss": log_loss(y, p),
+        "ece": expected_calibration_error(y, p),
+        "roc_auc": roc_auc_score(y, p),
+    }
 
 
 # ----------------------------------------------------------------------------
@@ -141,8 +152,12 @@ def collect_uncertainty(train, method, tuned):
     return low, high
 
 
-OUTCOMES = ["Missed sick (FN)", "False alarm (FP)", "Correctly referred (TP)",
-            "Correctly cleared (TN)"]
+OUTCOMES = [
+    "Missed sick (FN)",
+    "False alarm (FP)",
+    "Correctly referred (TP)",
+    "Correctly cleared (TN)",
+]
 
 
 def evaluate_not_confident(y, p3, low3, high3, threshold) -> pd.DataFrame:
@@ -157,7 +172,7 @@ def evaluate_not_confident(y, p3, low3, high3, threshold) -> pd.DataFrame:
     Pooled over the 3 repeats (each patient counted once per repeat).
     """
     y_all = np.tile(y, config.CV_REPEATS)
-    decision = (p3.ravel() >= threshold)
+    decision = p3.ravel() >= threshold
     flagged = straddles(low3.ravel(), high3.ravel(), threshold)
     masks = {
         "Missed sick (FN)": (y_all == 1) & ~decision,
@@ -165,9 +180,16 @@ def evaluate_not_confident(y, p3, low3, high3, threshold) -> pd.DataFrame:
         "Correctly referred (TP)": (y_all == 1) & decision,
         "Correctly cleared (TN)": (y_all == 0) & ~decision,
     }
-    return pd.DataFrame({name: {"n": int(m.sum()), "flagged": int(flagged[m].sum()),
-                                "share_flagged": flagged[m].mean() if m.any() else np.nan}
-                         for name, m in masks.items()}).T
+    return pd.DataFrame(
+        {
+            name: {
+                "n": int(m.sum()),
+                "flagged": int(flagged[m].sum()),
+                "share_flagged": flagged[m].mean() if m.any() else np.nan,
+            }
+            for name, m in masks.items()
+        }
+    ).T
 
 
 def simulate_guarded_policy(p_by_stage, low_by_stage, high_by_stage, zones):
@@ -197,35 +219,50 @@ def simulate_guarded_policy(p_by_stage, low_by_stage, high_by_stage, zones):
 def _reliability(y, p, n_bins=8):
     edges = np.quantile(p, np.linspace(0, 1, n_bins + 1))
     bins = np.clip(np.searchsorted(edges, p, side="right") - 1, 0, n_bins - 1)
-    return (np.array([p[bins == b].mean() for b in range(n_bins) if (bins == b).any()]),
-            np.array([y[bins == b].mean() for b in range(n_bins) if (bins == b).any()]))
+    return (
+        np.array([p[bins == b].mean() for b in range(n_bins) if (bins == b).any()]),
+        np.array([y[bins == b].mean() for b in range(n_bins) if (bins == b).any()]),
+    )
 
 
 def plot_calibration(y, oof, method):
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.6), sharey=True)
     y_rep = np.tile(y, config.CV_REPEATS)
     for ax, stage in zip(axes, config.STAGES):
-        ax.plot([0, 1], [0, 1], linestyle="--", color="#b5b4ae", linewidth=1,
-                label="Perfectly honest")
+        ax.plot(
+            [0, 1], [0, 1], linestyle="--", color="#b5b4ae", linewidth=1, label="Perfectly honest"
+        )
         for variant in ("uncalibrated", "sigmoid"):
             p = oof[stage][variant].ravel()
             mean_pred, frac_sick = _reliability(y_rep, p)
             ece = expected_calibration_error(y_rep, p)
             chosen_mark = "  ✓ chosen" if variant == method[stage] else ""
-            ax.plot(mean_pred, frac_sick, "o-", color=VARIANT_COLORS[variant], linewidth=2,
-                    markersize=7, label=f"{variant} (ECE {ece:.3f}){chosen_mark}")
+            ax.plot(
+                mean_pred,
+                frac_sick,
+                "o-",
+                color=VARIANT_COLORS[variant],
+                linewidth=2,
+                markersize=7,
+                label=f"{variant} (ECE {ece:.3f}){chosen_mark}",
+            )
         ax.set_title(f"Stage {stage}: {config.STAGE_NAMES[stage]}", fontweight="bold")
         ax.set_xlabel("Predicted risk")
-        ax.set_xlim(0, 1); ax.set_ylim(0, 1)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
         ax.legend(frameon=False, loc="upper left", fontsize=9)
         ax.grid(color="#ebeae6")
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
     axes[0].set_ylabel("Actual share with heart disease")
-    fig.suptitle("Calibration: does predicted risk match reality?  (out-of-fold, 243 patients x 3 repeats)",
-                 fontweight="bold", y=1.03)
+    fig.suptitle(
+        "Calibration: does predicted risk match reality?  (out-of-fold, 243 patients x 3 repeats)",
+        fontweight="bold",
+        y=1.03,
+    )
     path = config.FIGURES_DIR / "10_calibration_curves.png"
-    fig.savefig(path, dpi=150, bbox_inches="tight"); plt.close(fig)
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
     print(f"saved {path.relative_to(config.PROJECT_ROOT)}")
 
 
@@ -233,18 +270,25 @@ def plot_not_confident(table: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(8, 3.2))
     bars = ax.barh(table.index, table["share_flagged"] * 100, color="#2a78d6", height=0.5)
     for bar, (_, row) in zip(bars, table.iterrows()):
-        ax.text(bar.get_width() + 0.8, bar.get_y() + bar.get_height() / 2,
-                f"{row.share_flagged:.0%}  ({int(row.flagged)} of {int(row.n)})",
-                va="center", color=TEXT)
+        ax.text(
+            bar.get_width() + 0.8,
+            bar.get_y() + bar.get_height() / 2,
+            f"{row.share_flagged:.0%}  ({int(row.flagged)} of {int(row.n)})",
+            va="center",
+            color=TEXT,
+        )
     ax.set_xlim(0, max(table["share_flagged"]) * 100 * 1.6)
     ax.set_xlabel("Share flagged 'not confident' (%)")
     ax.invert_yaxis()
-    ax.set_title("Model-disagreement flag at the final decision: a weak signal on this data",
-                 fontweight="bold")
+    ax.set_title(
+        "Model-disagreement flag at the final decision: a weak signal on this data",
+        fontweight="bold",
+    )
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     path = config.FIGURES_DIR / "11_not_confident_errors.png"
-    fig.savefig(path, dpi=150, bbox_inches="tight"); plt.close(fig)
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
     print(f"saved {path.relative_to(config.PROJECT_ROOT)}")
 
 
@@ -259,10 +303,20 @@ def pooled_scores(y, oof) -> pd.DataFrame:
     produces gaps of 0.1+. Pooling gives ~73 per bin.
     """
     y_all = np.tile(y, config.CV_REPEATS)
-    return pd.DataFrame([{"stage": s, "variant": v,
-                          **{k: round(val, 4) for k, val in
-                             score_probabilities(y_all, oof[s][v].ravel()).items()}}
-                         for s in config.STAGES for v in VARIANTS])
+    return pd.DataFrame(
+        [
+            {
+                "stage": s,
+                "variant": v,
+                **{
+                    k: round(val, 4)
+                    for k, val in score_probabilities(y_all, oof[s][v].ravel()).items()
+                },
+            }
+            for s in config.STAGES
+            for v in VARIANTS
+        ]
+    )
 
 
 def choose_methods(cal_table: pd.DataFrame) -> dict:
@@ -286,10 +340,13 @@ def report(train, df, y, oof, low, high, method, chosen):
 
     low_mean = {s: low[s].mean(axis=0) for s in config.STAGES}
     high_mean = {s: high[s].mean(axis=0) for s in config.STAGES}
-    nc = evaluate_not_confident(y, oof[3][method[3]], low[3], high[3],
-                                zones[3]["screening_threshold"])
+    nc = evaluate_not_confident(
+        y, oof[3][method[3]], low[3], high[3], zones[3]["screening_threshold"]
+    )
     nc.to_csv(config.REPORTS_DIR / "phase5_not_confident.csv")
-    print("\nStage-3 decision, share flagged 'not confident' by outcome:\n", nc.round(3).to_string())
+    print(
+        "\nStage-3 decision, share flagged 'not confident' by outcome:\n", nc.round(3).to_string()
+    )
     widths = (high[3] - low[3]).ravel()
     print(f"Median uncertainty range at stage 3: {np.median(widths):.3f}")
 
@@ -309,7 +366,9 @@ def report(train, df, y, oof, low, high, method, chosen):
     for stage in config.STAGES:
         X_train, _ = get_features_and_target(train, stage)
         detector = NoveltyDetector(stage).fit(X_train)
-        novelty_rows[f"stage_{stage}"] = {"Cleveland (training)": detector.is_unusual(X_train).mean()}
+        novelty_rows[f"stage_{stage}"] = {
+            "Cleveland (training)": detector.is_unusual(X_train).mean()
+        }
         for hospital in config.EXTERNAL_HOSPITALS:
             X_h, _ = get_features_and_target(df[df[config.HOSPITAL_COLUMN] == hospital], stage)
             novelty_rows[f"stage_{stage}"][hospital] = detector.is_unusual(X_h).mean()
@@ -320,9 +379,15 @@ def report(train, df, y, oof, low, high, method, chosen):
     plot_calibration(y, oof, method)
     plot_not_confident(nc)
     with open(config.REPORTS_DIR / "phase5_zones.json", "w") as f:
-        json.dump({"chosen": {str(s): m for s, m in chosen.items()},
-                   "calibration": {str(s): m for s, m in method.items()},
-                   "zones": {str(s): z for s, z in zones.items()}}, f, indent=2)
+        json.dump(
+            {
+                "chosen": {str(s): m for s, m in chosen.items()},
+                "calibration": {str(s): m for s, m in method.items()},
+                "zones": {str(s): z for s, z in zones.items()},
+            },
+            f,
+            indent=2,
+        )
     return zones
 
 
@@ -334,16 +399,26 @@ def main(report_only: bool = False):
 
     if report_only:  # regenerate tables/charts without retraining
         saved = joblib.load(config.MODELS_DIR / "phase5_oof.joblib")
-        report(train, df, saved["y"], saved["oof"], saved["low"], saved["high"],
-               saved["method"], chosen)
+        report(
+            train,
+            df,
+            saved["y"],
+            saved["oof"],
+            saved["low"],
+            saved["high"],
+            saved["method"],
+            chosen,
+        )
         return
 
     # A. calibration variants, B. uncertainty ranges (both out-of-fold)
     y, oof, _fold_scores, tuned = collect_calibration(train, chosen)
     method = choose_methods(pooled_scores(y, oof))
     low, high = collect_uncertainty(train, method, tuned)
-    joblib.dump({"y": y, "oof": oof, "method": method, "low": low, "high": high},
-                config.MODELS_DIR / "phase5_oof.joblib")
+    joblib.dump(
+        {"y": y, "oof": oof, "method": method, "low": low, "high": high},
+        config.MODELS_DIR / "phase5_oof.joblib",
+    )
     zones = report(train, df, y, oof, low, high, method, chosen)
 
     # D. final models, trained on all 243 training patients
@@ -354,8 +429,10 @@ def main(report_only: bool = False):
             "model": make_variant(base, method[stage]).fit(X, y),
             "uncertainty": SubsampleEnsemble(make_variant(base, method[stage])).fit(X, y),
             "novelty": NoveltyDetector(stage).fit(X),
-            "model_name": chosen[stage], "calibration": method[stage],
-            "features": config.STAGES[stage], "zones": zones[stage],
+            "model_name": chosen[stage],
+            "calibration": method[stage],
+            "features": config.STAGES[stage],
+            "zones": zones[stage],
         }
         joblib.dump(bundle, config.MODELS_DIR / f"stage{stage}.joblib")
     print("saved calibrated stage models (with uncertainty + novelty detectors) to models/")
@@ -363,4 +440,5 @@ def main(report_only: bool = False):
 
 if __name__ == "__main__":
     import sys
+
     main(report_only="--report-only" in sys.argv)

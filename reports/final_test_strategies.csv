@@ -1,0 +1,5 @@
+,recall,specificity,sick_missed,healthy_flagged,needed_treadmill,needed_invasive
+Everyone: stage 1 only,"1.000 [0.877, 1.000]","0.394 [0.229, 0.579]",0,20,0.0,0.0
+Everyone: stage 2 only,"1.000 [0.877, 1.000]","0.455 [0.281, 0.636]",0,18,1.0,0.0
+Everyone: stage 3 only,"1.000 [0.877, 1.000]","0.455 [0.281, 0.636]",0,18,1.0,1.0
+CardioStage staged policy,"1.000 [0.877, 1.000]","0.515 [0.335, 0.692]",0,16,0.6885245901639344,0.4918032786885246

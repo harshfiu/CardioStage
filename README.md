@@ -2,120 +2,136 @@
 
 **A heart-disease risk screener that works the way doctors order tests: cheapest first.**
 
-CardioStage estimates heart-disease risk in stages. It starts from a basic check-up, then adds a treadmill stress test, then invasive imaging. At each stage it answers *"is the next test worth it?"*, explains its reasoning, admits when it isn't sure, and is tested on hospitals it has never seen.
+CardioStage estimates heart-disease risk in three stages: a basic check-up, then a treadmill stress test, then invasive imaging. At each stage it decides whether the patient can be **cleared**, should be **referred**, or needs the **next test**. Every estimate is calibrated, explained in plain English, and flagged when the patient is unlike anyone the model has seen.
 
-> 🚧 **Work in progress.** Built in phases; see the roadmap below.
+![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-59%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
+> ⚕️ **Educational project, not a medical device.** Trained on 243 patients from a 1980s dataset. Not for diagnosis or treatment decisions.
+
+---
+
+## Headline results
+
+**Sealed test set:** 61 Cleveland patients, locked away from all development and opened once at the end, with thresholds frozen:
+
+| Strategy | Sick missed (of 28) | Recall [95% CI] | Specificity | Needed invasive tests |
+|---|---|---|---|---|
+| Everyone gets every test | 0 | 1.000 [0.877, 1.000] | 0.455 | 100% |
+| **CardioStage staged policy** | **0** | **1.000 [0.877, 1.000]** | **0.515** | **49%** |
+
+**Cross-validation** (243 training patients, honest out-of-fold predictions, the more stable estimate): the staged policy matched all-tests recall (0.964 vs 0.973; difference −0.009 [−0.029, 0.000]) while needing **40% fewer invasive tests [33%, 46%]**.
+
+**In one sentence:** CardioStage catches sick patients as reliably as testing everyone fully, while sparing roughly half of patients invasive imaging.
+
+![Final test vs earlier estimates](reports/figures/18_final_test.png)
+
+---
+
+## How it works
+
+| Stage | Measurements | What it takes | Model |
+|---|---|---|---|
+| 1. Basic check-up | age, sex, chest-pain type, blood pressure, cholesterol, blood sugar | Clinic visit + blood test | Logistic regression |
+| 2. + Treadmill | resting ECG, max heart rate, exercise chest pain, ST depression, ST slope | ECG + stress test | Ensemble (LR + RF + XGBoost), Platt-calibrated |
+| 3. + Invasive imaging | vessels seen on fluoroscopy, thallium scan | Hospital, dye/radiation | Ensemble, Platt-calibrated |
+
+At stages 1–2, risk below a **rule-out** level (keeps ≥99% of sick patients above it) → cleared; above a **rule-in** level (≥90% of flagged truly sick) → referred; in between → next test. Stage 3 refers anyone above a threshold set to catch **97% of sick patients**.
+
+![Where patients stop](reports/figures/09_staged_policy_flow.png)
 
 ## What makes it different
 
-| Feature | What it does |
+| | |
 |---|---|
-| **Staged screening** | Separate models for basic info → + treadmill test → + invasive imaging, showing how much each test actually adds |
-| **Cross-hospital testing** | Trained on Cleveland, evaluated on Hungary, Switzerland and VA Long Beach to measure real-world generalisation |
-| **Explanations** | Per-patient SHAP breakdown of what drove each prediction, in plain English |
-| **Honest probabilities** | Calibrated risk scores, plus a "not confident" answer for borderline or unusual patients |
-| **Fairness check** | Performance compared across sex and age groups |
+| **Staged screening** | Measures what each test actually adds, and gives expensive tests only to patients who need them |
+| **Honest probabilities** | Calibrated risk (average error 3–5 points), a plausible range from 20 resampled models, and an unusual-patient warning |
+| **Explanations** | Per-patient SHAP breakdown that adds up exactly to the risk shown. All 12 medical sanity checks pass |
+| **External validation** | Tested unchanged at three hospitals it never saw |
+| **Fairness analysis** | Performance by sex and age, with an honest account of the cases it misses |
+| **Rigour** | Sealed test set, nested cross-validation, bootstrap and exact confidence intervals, 59 automated tests |
 
-## Roadmap
-- [x] Phase 1: Project setup
-- [x] Phase 2: Data exploration & cleaning
-- [x] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
-- [x] Phase 4: Staged screening
-- [x] Phase 5: Calibration & uncertainty
-- [x] Phase 6: Cross-hospital & fairness evaluation
-- [x] Phase 7: Explanations (SHAP)
-- [x] Phase 8: Streamlit app
-- [ ] Phase 9: Polish
+## Key findings
 
-## Setup
+**Each test's value:** ROC-AUC (cross-validation) rises from **0.84** (check-up) → **0.86** (+ treadmill) → **0.90** (+ invasive). Invasive imaging adds the most.
+
+**Explanations:** as test results arrive, the model relies less on demographics. The influence of sex falls from 13 → 7 → 4 percentage points.
+> *Estimated risk 91% (typical patient: 48%). Raising it: thallium scan = reversible defect (+12 pts); no chest pain (+8 pts); ST depression 3.4 mm (+6 pts). Lowering it: blocked vessels = 0 (−3 pts).*
+
+**Unseen hospitals:**
+
+| Hospital | Stage 1 AUC | Stage 2 AUC | Verdict |
+|---|---|---|---|
+| Hungary | 0.840 [0.79, 0.89] | 0.892 [0.85, 0.93] | Transfers fully |
+| VA Long Beach | 0.718 [0.63, 0.80] | 0.741 [0.66, 0.83] | Clear drop (different population, missing data) |
+| Switzerland | 0.767 [0.48, 0.95] | 0.776 [0.58, 0.96] | Undetermined: only 8 healthy patients |
+
+Probabilities under-predict at high-disease hospitals, and a one-number **prior shift** fixes it (Switzerland ECE 0.26 → 0.04). Decision cutoffs need local re-validation.
+
+**Model choice:** logistic regression, random forest and XGBoost were statistically tied (ROC-AUC 0.89–0.90). On small data, the simple model is at least as good. A [from-scratch numpy logistic regression](src/cardiostage/from_scratch.py) reproduces scikit-learn's weights to 6 decimal places.
+
+## Limitations
+- **Small, old, single-site training data:** 243 patients from one US hospital in the 1980s.
+- **Referral population:** everyone was already sent for heart testing, so patterns like "no chest pain → higher risk" don't apply to the general public.
+- **Thresholds are local:** at Hungary the stage-1 clear zone was less safe (NPV 90% vs 96%).
+- **Stage 3 not externally validated:** other hospitals lacked invasive test data.
+- **Atypical presentations:** a woman with atypical chest pain was cleared at stage 1 in testing, mirroring real-world under-diagnosis of women. Documented rather than "fixed" with a rule fitted to 2 patients.
+- **Explanations describe the model, not biology.**
+
+## The app
+
 ```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows  (Mac/Linux: source .venv/bin/activate)
-pip install -r requirements.txt
-pip install -e .
-python -m cardiostage.train_all # build the models (~10 minutes, once)
-pytest                          # verify everything (58 tests)
 streamlit run app/streamlit_app.py
 ```
 
-## The app
-Enter a patient's basic check-up details and CardioStage returns a calibrated risk, a plausible range, an unusual-patient warning when relevant, and a plain-English explanation. It then recommends clearing, referring, or taking the next test. Treadmill and imaging results can be added step by step. Four example patients include one that deliberately demonstrates a known limitation. Results and About pages present the evidence and the caveats.
+- **Screener:** enter check-up details, get risk + range + recommendation + explanation, then add test results stage by stage. Four example patients, including one that deliberately shows a known limitation.
+- **Results:** the evidence, with charts.
+- **About:** method, data and limitations.
+
+## Quick start
+
+```bash
+git clone https://github.com/harshfiu/CardioStage.git
+cd CardioStage
+python -m venv .venv
+.venv\Scripts\activate              # Windows   (Mac/Linux: source .venv/bin/activate)
+pip install -r requirements.txt
+pip install -e .
+python -m cardiostage.train_all     # build all models (~10 minutes, once)
+pytest                              # 59 tests
+streamlit run app/streamlit_app.py
+```
+
+Reproduce any phase's analysis, e.g. `python -m cardiostage.external_validation`. Each module's docstring lists its command.
 
 ## Project structure
+
 ```
-├── app/                 Streamlit app (entry point + views/)
-├── data/
-│   ├── raw/             original dataset, never edited
-│   └── processed/       cleaned data (generated)
-├── docs/learning/       step-by-step guides explaining every phase
-├── models/              trained models (generated)
-├── reports/figures/     charts
-├── src/cardiostage/     the Python package: all project logic
-└── tests/               automated checks
+├── app/                    Streamlit app: entry point, views/, shared ui.py
+├── data/raw/               original UCI dataset (never edited)
+├── docs/learning/          9 step-by-step guides: how and why every part was built
+├── models/                 trained models (generated by train_all, not in Git)
+├── reports/                result tables (CSV) and figures/
+├── src/cardiostage/
+│   ├── config.py           paths, stages, thresholds: one source of truth
+│   ├── data.py             loading, cleaning, the sealed train/test split
+│   ├── preprocessing.py    leakage-safe imputation, scaling, encoding
+│   ├── models.py           model pipelines and tuning grids
+│   ├── staging.py          per-stage selection, decision zones, policy simulation
+│   ├── calibration.py      calibration, uncertainty evaluation, final models
+│   ├── uncertainty.py      plausible ranges, unusual-patient detection
+│   ├── external_validation.py, fairness.py, final_evaluation.py
+│   ├── explain.py          SHAP explanations in plain English
+│   ├── predictor.py        the app's decision engine
+│   └── from_scratch.py     logistic regression in pure numpy
+└── tests/                  59 automated tests
 ```
 
-## Data
-UCI Heart Disease dataset (920 patients, 4 hospitals). See [`data/README.md`](data/README.md).
+## Learning guides
+New to ML? [`docs/learning/`](docs/learning/README.md) walks through every phase: setup, data leakage, nested cross-validation, thresholds, calibration, external validation, fairness, SHAP, the app and final evaluation. Each guide ends with questions and answers.
 
-**Key finding:** the four hospitals recorded different tests. Invasive Stage 3 tests exist almost only for Cleveland, and Switzerland never recorded cholesterol. This shapes how the staged models are trained and evaluated.
-
-![Missing data by hospital](reports/figures/02_missing_by_hospital.png)
-
-## Staged screening results
-Each patient starts with a basic check-up. Low-risk patients are cleared, high-risk patients are referred, and only uncertain patients go on to the treadmill test and then invasive imaging. All strategies are tuned to catch **97% of sick patients** (calibrated out-of-fold predictions, 243 Cleveland training patients):
-
-| Strategy | Recall | Specificity | Need invasive tests |
-|---|---|---|---|
-| Everyone gets every test | 0.973 | 0.447 | 100% |
-| **CardioStage staged policy** | **0.964** | **0.470** | **60%** |
-
-Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive tests **−40% [−46%, −33%]**. The staged policy matches giving everyone every test while sparing about 40% of patients invasive imaging.
-
-![Staged policy flow](reports/figures/09_staged_policy_flow.png)
-
-## Honest probabilities
-- **Calibrated:** predicted risk matches observed disease rates (pooled ECE 0.03–0.05; sigmoid calibration on stages 2–3).
-- **Plausible risk range:** 20 models trained on different patient subsets show how stable each prediction is. Shown for transparency; it proved a weak error detector, so it doesn't change decisions.
-- **Unusual-patient warning:** flags out-of-range values or unusual combinations. It fires on ~1% of training patients but up to 13% at hospitals with very different populations.
-
-![Calibration](reports/figures/10_calibration_curves.png)
-
-## Explanations
-Every prediction is broken down with SHAP into plain-English contributions that add up exactly to the risk shown, for example:
-
-> Estimated risk 91% (typical patient: 48%). Raising it: thallium scan = reversible defect (+12 pts); no chest pain (+8 pts); ST depression 3.4 mm (+6 pts). Lowering it: blocked vessels = 0 (−3 pts).
-
-All 12 medical direction checks pass. As test results arrive, the model relies less on demographics: the influence of sex falls from 13.3 → 7.0 → 3.7 points across the stages.
-
-![What drives each stage](reports/figures/15_global_importance.png)
-
-## External validation (unseen hospitals)
-Stage models trained only on Cleveland, applied unchanged to three other hospitals:
-
-| Hospital | Disease rate | Stage 1 AUC | Stage 2 AUC |
-|---|---|---|---|
-| Cleveland (internal, out-of-fold) | 46% | 0.837 | 0.855 |
-| Hungary | 36% | 0.840 [0.79, 0.89] | 0.892 [0.85, 0.93] |
-| VA Long Beach | 74% | 0.718 [0.63, 0.80] | 0.741 [0.66, 0.83] |
-| Switzerland | 93% | 0.767 [0.48, 0.95]* | 0.776 [0.58, 0.96]* |
-
-\*Only 8 healthy Swiss patients, so performance there is undetermined. Ranking transfers well to Hungary and degrades at VA. Probabilities under-predict at high-prevalence hospitals, which a one-number **prior shift** corrects (Switzerland ECE 0.26 → 0.04). Decision cutoffs need local re-checking: the stage-1 clear zone was less safe at Hungary (NPV 90% vs 96%).
-
-![External validation](reports/figures/12_external_auc.png)
-
-## Fairness
-Ranking quality is equal for women and men, both internally and externally. Recall for women was 0.89 [0.72, 1.00] vs 0.98 for men, based on 2 missed women out of 18. One case reflects the known under-diagnosis of atypical presentations; the other sat exactly on the threshold. This is documented as a limitation rather than "fixed" with a rule fitted to two patients.
-
-## Model comparison
-Nested cross-validation (5 folds × 3 repeats, tuning inside each fold) on 243 Cleveland training patients, using all features:
-
-| Model | ROC-AUC | Recall | Precision |
-|---|---|---|---|
-| Logistic Regression | 0.899 ± 0.028 | 0.778 | 0.856 |
-| Random Forest | 0.894 ± 0.021 | 0.775 | 0.820 |
-| XGBoost | 0.892 ± 0.025 | 0.778 | 0.822 |
-
-The models are statistically tied. On this small dataset, the simple, interpretable model is at least as good as the tree ensembles. A from-scratch numpy logistic regression ([`from_scratch.py`](src/cardiostage/from_scratch.py)) reproduces scikit-learn's weights to 6 decimal places.
+## Data & licence
+**Data:** [UCI Heart Disease dataset](https://archive.ics.uci.edu/dataset/45/heart+disease) (Janosi, Steinbrunn, Pfisterer & Detrano, 1988), CC BY 4.0, via the [Kaggle mirror](https://www.kaggle.com/datasets/redwankarimsony/heart-disease-data). See [`data/README.md`](data/README.md).
+**Code:** [MIT License](LICENSE).
 
 ## Disclaimer
-CardioStage is an educational machine-learning project. **It is not a medical device and must not be used for diagnosis or treatment decisions.**
+CardioStage is an educational machine-learning project. **It is not a medical device and must not be used for diagnosis, treatment, or any decision about a real person.** If you have chest pain or heart concerns, contact a doctor or emergency services.

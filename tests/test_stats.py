@@ -20,10 +20,10 @@ def test_bootstrap_ci_contains_estimate_and_narrows_with_more_data():
 
 
 def test_bootstrap_ci_skips_single_class_resamples():
-    y = np.array([0] * 40 + [1] * 2)       # very few positives
+    y = np.array([0] * 40 + [1] * 2)  # very few positives
     p = np.linspace(0, 1, 42)
     est, lo, hi = bootstrap_ci(roc_auc_score, y, p, need_both_classes=True)
-    assert est == pytest.approx(1.0)        # resamples without a positive were skipped, no crash
+    assert est == pytest.approx(1.0)  # resamples without a positive were skipped, no crash
 
 
 def test_prior_shift_no_change_when_rates_equal():
@@ -34,7 +34,7 @@ def test_prior_shift_no_change_when_rates_equal():
 def test_prior_shift_moves_toward_new_rate_and_keeps_order():
     p = np.array([0.1, 0.3, 0.6])
     shifted = prior_shift(p, train_rate=0.46, new_rate=0.93)
-    assert (shifted > p).all()                     # higher local disease rate -> higher risk
+    assert (shifted > p).all()  # higher local disease rate -> higher risk
     assert list(np.argsort(shifted)) == [0, 1, 2]  # ranking unchanged
     # Bayes check on one value: odds 0.5/0.5=1, factor = (0.93/0.07)/(0.46/0.54)
     factor = (0.93 / 0.07) / (0.46 / 0.54)
@@ -50,3 +50,15 @@ def test_recall_specificity_helpers():
 def test_age_bands():
     bands = age_band(pd.Series([35, 49, 50, 59, 60, 77])).astype(str).tolist()
     assert bands == ["under 50", "under 50", "50-59", "50-59", "60+", "60+"]
+
+
+def test_exact_proportion_ci():
+    from cardiostage.stats import exact_proportion_ci
+
+    est, lo, hi = exact_proportion_ci(28, 28)
+    assert est == 1.0 and hi == 1.0
+    assert lo == pytest.approx(0.877, abs=0.001)  # 28/28 does NOT prove 100%
+    est, lo, hi = exact_proportion_ci(0, 10)
+    assert lo == 0.0 and 0.25 < hi < 0.35
+    est, lo, hi = exact_proportion_ci(50, 100)
+    assert lo < 0.5 < hi

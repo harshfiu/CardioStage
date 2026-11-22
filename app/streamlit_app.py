@@ -12,9 +12,11 @@ import streamlit as st
 
 st.set_page_config(page_title="CardioStage", page_icon="🫀", layout="wide")
 
-navigation = st.navigation([
-    st.Page("views/screener.py", title="Screener", icon="🫀", default=True),
-    st.Page("views/results.py", title="Results", icon="📊"),
-    st.Page("views/about.py", title="About", icon="ℹ️"),
-])
+navigation = st.navigation(
+    [
+        st.Page("views/screener.py", title="Screener", icon="🫀", default=True),
+        st.Page("views/results.py", title="Results", icon="📊"),
+        st.Page("views/about.py", title="About", icon="ℹ️"),
+    ]
+)
 navigation.run()
