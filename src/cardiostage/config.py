@@ -151,3 +151,29 @@ SCREENING_RECALL = 0.97
 #   UNCERTAIN  -> in between: recommend the next, more informative test.
 RULE_OUT_RECALL = 0.99
 RULE_IN_PRECISION = 0.90
+
+# ---------------------------------------------------------------------------
+# Honest probabilities and "not sure" answers  (Phase 5)
+# ---------------------------------------------------------------------------
+# Calibration methods compared (see calibration.py):
+#   "sigmoid"  (Platt scaling): fits a smooth S-curve, needs little data
+#   "isotonic": fits any increasing step function, flexible but data-hungry
+CALIBRATION_METHODS = ["sigmoid", "isotonic"]
+
+# Model uncertainty: train N_REPLICAS versions of each stage model, each on a
+# random 80% of the training patients. If those versions disagree about a
+# patient enough that their middle-80% range crosses a decision threshold,
+# the answer is flagged "not confident".
+N_REPLICAS = 20
+REPLICA_FRACTION = 0.8
+UNCERTAINTY_PERCENTILES = (10, 90)
+
+# Decision (Phase 5): on this data the disagreement check proved a weak error
+# detector, so the app SHOWS each patient's plausible risk range for
+# transparency but does NOT let it change decisions. (As a guard it caught
+# 1 more sick patient of 111 but raised invasive tests from 60% to 72%.)
+USE_UNCERTAINTY_GUARD = False
+
+# Unusual-patient detection: flag inputs less typical than the most unusual
+# 1% of training patients.
+NOVELTY_QUANTILE = 0.01

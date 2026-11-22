@@ -1,0 +1,25 @@
+{
+  "chosen": {
+    "1": "logistic_regression",
+    "2": "ensemble",
+    "3": "ensemble"
+  },
+  "calibration": {
+    "1": "uncalibrated",
+    "2": "sigmoid",
+    "3": "sigmoid"
+  },
+  "zones": {
+    "1": {
+      "rule_out_below": 0.08965191879430844,
+      "rule_in_from": 0.8297359768023638
+    },
+    "2": {
+      "rule_out_below": 0.13355977176231595,
+      "rule_in_from": 0.7823697267599741
+    },
+    "3": {
+      "screening_threshold": 0.14846403620101187
+    }
+  }
+}

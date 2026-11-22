@@ -1,0 +1,5 @@
+,n,flagged,share_flagged
+Missed sick (FN),11.0,2.0,0.18181818181818182
+False alarm (FP),216.0,19.0,0.08796296296296297
+Correctly referred (TP),322.0,3.0,0.009316770186335404
+Correctly cleared (TN),180.0,46.0,0.25555555555555554

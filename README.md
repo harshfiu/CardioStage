@@ -21,7 +21,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 - [x] Phase 2: Data exploration & cleaning
 - [x] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
 - [x] Phase 4: Staged screening
-- [ ] Phase 5: Calibration & uncertainty
+- [x] Phase 5: Calibration & uncertainty
 - [ ] Phase 6: Cross-hospital & fairness evaluation
 - [ ] Phase 7: Explanations (SHAP)
 - [ ] Phase 8: Streamlit app
@@ -57,16 +57,23 @@ UCI Heart Disease dataset (920 patients, 4 hospitals). See [`data/README.md`](da
 ![Missing data by hospital](reports/figures/02_missing_by_hospital.png)
 
 ## Staged screening results
-Each patient starts with a basic check-up. Low-risk patients are cleared, high-risk patients are referred, and only uncertain patients go on to the treadmill test and then invasive imaging. All strategies are tuned to catch **97% of sick patients** (out-of-fold predictions, 243 Cleveland training patients):
+Each patient starts with a basic check-up. Low-risk patients are cleared, high-risk patients are referred, and only uncertain patients go on to the treadmill test and then invasive imaging. All strategies are tuned to catch **97% of sick patients** (calibrated out-of-fold predictions, 243 Cleveland training patients):
 
 | Strategy | Recall | Specificity | Need invasive tests |
 |---|---|---|---|
-| Everyone gets every test | 0.973 | 0.432 | 100% |
-| **CardioStage staged policy** | **0.964** | **0.439** | **63%** |
+| Everyone gets every test | 0.973 | 0.447 | 100% |
+| **CardioStage staged policy** | **0.964** | **0.470** | **60%** |
 
-Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive tests **−37% [−44%, −31%]**. The staged policy matches giving everyone every test while sparing over a third of patients invasive imaging.
+Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive tests **−40% [−46%, −33%]**. The staged policy matches giving everyone every test while sparing about 40% of patients invasive imaging.
 
 ![Staged policy flow](reports/figures/09_staged_policy_flow.png)
+
+## Honest probabilities
+- **Calibrated:** predicted risk matches observed disease rates (pooled ECE 0.03–0.05; sigmoid calibration on stages 2–3).
+- **Plausible risk range:** 20 models trained on different patient subsets show how stable each prediction is. Shown for transparency; it proved a weak error detector, so it doesn't change decisions.
+- **Unusual-patient warning:** flags out-of-range values or unusual combinations. It fires on ~1% of training patients but up to 13% at hospitals with very different populations.
+
+![Calibration](reports/figures/10_calibration_curves.png)
 
 ## Model comparison
 Nested cross-validation (5 folds × 3 repeats, tuning inside each fold) on 243 Cleveland training patients, using all features:
