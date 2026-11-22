@@ -128,3 +128,26 @@ CV_FOLDS = 5
 CV_REPEATS = 3
 
 REPORTS_DIR = PROJECT_ROOT / "reports"
+
+# ---------------------------------------------------------------------------
+# Screening decision rules  (Phase 4)
+# ---------------------------------------------------------------------------
+# In screening, missing a sick patient is far worse than a false alarm, so the
+# thresholds are chosen around RECALL (fraction of sick patients caught).
+
+# Final yes/no threshold: catch at least 97% of sick patients.
+# Chosen deliberately (Phase 4): in screening a false alarm costs an extra
+# test, while a missed patient can cost a life. Compared options (90/95/97%)
+# are documented in docs/learning/04-staging.md.
+SCREENING_RECALL = 0.97
+
+# Stage-by-stage "is the next test worth it?" zones:
+#   LOW risk   -> below a threshold that still keeps >= 99% of sick patients
+#                 above it (so at most ~1% of sick patients are sent home
+#                 at that stage).
+#   HIGH risk  -> above a threshold where >= 90% of flagged patients are
+#                 truly sick: confident enough to refer straight to a
+#                 cardiologist.
+#   UNCERTAIN  -> in between: recommend the next, more informative test.
+RULE_OUT_RECALL = 0.99
+RULE_IN_PRECISION = 0.90

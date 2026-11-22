@@ -1,0 +1,20 @@
+{
+  "chosen": {
+    "1": "logistic_regression",
+    "2": "ensemble",
+    "3": "ensemble"
+  },
+  "zones": {
+    "1": {
+      "rule_out_below": 0.08965191879430844,
+      "rule_in_from": 0.8297359768023638
+    },
+    "2": {
+      "rule_out_below": 0.12485381483391388,
+      "rule_in_from": 0.7822214853855929
+    },
+    "3": {
+      "screening_threshold": 0.17209268316849835
+    }
+  }
+}

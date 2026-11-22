@@ -20,7 +20,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 - [x] Phase 1: Project setup
 - [x] Phase 2: Data exploration & cleaning
 - [x] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
-- [ ] Phase 4: Staged screening
+- [x] Phase 4: Staged screening
 - [ ] Phase 5: Calibration & uncertainty
 - [ ] Phase 6: Cross-hospital & fairness evaluation
 - [ ] Phase 7: Explanations (SHAP)
@@ -55,6 +55,18 @@ UCI Heart Disease dataset (920 patients, 4 hospitals). See [`data/README.md`](da
 **Key finding:** the four hospitals recorded different tests. Invasive Stage 3 tests exist almost only for Cleveland, and Switzerland never recorded cholesterol. This shapes how the staged models are trained and evaluated.
 
 ![Missing data by hospital](reports/figures/02_missing_by_hospital.png)
+
+## Staged screening results
+Each patient starts with a basic check-up. Low-risk patients are cleared, high-risk patients are referred, and only uncertain patients go on to the treadmill test and then invasive imaging. All strategies are tuned to catch **97% of sick patients** (out-of-fold predictions, 243 Cleveland training patients):
+
+| Strategy | Recall | Specificity | Need invasive tests |
+|---|---|---|---|
+| Everyone gets every test | 0.973 | 0.432 | 100% |
+| **CardioStage staged policy** | **0.964** | **0.439** | **63%** |
+
+Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive tests **−37% [−44%, −31%]**. The staged policy matches giving everyone every test while sparing over a third of patients invasive imaging.
+
+![Staged policy flow](reports/figures/09_staged_policy_flow.png)
 
 ## Model comparison
 Nested cross-validation (5 folds × 3 repeats, tuning inside each fold) on 243 Cleveland training patients, using all features:
