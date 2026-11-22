@@ -120,10 +120,32 @@ python -c "from cardiostage import config; print(config.STAGES[2])"
 3. Why is `thal` in Stage 3 and not Stage 1?
 4. Why shouldn't the hospital name be fed into the model?
 
-<details><summary>Answers</summary>
+## Answers
 
-1. Reproducibility: every change must be repeatable code, so anyone gets identical data.
-2. Conflicting library versions; updating one project could break the other.
-3. It needs a thallium nuclear scan in a hospital. It's expensive and invasive, so a doctor orders it last.
-4. A diagnosis should depend on the patient's body, not their location. It would also make the cross-hospital test meaningless.
-</details>
+**1. Why do we never edit `data/raw/heart_disease_uci.csv` by hand?**
+
+Because of **reproducibility**. If you open the file in Excel and fix a few values, nobody (including future you) can tell what changed or why, and nobody can repeat it. Your results would depend on invisible manual edits.
+Instead, the raw file stays exactly as downloaded, and *every* cleaning step is written as code in `src/cardiostage/`. That gives three benefits:
+- **Anyone can re-run it** from the original file and get identical cleaned data.
+- **Every decision is documented**, e.g. "cholesterol of 0 means missing". The code *is* the record.
+- **Mistakes are fixable.** If a cleaning step turns out to be wrong, you change one line and re-run. With hand edits, the original values would be gone forever.
+
+**2. What would go wrong if two projects shared one global Python installation?**
+
+**Version conflicts.** There's only one copy of each library globally. Suppose an old project needs `pandas 2.0` and CardioStage needs `pandas 3.1`. Upgrading for CardioStage could silently break the old project, and downgrading would break CardioStage.
+It also hurts reproducibility. A global install collects many libraries over time, so you lose track of what *this* project actually needs, and `requirements.txt` might miss something that only worked because it happened to be installed.
+A virtual environment (`.venv/`) gives each project its own isolated set of libraries, and `requirements.txt` records exactly what's in it.
+
+**3. Why is `thal` in Stage 3 and not Stage 1?**
+
+Because of **how hard and costly the test is to get**, which is the whole idea behind CardioStage's stages.
+`thal` is the result of a **thallium stress scan**: a radioactive tracer is injected and a nuclear-imaging camera shows how well blood reaches the heart muscle. It needs a hospital, specialist staff, radiation exposure and significant cost.
+Stage 1 holds only what a normal clinic visit and blood test give you (age, sex, chest-pain type, blood pressure, cholesterol, blood sugar). A doctor would never order a nuclear scan first. They escalate only if the cheaper information leaves them unsure. Our stages copy that order, so we can measure whether the expensive test actually adds value.
+
+**4. Why shouldn't the hospital name be fed into the model?**
+
+Two reasons:
+- **It isn't medical information.** A diagnosis should depend on the patient's body, not which building they walked into. In this data, the hospitals have very different disease rates (some mostly sick patients, some mostly healthy). A model given the hospital name could learn shortcuts like *"from Switzerland → probably sick"*. That's useless for a new patient at a new hospital, and it looks accurate for the wrong reason.
+- **It would break the cross-hospital experiment (feature B).** We train on Cleveland and test on the other hospitals to see if the model generalises. If the hospital name were an input, the model would meet a hospital value it had never seen during training, and the test would no longer measure what we want.
+
+So the `dataset` column is used only to **split** the data by hospital, never as a feature.
