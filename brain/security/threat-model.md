@@ -53,7 +53,7 @@
 | TB2 | **Host ↔ network** | – | Closed: socket bound to `127.0.0.1` |
 | TB3 | **Server ↔ local filesystem** | `integrity.load`, `pd.read_csv`, `st.image` (fixed paths) | Pickles verified before load |
 | TB4 | **Server ↔ third party** | – | Closed: no startup IP lookup |
-| TB5 | **Developer/CI ↔ package index and GitHub Actions** | `pip install -r requirements.txt -c constraints.txt`; actions `checkout@v4`, `setup-python@v5`, `gitleaks-action@v2` | Pinned + constrained; audited |
+| TB5 | **Developer/CI ↔ package index and GitHub Actions** | `pip install -r requirements.txt -c constraints.txt`; actions `checkout@v7`, `setup-python@v7`, `gitleaks-action@v3` | Pinned + constrained; audited |
 | TB6 | **Local repo ↔ GitHub** | `git push` (HTTPS, no credentials in remote URL) | Unchanged |
 
 ## 5. Entry points

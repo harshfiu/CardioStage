@@ -5,7 +5,7 @@ How the code is organised, how data flows from the raw CSV to an on-screen expla
 | | |
 |---|---|
 | **Last updated** | 2026-11-23 (security hardening) |
-| **Stack** | Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.14 · pip-audit 2.10 |
+| **Stack** | Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.17 · pip-audit 2.10 |
 | **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Design system](03-design-system.md) · Security: [`brain/security/`](../../brain/security/threat-model.md) |
 
 ---
@@ -174,7 +174,7 @@ Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format sr
 - **Pinning:** `requirements.txt` pins direct dependencies; `constraints.txt` pins **all** installed packages (incl. transitive) to tested versions. Constraints only fix versions, so platform-specific packages aren't forced onto other OSes. No hash pinning (see §11).
 - **CI** (`.github/workflows/ci.yml`, on push/PR to `main`, `permissions: contents: read`):
   - *quality* job (Ubuntu, Python 3.12): install with constraints → `ruff check` → `pytest -q -rs` (model tests skip) → `pip-audit -r requirements.txt`.
-  - *secrets* job: `gitleaks/gitleaks-action@v2` over the full history (`fetch-depth: 0`).
+  - *secrets* job: `gitleaks/gitleaks-action@v3` (with `actions/checkout@v7`, `actions/setup-python@v7`) over the full history (`fetch-depth: 0`).
 - **Dependabot** (`.github/dependabot.yml`): weekly update PRs for pip and GitHub Actions.
 - **Last audit** (2026-11-23): `pip-audit` found **no known vulnerabilities** in `requirements.txt` or the full environment.
 - **Line endings** normalised to LF via `.gitattributes`. **Ignored:** `.venv/`, caches, `data/processed/*`, `models/*`, `.streamlit/secrets.toml`.
@@ -238,5 +238,6 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Merged Dependabot updates: ruff 0.17.6, actions/checkout v7, actions/setup-python v7, gitleaks-action v3 (lint, 84 tests and pip-audit re-verified locally) |
 | 2026-11-23 | Security hardening: localhost binding, hidden error details, input validation, rate limiting, integrity manifest, constraints file, CI (ruff/pytest/pip-audit/gitleaks), Dependabot; 84 tests; ADR-12–16; corrected the network-call statement in §1 |
 | 2026-11-23 | Document created at v1.0 |
