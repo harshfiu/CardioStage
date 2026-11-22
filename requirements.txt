@@ -1,0 +1,26 @@
+# Exact versions this project was built and tested with.
+# Pinning (==) means anyone who installs from this file gets the same
+# behaviour we did; library updates can change results or break code.
+#
+# Install:  pip install -r requirements.txt  &&  pip install -e .
+
+# --- Data handling ---
+pandas==3.1.1          # tables (DataFrames): loading, cleaning, reshaping data
+numpy==2.5.5           # fast numerical arrays; pandas & scikit-learn build on it
+
+# --- Machine learning ---
+scikit-learn==1.9.1    # logistic regression, random forest, calibration, metrics
+xgboost==3.4.1         # gradient-boosted trees, often strongest on tabular data
+shap==0.54.1           # explains individual predictions (feature C)
+joblib==1.6.0          # saving/loading trained models to/from disk
+
+# --- Visualisation ---
+matplotlib==3.11.2     # core plotting library (static charts for the README)
+seaborn==0.13.2        # nicer statistical charts on top of matplotlib
+plotly==7.1.0          # interactive charts inside the Streamlit app
+
+# --- App ---
+streamlit==1.67.0      # turns Python scripts into an interactive web app
+
+# --- Testing ---
+pytest==9.2.0          # runs the automated checks in tests/

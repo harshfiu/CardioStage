@@ -1,0 +1,5 @@
+# Normalise line endings so the repo looks the same on Windows, Mac and Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.joblib binary

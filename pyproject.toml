@@ -1,0 +1,21 @@
+# pyproject.toml describes this project as an installable Python package.
+# Installing it in "editable" mode (pip install -e .) lets any script, test,
+# or the Streamlit app write `from cardiostage import config`, while edits to
+# the code take effect immediately without reinstalling.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cardiostage"
+version = "0.1.0"
+description = "Staged, calibrated, explainable heart-disease risk screening."
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]          # our package code lives in src/cardiostage
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

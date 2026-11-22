@@ -1,0 +1,26 @@
+# Virtual environment (huge, machine-specific; rebuilt from requirements.txt)
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Generated artifacts (recreated by running the pipeline)
+data/processed/*
+models/*
+!data/processed/.gitkeep
+!models/.gitkeep
+
+# Editor / OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Streamlit local secrets
+.streamlit/secrets.toml
