@@ -18,7 +18,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 
 ## Roadmap
 - [x] Phase 1: Project setup
-- [ ] Phase 2: Data exploration & cleaning
+- [x] Phase 2: Data exploration & cleaning
 - [ ] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
 - [ ] Phase 4: Staged screening
 - [ ] Phase 5: Calibration & uncertainty
@@ -51,6 +51,10 @@ pytest                          # verify everything is in place
 
 ## Data
 UCI Heart Disease dataset (920 patients, 4 hospitals). See [`data/README.md`](data/README.md).
+
+**Key finding:** the four hospitals recorded different tests. Invasive Stage 3 tests exist almost only for Cleveland, and Switzerland never recorded cholesterol. This shapes how the staged models are trained and evaluated.
+
+![Missing data by hospital](reports/figures/02_missing_by_hospital.png)
 
 ## Disclaimer
 CardioStage is an educational machine-learning project. **It is not a medical device and must not be used for diagnosis or treatment decisions.**

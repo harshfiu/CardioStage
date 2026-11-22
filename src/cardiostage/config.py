@@ -91,3 +91,21 @@ STAGE_NAMES = {
     2: "+ Treadmill stress test",
     3: "+ Invasive imaging",
 }
+
+# ---------------------------------------------------------------------------
+# Feature types  (decide HOW each column is prepared for the models)
+# ---------------------------------------------------------------------------
+# Models only understand numbers, and different kinds of columns need
+# different preparation (see preprocessing.py):
+
+# Numeric: real measurements where "bigger" means something.
+NUMERIC_FEATURES = ["age", "trestbps", "chol", "thalch", "oldpeak", "ca"]
+
+# Binary: yes/no columns, stored as 1/0.
+BINARY_FEATURES = ["sex", "fbs", "exang"]
+
+# Categorical: a few named options with no natural order
+# (e.g. chest pain type). These get "one-hot encoded" into yes/no columns.
+CATEGORICAL_FEATURES = ["cp", "restecg", "slope", "thal"]
+
+CLEAN_DATA_PATH = PROCESSED_DIR / "heart_clean.csv"
