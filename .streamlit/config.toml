@@ -7,6 +7,22 @@ textColor = "#1a1a19"
 
 [server]
 headless = true
+# Security (brain/security, SEC-01/SEC-04): listen on this computer only.
+# Streamlit's default ("") listens on EVERY network interface, which exposes
+# the app (no login, no encryption) to anyone on the same Wi-Fi/LAN, and also
+# makes Streamlit contact checkip.amazonaws.com at startup to print an
+# "External URL". A specific address avoids both.
+# To deliberately share on a trusted network, run with:
+#   streamlit run app/streamlit_app.py --server.address 0.0.0.0
+address = "localhost"
+# Defaults kept explicit so they can't be switched off by accident (R-5):
+enableXsrfProtection = true
+enableCORS = true
+
+[client]
+# Security (SEC-03): never show tracebacks (local paths, code) to users.
+# The app shows its own friendly error message instead.
+showErrorDetails = "none"
 
 [browser]
 gatherUsageStats = false

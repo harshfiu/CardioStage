@@ -227,10 +227,30 @@ External by sex: women AUC 0.864 / 0.848, men 0.807 / 0.851 (stages 1 / 2). Miss
 | `models/stage2.joblib` | 80 MB | same |
 | `models/stage3.joblib` | 85 MB | same (load ~7 s) |
 | `models/phase4_oof.joblib`, `phase5_oof.joblib` | <0.1 MB | out-of-fold predictions (analysis inputs) |
-| `models/phase3_*.joblib`, `phase7_shap.joblib` | <1 MB | Phase 3 baselines, SHAP values |
+| `models/phase3_*.joblib`, `phase7_shap.joblib` | <1 MB | Phase 3 baselines, SHAP values (written only; never loaded by code) |
+| `models/manifest.json` | <1 KB | SHA-256 of `stage{1,2,3}.joblib`, `phase4_oof.joblib`, `phase5_oof.joblib`; written by `calibration.main` or `python -m cardiostage.integrity` |
 | `reports/*.csv`, `reports/phase*_zones.json` | small | every result table (committed) |
 
-`models/` is git-ignored; rebuild with `python -m cardiostage.train_all` (~10 minutes).
+`models/` is git-ignored; rebuild with `python -m cardiostage.train_all` (~10 minutes), which also rewrites the manifest.
+
+**Integrity:** every pickle the code loads goes through `integrity.load`, which compares the file's SHA-256 with `manifest.json` and refuses to unpickle unlisted or modified files (`IntegrityError`). Bundles from elsewhere are therefore rejected unless you regenerate the manifest yourself. Only do that for files you built.
+
+### 12.1 Inference input contract (`predictor.to_frame`)
+Before scoring, the engine validates every input and raises `InvalidInputError` otherwise:
+
+| Input | Accepted values |
+|---|---|
+| `cp`, `restecg`, `slope`, `thal` | Exactly the training categories (`predictor.CHOICES`) |
+| `sex`, `fbs`, `exang` | 0 or 1 |
+| `ca` | 0, 1, 2 or 3 |
+| `age` | 18–100 |
+| `trestbps` | 60–250 mm Hg |
+| `chol` | 80–700 mg/dl |
+| `thalch` | 60–230 bpm |
+| `oldpeak` | −3.0 to 7.0 mm |
+| Any feature | Missing (`None`/NaN) → imputed with training median/mode; numbers must be finite |
+
+Values inside these plausible limits but outside the training ranges (§8.2) are accepted and flagged as unusual.
 
 ## 13. Reproduction
 ```bash
@@ -248,4 +268,5 @@ python -m cardiostage.final_evaluation     # figure 18 (sealed test)
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Added integrity manifest (§12) and the inference input contract (§12.1) after security hardening; models and metrics unchanged |
 | 2026-11-23 | Document created at v1.0 (all phases complete) |

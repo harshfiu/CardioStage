@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from cardiostage import config
+from cardiostage.integrity import IntegrityError
 from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
 
 UP, DOWN = "#eb6834", "#2a78d6"
@@ -28,6 +29,13 @@ def load_predictor_or_stop() -> CardioStagePredictor:
         return get_predictor()
     except ModelsNotFoundError as e:
         st.error(f"{e}")
+        st.stop()
+    except IntegrityError as e:
+        # A model file failed its SHA-256 check: never load it (SEC-05).
+        st.error(
+            f"**Model integrity check failed.** {e}  \n"
+            "Rebuild the models with `python -m cardiostage.train_all`."
+        )
         st.stop()
 
 

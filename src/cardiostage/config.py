@@ -177,3 +177,12 @@ USE_UNCERTAINTY_GUARD = False
 # Unusual-patient detection: flag inputs less typical than the most unusual
 # 1% of training patients.
 NOVELTY_QUANTILE = 0.01
+
+# ---------------------------------------------------------------------------
+# App abuse protection  (security finding SEC-02)
+# ---------------------------------------------------------------------------
+# Each stage-2/3 assessment costs ~3-5 s of CPU (ensemble + 20 uncertainty
+# copies + SHAP). Limit how many one browser session may run per minute.
+# A full 3-stage screening uses 3, so 20/minute never affects normal use.
+RATE_LIMIT_MAX_ASSESSMENTS = 20
+RATE_LIMIT_WINDOW_SECONDS = 60

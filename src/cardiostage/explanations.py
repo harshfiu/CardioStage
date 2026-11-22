@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.data import load_clean, split_cleveland
 from cardiostage.explain import LABELS, StageExplainer, explanation_text
 from cardiostage.staging import simulate_policy
@@ -89,7 +89,7 @@ def direction_checks(train, shap_values: dict) -> pd.DataFrame:
 
 def find_case_study(train):
     """The sick woman cleared at stage 1 by the staged policy (Phase 6)."""
-    saved = joblib.load(config.MODELS_DIR / "phase5_oof.joblib")
+    saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
     y = saved["y"]
     p = {s: saved["oof"][s][saved["method"][s]].mean(axis=0) for s in config.STAGES}
     with open(config.REPORTS_DIR / "phase5_zones.json") as f:
@@ -188,7 +188,7 @@ def plot_case_study(cases: list):
 
 def main():
     train, _sealed_test = split_cleveland(load_clean())
-    bundles = {s: joblib.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
+    bundles = {s: integrity.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
 
     shap_values, importance = {}, {}
     for stage in config.STAGES:

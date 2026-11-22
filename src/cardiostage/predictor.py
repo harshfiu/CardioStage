@@ -14,11 +14,10 @@ Usage:
 
 from dataclasses import dataclass, field
 
-import joblib
 import numpy as np
 import pandas as pd
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.data import load_clean, split_cleveland
 from cardiostage.explain import StageExplainer, explanation_text
 
@@ -29,6 +28,32 @@ CHOICES = {
     "slope": ["upsloping", "flat", "downsloping"],
     "thal": ["normal", "fixed defect", "reversable defect"],
 }
+
+# Allowed values for coded numeric inputs (security finding SEC-06: the
+# interface restricts these, but the engine re-checks them so a crafted
+# request can't feed it anything else).
+ALLOWED_CODES = {
+    "sex": {0.0, 1.0},
+    "fbs": {0.0, 1.0},
+    "exang": {0.0, 1.0},
+    "ca": {0.0, 1.0, 2.0, 3.0},
+}
+
+# Physically plausible limits for measurements (the same bounds as the app's
+# input boxes). Values outside these are rejected outright; values inside but
+# outside the TRAINING range are accepted and flagged by the novelty detector.
+PLAUSIBLE_RANGES = {
+    "age": (18, 100),
+    "trestbps": (60, 250),
+    "chol": (80, 700),
+    "thalch": (60, 230),
+    "oldpeak": (-3.0, 7.0),
+}
+
+
+class InvalidInputError(ValueError):
+    """Patient input that the models must not be asked to score."""
+
 
 ZONE_TEXT = {
     "low": (
@@ -104,7 +129,10 @@ class CardioStagePredictor:
                 f"Trained models not found ({', '.join(missing)}). "
                 "Build them with:  python -m cardiostage.train_all"
             )
-        bundles = {s: joblib.load(p) for s, p in paths.items()}
+        # Bundles are pickles: loading one can run code. integrity.load checks
+        # each file matches the fingerprint recorded when it was built (SEC-05)
+        # and raises IntegrityError otherwise.
+        bundles = {s: integrity.load(p) for s, p in paths.items()}
         train, _ = split_cleveland(load_clean())
         return cls(bundles, train)
 
@@ -117,18 +145,38 @@ class CardioStagePredictor:
 
     @staticmethod
     def to_frame(patient: dict, features: list) -> pd.DataFrame:
-        """One-row DataFrame in the exact format the models were trained on."""
+        """
+        One-row DataFrame in the exact format the models were trained on.
+
+        Every value is validated (defence in depth, SEC-06); anything unexpected
+        raises InvalidInputError instead of reaching the models.
+        """
         row = {}
         for f in features:
             value = patient.get(f)
             if value is None or (isinstance(value, float) and np.isnan(value)):
-                row[f] = np.nan
-            elif f in CHOICES:
+                row[f] = np.nan  # "not measured": the model imputes a typical value
+                continue
+            if f in CHOICES:
                 if value not in CHOICES[f]:
-                    raise ValueError(f"{f} must be one of {CHOICES[f]}, got {value!r}")
+                    raise InvalidInputError(f"{f} must be one of {CHOICES[f]}, got {value!r}")
                 row[f] = value
-            else:
-                row[f] = float(value)
+                continue
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                raise InvalidInputError(f"{f} must be a number, got {value!r}") from None
+            if not np.isfinite(number):
+                raise InvalidInputError(f"{f} must be a finite number, got {value!r}")
+            if f in ALLOWED_CODES and number not in ALLOWED_CODES[f]:
+                raise InvalidInputError(
+                    f"{f} must be one of {sorted(ALLOWED_CODES[f])}, got {value!r}"
+                )
+            if f in PLAUSIBLE_RANGES:
+                low, high = PLAUSIBLE_RANGES[f]
+                if not low <= number <= high:
+                    raise InvalidInputError(f"{f} must be between {low} and {high}, got {value!r}")
+            row[f] = number
         return pd.DataFrame([row], columns=features)
 
     def zone(self, stage: int, risk: float) -> str:

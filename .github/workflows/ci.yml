@@ -1,0 +1,57 @@
+# Continuous integration: runs on every push and pull request to main.
+# Security controls from brain/security/: SEC-07 (dependency audit) and
+# R-3 (secret scanning), plus lint and the test suite.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege: the jobs only need to read the repository.
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, tests, dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies (pinned, with full constraints)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -c constraints.txt
+          pip install -e .
+
+      - name: Lint (ruff)
+        run: ruff check src tests app
+
+      - name: Tests
+        # Model files aren't stored in Git, so tests that need trained models
+        # are skipped here (they report "trained models missing").
+        run: pytest -q -rs
+
+      - name: Dependency vulnerability audit (pip-audit)
+        run: pip-audit -r requirements.txt --progress-spinner off
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # scan the full history, not just the latest commit
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

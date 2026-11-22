@@ -23,7 +23,6 @@ Run:  python -m cardiostage.fairness
 
 import json
 
-import joblib
 import matplotlib
 
 matplotlib.use("Agg")
@@ -32,7 +31,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
 from cardiostage.staging import simulate_policy
 from cardiostage.stats import bootstrap_ci, fmt_ci
@@ -125,7 +124,7 @@ def plot_fairness(table: pd.DataFrame):
 def main():
     df = load_clean()
     train, _sealed_test = split_cleveland(df)
-    saved = joblib.load(config.MODELS_DIR / "phase5_oof.joblib")
+    saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
     y = saved["y"]
     p = {s: saved["oof"][s][saved["method"][s]].mean(axis=0) for s in config.STAGES}
     with open(config.REPORTS_DIR / "phase5_zones.json") as f:
@@ -156,7 +155,7 @@ def main():
     ext = df[df[config.HOSPITAL_COLUMN].isin(config.EXTERNAL_HOSPITALS)]
     ext_rows = []
     for stage in (1, 2):
-        bundle = joblib.load(config.MODELS_DIR / f"stage{stage}.joblib")
+        bundle = integrity.load(config.MODELS_DIR / f"stage{stage}.joblib")
         X, y_ext = get_features_and_target(ext, stage)
         p_ext = bundle["model"].predict_proba(X)[:, 1]
         for label, value in [("female", 0.0), ("male", 1.0)]:

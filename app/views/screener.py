@@ -9,8 +9,13 @@ recommendation -> if uncertain, add treadmill results -> then invasive
 imaging. Each step only asks for the next test when it's likely to help.
 """
 
+import logging
+import time
+
 import streamlit as st
 
+from cardiostage import ratelimit
+from cardiostage.predictor import InvalidInputError
 from ui import DISCLAIMER, load_predictor_or_stop, render_assessment
 
 # ----------------------------------------------------------------------------
@@ -208,10 +213,33 @@ def patient() -> dict:
 
 
 def run_stage(stage: int):
+    # Abuse protection (SEC-02): cap assessments per browser session.
+    allowed, st.session_state.assessment_times, wait = ratelimit.check_and_record(
+        st.session_state.get("assessment_times", []), time.time()
+    )
+    if not allowed:
+        st.warning(
+            f"Too many assessments in a short time. Please wait {wait:.0f} seconds and try again.",
+            icon="⏳",
+        )
+        return
+
     # Re-assessing a stage invalidates any later stages built on old inputs.
     st.session_state.results = {k: v for k, v in st.session_state.results.items() if k < stage}
-    with st.spinner(f"Assessing stage {stage} and explaining the result..."):
-        st.session_state.results[stage] = predictor.assess(patient(), stage)
+    try:
+        with st.spinner(f"Assessing stage {stage} and explaining the result..."):
+            st.session_state.results[stage] = predictor.assess(patient(), stage)
+    except InvalidInputError as e:
+        st.error(f"Some inputs aren't valid, so no assessment was made: {e}", icon="🚫")
+    except Exception:
+        # Never show tracebacks (local paths, code) to users (SEC-03). The full
+        # error still goes to the server console for the developer.
+        logging.getLogger("cardiostage.app").exception("Assessment failed")
+        st.error(
+            "Something went wrong while assessing this patient. No result was "
+            "produced. Please check the inputs and try again.",
+            icon="🚫",
+        )
 
 
 # ----------------------------------------------------------------------------

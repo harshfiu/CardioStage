@@ -102,10 +102,11 @@ It is a **portfolio and learning project**, not a medical device.
 |---|---|---|---|
 | NFR1 | Performance | Assessment with explanation ≤ 5 s per stage on a laptop | ~0.3 s (stage 1), ~3–5 s (stages 2–3) |
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
-| NFR3 | Privacy | No patient data leaves the machine; no network calls at inference | ✅ fully local |
+| NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`, `requirements.txt` pinned |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor and app flow | ✅ 59 tests |
-| NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow and security controls | ✅ 84 tests (run in CI) |
+| NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
+| NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes | ✅ see [Design system](03-design-system.md) |
 | NFR8 | Portability | Python ≥ 3.10; Windows / macOS / Linux paths via `pathlib` | ✅ (built on Python 3.12, Windows) |
 | NFR9 | Documentation | Code commented for beginners; a learning guide per phase; these four project docs kept current | ✅ |
@@ -119,6 +120,12 @@ It is a **portfolio and learning project**, not a medical device.
 | S4 | Known limitations shown in-app (About page; the limitation example with an explanatory note) |
 | S5 | Prioritise sensitivity: missed sick patients are treated as the costliest error (97% recall target) |
 | S6 | No subgroup "fix" may be fitted to a handful of patients; small-sample findings are documented, not patched |
+| S7 | The app listens on localhost by default; network sharing only by explicit operator choice |
+| S8 | Users never see tracebacks or internal details; failures show friendly messages |
+| S9 | Every input is validated by the engine (categories, codes, finite numbers, plausible ranges), not only by the UI |
+| S10 | Model pickles are loaded only after a SHA-256 integrity check |
+| S11 | Assessments are rate-limited per session (20 per minute) |
+| S12 | Dependencies are pinned/constrained and audited (`pip-audit`) in CI; secrets are scanned (gitleaks) |
 
 ## 10. Success metrics
 | Metric | Target | Result |
@@ -154,6 +161,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | Uncertainty range **display-only** | Proved a weak error detector |
 | 2026-11-23 | **MIT** licence | Portfolio-friendly |
 | 2026-11-23 | Maintain these four project docs with every change | Owner's request |
+| 2026-11-23 | Security assessment (`brain/security/`) and implement all fixes | Owner's request; localhost binding, validation, integrity checks, rate limiting, CI |
 
 ## 13. Risks and mitigations
 | Risk | Mitigation |
@@ -187,4 +195,5 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Security hardening: NFR3/5/6 updated, NFR10 and safety/security requirements S7–S12 added, decision logged |
 | 2026-11-23 | Document created at v1.0 completion (all 9 phases) |

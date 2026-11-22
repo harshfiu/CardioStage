@@ -22,7 +22,6 @@ For each hospital we check:
 Run:  python -m cardiostage.external_validation
 """
 
-import joblib
 import matplotlib
 
 matplotlib.use("Agg")
@@ -31,7 +30,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import brier_score_loss, roc_auc_score
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.calibration import _reliability, expected_calibration_error
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
 from cardiostage.stats import bootstrap_ci, fmt_ci, prior_shift
@@ -48,12 +47,12 @@ TEXT = "#52514e"
 
 
 def load_bundles():
-    return {s: joblib.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
+    return {s: integrity.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
 
 
 def internal_reference():
     """Cleveland out-of-fold predictions (Phase 5) and each stage's 97%-recall threshold."""
-    saved = joblib.load(config.MODELS_DIR / "phase5_oof.joblib")
+    saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
     y = saved["y"]
     p = {s: saved["oof"][s][saved["method"][s]].mean(axis=0) for s in config.STAGES}
     thresholds = {s: threshold_for_recall(y, p[s], config.SCREENING_RECALL) for s in config.STAGES}

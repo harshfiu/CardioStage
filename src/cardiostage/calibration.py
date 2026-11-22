@@ -34,7 +34,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
 from cardiostage.staging import (
     bootstrap_strategies,
@@ -398,7 +398,7 @@ def main(report_only: bool = False):
         chosen = {int(s): m for s, m in json.load(f)["chosen"].items()}
 
     if report_only:  # regenerate tables/charts without retraining
-        saved = joblib.load(config.MODELS_DIR / "phase5_oof.joblib")
+        saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
         report(
             train,
             df,
@@ -435,7 +435,10 @@ def main(report_only: bool = False):
             "zones": zones[stage],
         }
         joblib.dump(bundle, config.MODELS_DIR / f"stage{stage}.joblib")
+    # Record each bundle's SHA-256 so the app can refuse tampered files (SEC-05).
+    integrity.write_manifest(integrity.stage_bundle_paths())
     print("saved calibrated stage models (with uncertainty + novelty detectors) to models/")
+    print(f"wrote integrity manifest {integrity.MANIFEST_PATH.name}")
 
 
 if __name__ == "__main__":

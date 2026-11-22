@@ -1,12 +1,12 @@
 # CardioStage: Architecture Document
 
-How the code is organised, how data flows from the raw CSV to an on-screen explanation, and why it's built this way.
+How the code is organised, how data flows from the raw CSV to an on-screen explanation, how it's secured, and why it's built this way.
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-23 |
-| **Stack** | Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.14 |
-| **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Design system](03-design-system.md) |
+| **Last updated** | 2026-11-23 (security hardening) |
+| **Stack** | Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.14 · pip-audit 2.10 |
+| **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Design system](03-design-system.md) · Security: [`brain/security/`](../../brain/security/threat-model.md) |
 
 ---
 
@@ -17,31 +17,36 @@ How the code is organised, how data flows from the raw CSV to an on-screen expla
  data/raw/   │  data.py ─► preprocessing.py ─► models.py ─► staging.py ─► calibration.py           │
  heart_      │  (clean,     (per-stage        (pipelines,   (nested CV,    (calibration,          │
  disease_    │   split)      transformer)      grids)        zones,         uncertainty copies,    │
- uci.csv ───►│                                               policy)        novelty detector)      │
+ uci.csv ───►│                                               policy)        novelty, manifest)     │
              │                                                   │               │                 │
              │   external_validation.py · fairness.py · explanations.py · final_evaluation.py     │
              └───────────────────────────────────┬────────────────┼─────────────────────────────────┘
                                                  ▼                ▼
-                                      reports/ (CSV, JSON,   models/stage{1,2,3}.joblib
-                                      figures/*.png)         (git-ignored, ~170 MB total)
-                                                                  │
-             ┌──────────────────────────── ONLINE: the app ───────┼────────────────────────────────┐
+                                      reports/ (CSV, JSON,   models/stage{1,2,3}.joblib + manifest.json
+                                      figures/*.png)         (git-ignored, ~170 MB; SHA-256 fingerprints)
+                                                                  │ integrity.load (verify → unpickle)
+             ┌──────────────────── ONLINE: the app (127.0.0.1:8501 only) ─────────────────────────┐
              │  app/streamlit_app.py (navigation)                 ▼                                 │
-             │     ├─ views/screener.py ──► predictor.py (CardioStagePredictor) ──► explain.py     │
+             │     ├─ views/screener.py ─ rate limit ─► predictor.py (validate → assess) ► explain │
              │     ├─ views/results.py  ──► reports/*.csv, figures                                  │
              │     └─ views/about.py         ui.py: cached loading, result card, chart, disclaimer │
              └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Everything runs **locally**. There's no server-side database, no network calls at inference, and no external APIs.
+Everything runs **locally**. There's no server-side database and no external API. The app server listens on **localhost only** (`.streamlit/config.toml` `server.address = "localhost"`), so it isn't reachable from other devices. Because of that specific address, Streamlit also **skips its startup public-IP lookup** (`checkip.amazonaws.com`), which it performs only when bound to all interfaces in headless mode. No network calls are made during inference.
 
 ## 2. Repository layout
 ```
 CardioStage/
+├── .github/
+│   ├── workflows/ci.yml        CI: ruff, pytest, pip-audit; gitleaks secret scan (read-only permissions)
+│   └── dependabot.yml          weekly dependency / GitHub Actions update PRs
+├── .streamlit/config.toml      theme + security settings (localhost bind, hidden error details, XSRF/CORS on)
 ├── app/
 │   ├── streamlit_app.py        entry point: set_page_config + st.navigation
-│   ├── ui.py                   shared UI: get_predictor (cached), render_assessment, contribution_chart, DISCLAIMER
-│   └── views/                  screener.py · results.py · about.py
+│   ├── ui.py                   shared UI: get_predictor (cached; handles missing/tampered models), render_assessment, contribution_chart, DISCLAIMER
+│   └── views/                  screener.py (rate limit + error handling) · results.py · about.py
+├── brain/security/             threat model, secrets, attack surface, security checklist
 ├── data/
 │   ├── raw/heart_disease_uci.csv   original data (committed, never edited)
 │   ├── processed/              generated cleaned CSV (git-ignored)
@@ -49,14 +54,14 @@ CardioStage/
 ├── docs/
 │   ├── learning/               9 beginner guides + index
 │   └── project/                these 4 living documents + index
-├── models/                     generated artefacts (git-ignored except .gitkeep)
+├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      59 pytest tests (see §7)
-├── .streamlit/config.toml      app theme and settings
+├── tests/                      84 pytest tests (see §7)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
+├── constraints.txt             exact versions of all 76 installed packages (transitive pinning)
 ├── pyproject.toml              package metadata, pytest + ruff config
-├── requirements.txt            pinned dependencies
+├── requirements.txt            pinned direct dependencies
 ├── LICENSE                     MIT (code); CC BY 4.0 note (data)
 └── README.md
 ```
@@ -64,45 +69,57 @@ CardioStage/
 ## 3. Package modules (`src/cardiostage/`)
 | Module | Responsibility | Key API | Depends on |
 |---|---|---|---|
-| `config.py` | **Single source of truth**: paths, seed, target, hospitals, stage feature lists, feature types, CV settings, decision targets, uncertainty settings | constants | – |
+| `config.py` | **Single source of truth**: paths, seed, target, hospitals, stage feature lists, feature types, CV settings, decision targets, uncertainty settings, rate limits | constants | – |
 | `data.py` | Load raw CSV, cleaning rules, sealed split, stage feature selection | `load_raw`, `clean_data`, `load_clean`, `split_cleveland`, `get_features_and_target` | config |
 | `preprocessing.py` | Per-stage `ColumnTransformer` (impute/scale/one-hot), pandas output | `build_preprocessor(stage)` | config |
 | `models.py` | Candidate classifiers, tuning grids, pipelines | `MODEL_NAMES`, `PARAM_GRIDS`, `build_pipeline(name, stage)` | preprocessing |
 | `thresholds.py` | Pure decision functions | `threshold_for_recall`, `threshold_for_precision`, `decision_metrics` | numpy |
 | `staging.py` | Phase 4: per-stage nested CV + ensemble, OOF predictions, zones, policy simulation, bootstrap, final-model fitting | `collect_out_of_fold`, `compute_zones`, `simulate_policy`, `fit_final_model` | data, models, thresholds |
 | `uncertainty.py` | Subsample ensemble ranges; novelty detection | `SubsampleEnsemble`, `NoveltyDetector`, `straddles` | preprocessing |
-| `calibration.py` | Phase 5: calibration comparison, uncertainty evaluation, final bundles (`--report-only` mode) | `make_variant`, `expected_calibration_error`, `main` | staging, uncertainty |
+| `calibration.py` | Phase 5: calibration comparison, uncertainty evaluation, final bundles + integrity manifest (`--report-only` mode) | `make_variant`, `expected_calibration_error`, `main` | staging, uncertainty, integrity |
+| `integrity.py` | **SHA-256 manifest** for every pickle the code loads; verify-before-unpickle | `write_manifest`, `verify`, `load`, `IntegrityError`; CLI `python -m cardiostage.integrity` | config |
+| `ratelimit.py` | Pure sliding-window limiter (per browser session) | `check_and_record(timestamps, now)` | config |
 | `stats.py` | Bootstrap CIs, exact proportion CIs, prior shift | `bootstrap_ci`, `exact_proportion_ci`, `prior_shift` | scipy, numpy |
 | `explain.py` | SHAP permutation explainer on original features, text formatting | `StageExplainer`, `explanation_text`, `format_value` | shap |
-| `predictor.py` | **App decision engine** (no UI code) | `CardioStagePredictor.load()`, `.assess(patient, stage)` → `Assessment` | data, explain, bundles |
-| `external_validation.py` | Phase 6a analysis | `main` | stats, calibration |
-| `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging |
-| `explanations.py` | Phase 7 analysis | `main` | explain |
-| `final_evaluation.py` | Phase 9 sealed test | `main` | stats, staging |
+| `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment | `CardioStagePredictor.load()`, `.assess(patient, stage)` → `Assessment`; `InvalidInputError` | data, explain, integrity |
+| `external_validation.py` | Phase 6a analysis | `main` | stats, calibration, integrity |
+| `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging, integrity |
+| `explanations.py` | Phase 7 analysis | `main` | explain, integrity |
+| `final_evaluation.py` | Phase 9 sealed test | `main` | stats, staging, integrity |
 | `eda.py`, `train_baselines.py`, `from_scratch.py` | Phases 2–3 analyses | `main` | data, models |
-| `train_all.py` | Rebuild deployable models: staging → calibration | `main` | staging, calibration |
+| `train_all.py` | Rebuild deployable models: staging → calibration (writes manifest) | `main` | staging, calibration |
 
-**Dependency rule:** analysis scripts depend on core modules, never the reverse. `predictor.py` depends only on core modules and saved bundles, never on analysis scripts. The app depends only on `predictor`, `config` and `reports/`.
+**Dependency rules:** analysis scripts depend on core modules, never the reverse. `predictor.py` depends only on core modules and saved bundles. The app depends only on `predictor`, `ratelimit`, `integrity` (error type), `config` and `reports/`. **No module calls `joblib.load` directly**: every pickle goes through `integrity.load`.
 
 ## 4. Data flow
 ### 4.1 Training pipeline (`python -m cardiostage.train_all`, ~10 min)
 1. `load_clean()` → 918 rows; `split_cleveland()` → 243 train / 61 sealed test (seed 42).
-2. **staging.main** – for each stage: 15 outer folds × (grid search LR/RF/XGB + ensemble) → OOF probabilities, AUC table, chosen candidate → `reports/phase4_*.csv`, `phase4_zones.json`, figures 07–09, `models/phase4_oof.joblib`.
-3. **calibration.main** – reads `phase4_zones.json` (chosen candidates) → per stage: re-tune per fold, fit uncalibrated/sigmoid/isotonic → pooled Brier picks method → zones from calibrated OOF → uncertainty ranges via subsample ensembles per fold → reports + figures 10–11 → **final bundles** `models/stage{1,2,3}.joblib` = {model, uncertainty, novelty, model_name, calibration, features, zones}.
+2. **staging.main** – per stage: 15 outer folds × (grid search LR/RF/XGB + ensemble) → OOF probabilities, AUC table, chosen candidate → `reports/phase4_*.csv`, `phase4_zones.json`, figures 07–09, `models/phase4_oof.joblib`.
+3. **calibration.main** – reads `phase4_zones.json` → per stage: re-tune per fold, fit uncalibrated/sigmoid/isotonic → pooled Brier picks method → zones from calibrated OOF → uncertainty ranges → reports + figures 10–11 → **final bundles** `models/stage{1,2,3}.joblib` = {model, uncertainty, novelty, model_name, calibration, features, zones} → **`models/manifest.json`** with the SHA-256 of `stage{1,2,3}.joblib`, `phase4_oof.joblib` and `phase5_oof.joblib`.
 
-### 4.2 Evaluation scripts (read bundles / OOF, write reports)
+### 4.2 Evaluation scripts (read bundles / OOF via `integrity.load`, write reports)
 `external_validation` → figures 12–13 · `fairness` → 14 · `explanations` → 15–17 · `final_evaluation` → 18 (sealed test).
 
-### 4.3 Runtime: one assessment
+### 4.3 Runtime: app start and one assessment
 ```
+app start ─► ui.get_predictor()  (@st.cache_resource, once per server process)
+   └► CardioStagePredictor.load()
+        • missing bundle  → ModelsNotFoundError → friendly st.error + stop
+        • integrity.load(stage{s}.joblib): SHA-256 vs manifest.json
+              mismatch / unlisted / no manifest → IntegrityError → friendly st.error + stop (never unpickled)
+
 user submits form ─► screener.run_stage(stage)
-   └► predictor.assess(patient_dict, stage)
-        1. to_frame(): validate categories, NaN for missing → 1-row DataFrame (stage features)
-        2. bundle.model.predict_proba → risk
-        3. bundle.uncertainty.predict_interval → range (10th–90th pct of 20 copies)
-        4. zone(stage, risk) using frozen bundle.zones → headline + recommendation
-        5. bundle.novelty.check → unusual reasons;  not_measured list
-        6. StageExplainer(stage) (built once, cached) → SHAP values → describe() → summary text
+   1. ratelimit.check_and_record(session timestamps, now)  ── over 20/60 s → st.warning, stop
+   2. predictor.assess(patient_dict, stage)      (wrapped in try/except)
+        a. to_frame(): categories ∈ CHOICES · codes ∈ ALLOWED_CODES (sex/fbs/exang/ca)
+           · numbers finite and within PLAUSIBLE_RANGES · missing → NaN   ── else InvalidInputError
+        b. bundle.model.predict_proba → risk
+        c. bundle.uncertainty.predict_interval → range (10th–90th pct of 20 copies)
+        d. zone(stage, risk) using frozen bundle.zones → headline + recommendation
+        e. bundle.novelty.check → unusual reasons;  not_measured list
+        f. StageExplainer(stage) (built once, cached) → SHAP → summary text
+   3. InvalidInputError → st.error("inputs aren't valid…")
+      any other exception → logged to server console; generic st.error (no traceback to user)
    └► Assessment stored in st.session_state.results[stage]
 render_assessment(result) ─► metrics, decision box, warnings, Plotly chart, breakdown table
 ```
@@ -110,15 +127,31 @@ render_assessment(result) ─► metrics, decision box, warnings, Plotly chart, 
 ## 5. State, caching and performance
 | Concern | Mechanism | Numbers |
 |---|---|---|
-| Model loading | `@st.cache_resource` on `get_predictor()`, once per server process | ~15 s (stage 3 bundle ~7 s) |
+| Model loading | `@st.cache_resource` on `get_predictor()`, once per server process; includes SHA-256 verification | ~14–15 s (hashing adds <1 s for ~170 MB) |
 | Explainers | Lazily built per stage, cached in the predictor | built on first explanation |
-| Session state | `st.session_state`: input widget keys, `results` {stage: Assessment}, `example` | per browser session |
+| Session state | `st.session_state`: input widget keys, `results` {stage: Assessment}, `example`, `assessment_times` (rate limiter) | per browser session |
 | Forms | `st.form` so predictions run only on submit | – |
-| Assessment latency | prediction + interval + SHAP | ~0.3 s (stage 1), ~3–5 s (stages 2–3) |
+| Rate limit | `RATE_LIMIT_MAX_ASSESSMENTS = 20` per `RATE_LIMIT_WINDOW_SECONDS = 60` per session | a full screening uses 3 |
+| Assessment latency | validation + prediction + interval + SHAP | ~0.3 s (stage 1), ~3–5 s (stages 2–3) |
 | Training | parallel grid search (`n_jobs=-1`), parallel replicas/SHAP chunks (joblib) | full rebuild ~10 min on 20 cores |
 
 ## 6. Configuration
-All tunables live in `config.py`: `RANDOM_SEED=42`, `TEST_SIZE=0.2`, `CV_FOLDS=5`, `CV_REPEATS=3`, `SCREENING_RECALL=0.97`, `RULE_OUT_RECALL=0.99`, `RULE_IN_PRECISION=0.90`, `CALIBRATION_METHODS`, `N_REPLICAS=20`, `REPLICA_FRACTION=0.8`, `UNCERTAINTY_PERCENTILES=(10, 90)`, `USE_UNCERTAINTY_GUARD=False`, `NOVELTY_QUANTILE=0.01`, stage feature lists, feature types, paths. Changing a value requires re-running `train_all` (and the evaluation scripts) and **updating these docs**.
+**Python (`config.py`):** `RANDOM_SEED=42`, `TEST_SIZE=0.2`, `CV_FOLDS=5`, `CV_REPEATS=3`, `SCREENING_RECALL=0.97`, `RULE_OUT_RECALL=0.99`, `RULE_IN_PRECISION=0.90`, `CALIBRATION_METHODS`, `N_REPLICAS=20`, `REPLICA_FRACTION=0.8`, `UNCERTAINTY_PERCENTILES=(10, 90)`, `USE_UNCERTAINTY_GUARD=False`, `NOVELTY_QUANTILE=0.01`, `RATE_LIMIT_MAX_ASSESSMENTS=20`, `RATE_LIMIT_WINDOW_SECONDS=60`, stage feature lists, feature types, paths. Input validation limits (`CHOICES`, `ALLOWED_CODES`, `PLAUSIBLE_RANGES`) live in `predictor.py`.
+
+**Streamlit (`.streamlit/config.toml`):**
+| Setting | Value | Purpose |
+|---|---|---|
+| `server.address` | `"localhost"` | Local-only listening; skips external-IP lookup (SEC-01, SEC-04) |
+| `server.headless` | `true` | Don't auto-open a browser |
+| `server.enableXsrfProtection` | `true` (explicit) | Cross-site request forgery protection |
+| `server.enableCORS` | `true` (explicit) | Cross-origin protection |
+| `client.showErrorDetails` | `"none"` | No tracebacks shown to users (SEC-03) |
+| `browser.gatherUsageStats` | `false` | No telemetry |
+| `server.enableAgentApi` | not set (default `false`) | Experimental agent API stays off |
+
+To share deliberately on a trusted network: `streamlit run app/streamlit_app.py --server.address 0.0.0.0` (no TLS or login; see `brain/security/`).
+
+Changing model-related values requires re-running `train_all` (and evaluations) and **updating these docs**.
 
 ## 7. Testing
 | File | Tests | Covers | Needs `models/` |
@@ -130,22 +163,38 @@ All tunables live in `config.py`: `RANDOM_SEED=42`, `TEST_SIZE=0.2`, `CV_FOLDS=5
 | `test_uncertainty.py` | 7 | ECE, calibration wrapper, intervals, novelty detection | no |
 | `test_stats.py` | 7 | bootstrap CI, exact CI, prior shift, fairness helpers | no |
 | `test_explain.py` | 5 | encode/decode, SHAP additivity, baseline, text | no |
-| `test_predictor.py` | 7 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest** | yes (skipped with hint if absent) |
-| **Total** | **59** | | |
+| `test_predictor.py` | 7 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest** | yes |
+| `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
+| **Total** | **84** | 74 run without models; 10 skip with a "trained models missing" reason | |
 
-Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`.
+Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`; audit: `pip-audit -r requirements.txt`.
 
-## 8. Tooling and environment
-- **Virtual environment** `.venv/`; `pip install -r requirements.txt && pip install -e .` (editable `src/` package).
-- **Pinned versions** in `requirements.txt`.
-- **Line endings** normalised to LF via `.gitattributes`.
-- **Git workflow:** one commit per phase/change on `main`, pushed to `github.com/harshfiu/CardioStage`.
-- **Ignored:** `.venv/`, caches, `data/processed/*`, `models/*`, `.streamlit/secrets.toml`.
+## 8. Tooling, CI and supply chain
+- **Virtual environment** `.venv/`; `pip install -r requirements.txt -c constraints.txt && pip install -e .`.
+- **Pinning:** `requirements.txt` pins direct dependencies; `constraints.txt` pins **all** installed packages (incl. transitive) to tested versions. Constraints only fix versions, so platform-specific packages aren't forced onto other OSes. No hash pinning (see §11).
+- **CI** (`.github/workflows/ci.yml`, on push/PR to `main`, `permissions: contents: read`):
+  - *quality* job (Ubuntu, Python 3.12): install with constraints → `ruff check` → `pytest -q -rs` (model tests skip) → `pip-audit -r requirements.txt`.
+  - *secrets* job: `gitleaks/gitleaks-action@v2` over the full history (`fetch-depth: 0`).
+- **Dependabot** (`.github/dependabot.yml`): weekly update PRs for pip and GitHub Actions.
+- **Last audit** (2026-11-23): `pip-audit` found **no known vulnerabilities** in `requirements.txt` or the full environment.
+- **Line endings** normalised to LF via `.gitattributes`. **Ignored:** `.venv/`, caches, `data/processed/*`, `models/*`, `.streamlit/secrets.toml`.
+- **Git workflow:** commits on `main`, pushed to `github.com/harshfiu/CardioStage`.
 
 ## 9. Security and privacy
-- No authentication, accounts, or data persistence: inputs live only in the browser session's server-side state and disappear when it ends.
-- No outbound network calls during inference; Streamlit usage statistics disabled (`gatherUsageStats = false`).
-- Model files are loaded with `joblib` (pickle). **Only load bundles you built yourself**: pickles can execute code.
+Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Controls in place:
+| Area | Control |
+|---|---|
+| Network exposure | Listens on `127.0.0.1` only (verified: not reachable via the LAN address); no startup third-party IP lookup |
+| Request forgery / origins | XSRF and CORS protection explicitly enabled (unauthenticated upload PUT → 403) |
+| Framework surfaces | Agent API off (default; 403); static serving off; developer toolbar only for localhost |
+| Input validation | Categories, coded values, finite numbers and plausible ranges enforced in `predictor.to_frame`; Streamlit also clamps number inputs server-side |
+| Error handling | `showErrorDetails = "none"`; assessments wrapped in try/except with friendly messages; details only in the server console |
+| Abuse | Per-session rate limit (20 assessments / 60 s) |
+| Deserialisation | SHA-256 manifest verified before any pickle is loaded (`integrity.load`) |
+| Secrets | None used or stored; `.streamlit/secrets.toml` ignored; gitleaks in CI |
+| Supply chain | Pinned direct + constrained transitive deps; pip-audit in CI; Dependabot |
+| Privacy | No persistence or logging of patient inputs; inputs held only in session memory; telemetry off |
+| Not implemented (by design for local use) | Authentication, TLS, multi-session rate limiting, access logging: required before any shared deployment |
 
 ## 10. Architecture decision records (ADRs)
 | # | Decision | Alternatives | Why |
@@ -161,9 +210,17 @@ Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format sr
 | ADR-9 | Models git-ignored, rebuilt by `train_all` | commit ~170 MB of pickles | Repo size; reproducibility; pickle safety |
 | ADR-10 | Uncertainty range display-only | use as decision guard | Weak error signal; large test cost (see Models §8.1) |
 | ADR-11 | Exact (Clopper–Pearson) CIs for proportions | bootstrap everywhere | Bootstrap collapses at 0%/100% |
+| ADR-12 | Bind to localhost by default | all interfaces; TLS + auth proxy | Local educational use needs no network exposure; explicit flag to share |
+| ADR-13 | SHA-256 manifest before unpickling | trust files; switch to skops | Cheap tamper/corruption detection with joblib; skops reserved for distribution |
+| ADR-14 | Validation duplicated in engine (not only UI) | trust widget constraints | Defence in depth: crafted websocket values can bypass UI options |
+| ADR-15 | Per-session in-app rate limit | proxy limits only | No proxy exists for local use; pure function is testable |
+| ADR-16 | Constraints file instead of hash lockfile | `pip-compile --generate-hashes` | Cross-platform safe pinning of transitive deps without per-platform hash maintenance |
 
 ## 11. Known technical debt
-- Bundles are large (stages 2–3 ~80 MB each, mostly the 20 uncertainty copies of RF ensembles); deployment would need Git LFS / release assets or fewer replicas.
+- Bundles are large (stages 2–3 ~80 MB each, mostly the 20 uncertainty copies of RF ensembles); deployment would need Git LFS / release assets or fewer replicas (and a safer format than pickle, e.g. skops).
+- The integrity manifest lives beside the bundles in `models/`; it detects swapped/corrupted files but not an attacker who can rewrite both.
+- The rate limit is per browser session; many parallel sessions would need a reverse proxy.
+- No hash pinning of dependencies (constraints pin versions only).
 - `calibration.main` re-tunes models per fold (duplicating Phase 4 work) for simplicity; ~6 min.
 - Headless browser screenshots of the app are unreliable; the app is verified functionally with `AppTest`.
 - `predictor.CHOICES` duplicates category lists implied by the data; a mismatch would be caught by tests but not prevented by design.
@@ -171,12 +228,15 @@ Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format sr
 ## 12. Extending CardioStage
 | Change | Where | Then |
 |---|---|---|
-| New feature/stage | `config.STAGES`, `NUMERIC/BINARY/CATEGORICAL_FEATURES`, app forms, `explain.LABELS` | `train_all`, evaluations, tests, docs |
+| New feature/stage | `config.STAGES`, `NUMERIC/BINARY/CATEGORICAL_FEATURES`, app forms, `explain.LABELS`, `predictor.CHOICES/ALLOWED_CODES/PLAUSIBLE_RANGES` | `train_all`, evaluations, tests, docs |
 | New model type | `models.make_classifier` + `PARAM_GRIDS` (+ `MODEL_NAMES`) | `train_all` |
 | Different recall target | `config.SCREENING_RECALL` / `RULE_OUT_RECALL` | `train_all`, evaluations, app text, docs |
 | New page | `app/views/*.py` + `st.Page` in `streamlit_app.py` | AppTest smoke test |
+| New pickle loaded by code | add to `integrity.stage_bundle_paths()`; load via `integrity.load` | `python -m cardiostage.integrity` or `train_all` |
+| Dependency upgrade | `requirements.txt`, then `pip freeze --exclude-editable > constraints.txt` (keep header) | `pytest`, `pip-audit` |
 
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Security hardening: localhost binding, hidden error details, input validation, rate limiting, integrity manifest, constraints file, CI (ruff/pytest/pip-audit/gitleaks), Dependabot; 84 tests; ADR-12–16; corrected the network-call statement in §1 |
 | 2026-11-23 | Document created at v1.0 |

@@ -14,7 +14,6 @@ Rules of a sealed test:
 Run:  python -m cardiostage.final_evaluation
 """
 
-import joblib
 import matplotlib
 
 matplotlib.use("Agg")
@@ -23,7 +22,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import brier_score_loss, roc_auc_score
 
-from cardiostage import config
+from cardiostage import config, integrity
 from cardiostage.calibration import expected_calibration_error
 from cardiostage.data import get_features_and_target, load_clean, split_cleveland
 from cardiostage.external_validation import internal_reference
@@ -36,7 +35,7 @@ TEXT = "#52514e"
 
 def main():
     train, test = split_cleveland(load_clean())
-    bundles = {s: joblib.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
+    bundles = {s: integrity.load(config.MODELS_DIR / f"stage{s}.joblib") for s in config.STAGES}
     y = test[config.TARGET_COLUMN].to_numpy()
     print(
         f"Sealed test set: {len(y)} patients, {int(y.sum())} with heart disease ({y.mean():.0%})\n"

@@ -135,6 +135,12 @@ Bordered container, top to bottom:
 | Unusual patient | `st.warning` | 🧭 |
 | Known-limitation example note | `st.info` (sidebar) | 🧪 |
 | Screening complete | `st.success` | 🏁 |
+| Invalid input ("Some inputs aren't valid, so no assessment was made: …") | `st.error` | 🚫 |
+| Unexpected failure ("Something went wrong while assessing this patient…"): never a traceback | `st.error` | 🚫 |
+| Rate limit ("Too many assessments in a short time. Please wait N seconds…") | `st.warning` | ⏳ |
+| Model integrity failure ("**Model integrity check failed.** … Rebuild the models with `python -m cardiostage.train_all`.") | `st.error` (stops the page) | – |
+
+**Error-message rules:** say what happened and what to do next, in plain English; never show stack traces, file paths or internal values (`client.showErrorDetails = "none"`); no result is shown when an assessment fails.
 
 ### 5.5 Contribution chart (`ui.contribution_chart`, Plotly)
 Horizontal bars, labels `Measurement = value`, orange positive / blue negative, values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background.
@@ -163,4 +169,5 @@ Horizontal bars, labels `Measurement = value`, orange positive / blue negative, 
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Added error, rate-limit and integrity callouts and error-message rules (security hardening) |
 | 2026-11-23 | Document created at v1.0 |

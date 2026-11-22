@@ -1,0 +1,14 @@
+# Dependabot opens pull requests when dependencies have updates or security
+# fixes (SEC-07). CI then runs the tests and pip-audit on each proposal.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
