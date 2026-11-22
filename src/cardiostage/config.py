@@ -109,3 +109,22 @@ BINARY_FEATURES = ["sex", "fbs", "exang"]
 CATEGORICAL_FEATURES = ["cp", "restecg", "slope", "thal"]
 
 CLEAN_DATA_PATH = PROCESSED_DIR / "heart_clean.csv"
+
+# ---------------------------------------------------------------------------
+# Training setup  (decided after Phase 2, see docs/learning/02-data.md)
+# ---------------------------------------------------------------------------
+# All stage models are trained on Cleveland only: it is the one hospital with
+# near-complete data for every stage, so the stages can be compared fairly on
+# the SAME patients. The other hospitals become unseen external test sets.
+TRAIN_HOSPITAL = "Cleveland"
+EXTERNAL_HOSPITALS = ["Hungary", "Switzerland", "VA Long Beach"]
+
+# 20% of Cleveland is sealed away as the final test set ("the exam").
+TEST_SIZE = 0.2
+
+# Cross-validation: split training data into 5 parts ("folds"), and repeat
+# the whole process with different shuffles for more stable estimates.
+CV_FOLDS = 5
+CV_REPEATS = 3
+
+REPORTS_DIR = PROJECT_ROOT / "reports"

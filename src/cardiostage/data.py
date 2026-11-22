@@ -84,6 +84,34 @@ def get_features_and_target(df: pd.DataFrame, stage: int):
     return X, y
 
 
+def load_clean() -> pd.DataFrame:
+    """Load raw data and clean it in one call (fast enough to do every time)."""
+    return clean_data(load_raw())
+
+
+def split_cleveland(df: pd.DataFrame):
+    """
+    Return (train, test) DataFrames from the Cleveland patients.
+
+    - stratify=...: keep the same disease rate (~46%) in both parts. With
+      small data, a random split could otherwise put, say, 55% sick patients
+      in test and 43% in train, making scores noisy and misleading.
+    - random_state: fixed seed, so EVERY phase gets the exact same split.
+      The test set must stay the same patients for the whole project, or
+      we'd gradually "peek" at it by trying things on different splits.
+    """
+    from sklearn.model_selection import train_test_split
+
+    cleveland = df[df[config.HOSPITAL_COLUMN] == config.TRAIN_HOSPITAL]
+    train, test = train_test_split(
+        cleveland,
+        test_size=config.TEST_SIZE,
+        stratify=cleveland[config.TARGET_COLUMN],
+        random_state=config.RANDOM_SEED,
+    )
+    return train, test
+
+
 def save_clean_data(df: pd.DataFrame) -> None:
     config.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     df.to_csv(config.CLEAN_DATA_PATH, index=False)

@@ -19,7 +19,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 ## Roadmap
 - [x] Phase 1: Project setup
 - [x] Phase 2: Data exploration & cleaning
-- [ ] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
+- [x] Phase 3: Baseline models (Logistic Regression, Random Forest, XGBoost)
 - [ ] Phase 4: Staged screening
 - [ ] Phase 5: Calibration & uncertainty
 - [ ] Phase 6: Cross-hospital & fairness evaluation
@@ -55,6 +55,17 @@ UCI Heart Disease dataset (920 patients, 4 hospitals). See [`data/README.md`](da
 **Key finding:** the four hospitals recorded different tests. Invasive Stage 3 tests exist almost only for Cleveland, and Switzerland never recorded cholesterol. This shapes how the staged models are trained and evaluated.
 
 ![Missing data by hospital](reports/figures/02_missing_by_hospital.png)
+
+## Model comparison
+Nested cross-validation (5 folds × 3 repeats, tuning inside each fold) on 243 Cleveland training patients, using all features:
+
+| Model | ROC-AUC | Recall | Precision |
+|---|---|---|---|
+| Logistic Regression | 0.899 ± 0.028 | 0.778 | 0.856 |
+| Random Forest | 0.894 ± 0.021 | 0.775 | 0.820 |
+| XGBoost | 0.892 ± 0.025 | 0.778 | 0.822 |
+
+The models are statistically tied. On this small dataset, the simple, interpretable model is at least as good as the tree ensembles. A from-scratch numpy logistic regression ([`from_scratch.py`](src/cardiostage/from_scratch.py)) reproduces scikit-learn's weights to 6 decimal places.
 
 ## Disclaimer
 CardioStage is an educational machine-learning project. **It is not a medical device and must not be used for diagnosis or treatment decisions.**
