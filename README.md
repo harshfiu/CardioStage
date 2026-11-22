@@ -30,7 +30,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 ## Setup
 ```bash
 python -m venv .venv
-.venv\Scriptsctivate          # Windows  (Mac/Linux: source .venv/bin/activate)
+.venvScriptsctivate          # Windows  (Mac/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
 pip install -e .
 python -m cardiostage.train_all # build the models (~10 minutes, once)
