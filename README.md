@@ -23,7 +23,7 @@ CardioStage estimates heart-disease risk in stages. It starts from a basic check
 - [x] Phase 4: Staged screening
 - [x] Phase 5: Calibration & uncertainty
 - [x] Phase 6: Cross-hospital & fairness evaluation
-- [ ] Phase 7: Explanations (SHAP)
+- [x] Phase 7: Explanations (SHAP)
 - [ ] Phase 8: Streamlit app
 - [ ] Phase 9: Polish
 
@@ -74,6 +74,15 @@ Bootstrap 95% CI for the difference: recall −0.009 [−0.029, 0.000], invasive
 - **Unusual-patient warning:** flags out-of-range values or unusual combinations. It fires on ~1% of training patients but up to 13% at hospitals with very different populations.
 
 ![Calibration](reports/figures/10_calibration_curves.png)
+
+## Explanations
+Every prediction is broken down with SHAP into plain-English contributions that add up exactly to the risk shown, for example:
+
+> Estimated risk 91% (typical patient: 48%). Raising it: thallium scan = reversible defect (+12 pts); no chest pain (+8 pts); ST depression 3.4 mm (+6 pts). Lowering it: blocked vessels = 0 (−3 pts).
+
+All 12 medical direction checks pass. As test results arrive, the model relies less on demographics: the influence of sex falls from 13.3 → 7.0 → 3.7 points across the stages.
+
+![What drives each stage](reports/figures/15_global_importance.png)
 
 ## External validation (unseen hospitals)
 Stage models trained only on Cleveland, applied unchanged to three other hospitals:

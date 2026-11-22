@@ -1,0 +1,13 @@
+check,statistic,expected,passes
+higher max heart rate lowers risk,-0.955,-,True
+more ST depression raises risk,0.899,+,True
+more blocked vessels raise risk,0.916,+,True
+older age raises risk,0.734,+,True
+higher blood pressure raises risk,0.945,+,True
+male sex raises risk,0.026,+,True
+exercise chest pain raises risk,0.04,+,True
+no chest pain raises risk (referral paradox),0.096,+,True
+atypical angina lowers risk,-0.068,-,True
+reversible defect raises risk,0.141,+,True
+normal thallium scan lowers risk,-0.109,-,True
+upsloping ST segment lowers risk,-0.053,-,True
