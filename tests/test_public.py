@@ -35,7 +35,12 @@ def test_consent_unlocks_the_app():
     at = accept_consent(AppTest.from_file(APP, default_timeout=180).run())
     assert not at.exception
     assert at.session_state.consented is True
-    assert "Assess risk" in [b.label for b in at.button]
+    labels = [b.label for b in at.button]
+    assert "Continue" not in labels  # the consent screen is gone
+    # The screener now runs. Without trained models (e.g. in CI) it stops with a
+    # friendly "models not found" message; with models it shows the Stage 1 form.
+    models_message = any("models" in e.value.lower() for e in at.error)
+    assert "Assess risk" in labels or models_message
 
 
 def test_public_and_local_wording(monkeypatch):
