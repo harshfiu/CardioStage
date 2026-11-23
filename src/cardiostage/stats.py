@@ -6,6 +6,8 @@ healthy Swiss patients...) comes with a confidence interval, because a single
 number from a small group can be very misleading on its own.
 """
 
+import re
+
 import numpy as np
 
 from cardiostage import config
@@ -81,3 +83,9 @@ def prior_shift(proba, train_rate: float, new_rate: float):
     factor = (new_rate / (1 - new_rate)) / (train_rate / (1 - train_rate))
     new_odds = odds * factor
     return new_odds / (1 + new_odds)
+
+
+def parse_ci(text: str) -> dict:
+    """Read back a formatted interval: '0.965 [0.928, 0.992]' -> {'value', 'low', 'high'}."""
+    value, low, high = (float(x) for x in re.findall(r"-?\d+\.\d+", str(text))[:3])
+    return {"value": value, "low": low, "high": high}

@@ -1,0 +1,138 @@
+"""
+Export the extra data the app's Results page needs to draw its charts
+natively (dark theme, interactive) instead of showing the static PNGs.
+
+Most Results charts are drawn straight from the committed tables in
+reports/. Three need data those tables don't keep (calibration curve
+points, external calibration curves, the case-study explanation), plus the
+patient flow. This script recomputes exactly those with the SAME functions
+the analysis phases used, and writes them to reports/chart_data.json. It
+doesn't retrain anything or touch any other report.
+
+Needs the trained models (models/, local). Re-run after any retraining:
+    python -m cardiostage.chart_data
+"""
+
+import json
+
+import numpy as np
+
+from cardiostage import config, integrity
+from cardiostage.calibration import _reliability, expected_calibration_error
+from cardiostage.data import get_features_and_target, load_clean, split_cleveland
+from cardiostage.site_data import patient_flow
+from cardiostage.stats import prior_shift
+
+CHART_DATA_PATH = config.REPORTS_DIR / "chart_data.json"
+VARIANTS = ("uncalibrated", "sigmoid")
+
+
+def _points(x, y) -> list:
+    return [{"predicted": round(float(a), 4), "actual": round(float(b), 4)} for a, b in zip(x, y)]
+
+
+def calibration_curves() -> dict:
+    """Reliability points per stage and variant (as figure 10; 729 pooled OOF predictions)."""
+    saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
+    y_all = np.tile(saved["y"], config.CV_REPEATS)
+    out = {}
+    for stage in config.STAGES:
+        out[str(stage)] = {
+            "chosen": saved["method"][stage],
+            "variants": {
+                v: {
+                    "ece": round(
+                        float(expected_calibration_error(y_all, saved["oof"][stage][v].ravel())), 4
+                    ),
+                    "points": _points(*_reliability(y_all, saved["oof"][stage][v].ravel())),
+                }
+                for v in VARIANTS
+            },
+        }
+    return out
+
+
+def external_calibration() -> dict:
+    """Stage-1 reliability at each unseen hospital, before/after prior shift (as figure 13)."""
+    df = load_clean()
+    train, _sealed = split_cleveland(df)
+    train_rate = train[config.TARGET_COLUMN].mean()
+    bundle = integrity.load(config.MODELS_DIR / "stage1.joblib")
+    out = {}
+    for hospital in config.EXTERNAL_HOSPITALS:
+        X, y = get_features_and_target(df[df[config.HOSPITAL_COLUMN] == hospital], 1)
+        y = y.to_numpy()
+        p = bundle["model"].predict_proba(X)[:, 1]
+        p_shift = prior_shift(p, train_rate, y.mean())
+        out[hospital] = {
+            "n": int(len(y)),
+            "disease_rate": round(float(y.mean()), 4),
+            "as_trained": {
+                "ece": round(float(expected_calibration_error(y, p)), 4),
+                "points": _points(*_reliability(y, p, n_bins=6)),
+            },
+            "after_prior_shift": {
+                "ece": round(float(expected_calibration_error(y, p_shift)), 4),
+                "points": _points(*_reliability(y, p_shift, n_bins=6)),
+            },
+        }
+    return out
+
+
+def case_study() -> list:
+    """The sick woman cleared at stage 1, explained at stages 1 and 3 (as figure 17)."""
+    from cardiostage.explain import StageExplainer
+    from cardiostage.explanations import find_case_study
+
+    train, _sealed = split_cleveland(load_clean())
+    case = find_case_study(train)
+    # Her honest out-of-fold risk (models that never saw her): the number the
+    # staged policy actually used to clear her. The bars below explain the FINAL
+    # model, trained on all 243 patients including her, so its risk differs.
+    saved = integrity.load(config.MODELS_DIR / "phase5_oof.joblib")
+    position = train.index.get_loc(case.index[0])
+    out = []
+    for stage in (1, 3):
+        b = integrity.load(config.MODELS_DIR / f"stage{stage}.joblib")
+        explainer = StageExplainer(b["model"], b["features"], train)
+        e = explainer.explain(case)
+        table = explainer.describe(case.iloc[0], e[0])
+        out.append(
+            {
+                "stage": stage,
+                "name": config.STAGE_NAMES[stage],
+                "baseline": round(float(e.base_values[0]), 4),
+                "risk": round(float(b["model"].predict_proba(case[b["features"]])[0, 1]), 4),
+                "oof_risk": round(
+                    float(saved["oof"][stage][saved["method"][stage]][:, position].mean()), 4
+                ),
+                "contributions": [
+                    {
+                        "label": r.label,
+                        "value": r.value,
+                        "points": round(float(r.contribution) * 100, 2),
+                    }
+                    for r in table.head(8).itertuples()
+                ],
+            }
+        )
+    return out
+
+
+def build() -> dict:
+    return {
+        "source": "Generated by `python -m cardiostage.chart_data` from models/ (see docstring).",
+        "flow": patient_flow(),
+        "calibration": calibration_curves(),
+        "external_calibration": external_calibration(),
+        "case_study": case_study(),
+    }
+
+
+def main():
+    CHART_DATA_PATH.write_text(json.dumps(build(), indent=2), encoding="utf-8")
+    print(f"wrote {CHART_DATA_PATH.relative_to(config.PROJECT_ROOT)}")
+
+
+if __name__ == "__main__":
+    main()

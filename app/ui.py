@@ -9,9 +9,7 @@ from cardiostage import config
 from cardiostage.explain import LABELS
 from cardiostage.integrity import IntegrityError
 from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
-
-UP, DOWN = "#FF8A65", "#5B8FE8"  # coral raises risk, blue lowers it (as on the site)
-TEXT_PRIMARY, TEXT_SECONDARY = "#F3EEE6", "#A9A196"  # warm off-white, warm grey (dark theme)
+from charts import DOWN, TEXT_PRIMARY, TEXT_SECONDARY, UP, signed  # shared colour tokens
 
 DISCLAIMER = (
     "**Educational project, not a medical device.** CardioStage was trained on 243 patients "
@@ -54,7 +52,7 @@ def contribution_chart(explanation, top: int = 8) -> go.Figure:
             y=labels,
             orientation="h",
             marker_color=[UP if v > 0 else DOWN for v in values],
-            text=[f"{v:+.1f}" for v in values],
+            text=[signed(v) for v in values],
             textposition="outside",
             textfont=dict(size=14, color=TEXT_PRIMARY),
             hovertemplate="%{y}<br>%{x:+.1f} percentage points<extra></extra>",

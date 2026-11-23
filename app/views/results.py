@@ -1,32 +1,25 @@
 """Results page: how well CardioStage works, with the evidence behind each claim."""
 
+import json
+
 import pandas as pd
 import streamlit as st
 
+import charts
 from cardiostage import config
 from ui import DISCLAIMER
 
-FIG = config.FIGURES_DIR
 REP = config.REPORTS_DIR
-
-# Chart PNGs are drawn at 150 dpi, so shown at full container width their text
-# becomes larger than the page's own headings. Single-panel charts get a fixed
-# readable width; wide multi-panel charts may use more space.
-SINGLE_PANEL_WIDTH = 720
-MULTI_PANEL_WIDTH = 1100
-MULTI_PANEL = {
-    "10_calibration_curves.png",
-    "12_external_auc.png",
-    "13_external_calibration.png",
-    "14_fairness.png",
-    "15_global_importance.png",
-    "17_case_study.png",
-}
+# Extra chart data (calibration curves, case study, patient flow), exported by
+# `python -m cardiostage.chart_data`. Committed, so this page needs no models.
+CHART_DATA = json.loads((REP / "chart_data.json").read_text(encoding="utf-8"))
 
 
-def figure(name: str, caption: str | None = None):
-    width = MULTI_PANEL_WIDTH if name in MULTI_PANEL else SINGLE_PANEL_WIDTH
-    st.image(str(FIG / name), caption=caption, width=width)
+def chart(fig, caption: str | None = None):
+    """Show a Plotly chart at full width, without the toolbar (hover still works)."""
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+    if caption:
+        st.caption(caption)
 
 
 st.title("📊 How well does CardioStage work?")
@@ -87,7 +80,7 @@ with tab0:
         "Need invasive",
     ]
     st.dataframe(show_final, width="stretch")
-    figure("18_final_test.png")
+    chart(charts.final_test(pd.read_csv(REP / "final_test_stages.csv")))
     st.markdown(
         "No sick patient was missed (28 of 28), and the staged policy needed invasive "
         "tests for only half of the patients. Catching 28 of 28 does **not** prove 100% "
@@ -98,7 +91,7 @@ with tab0:
 
 with tab1:
     st.markdown("#### The staged policy matches all-tests accuracy with far fewer invasive tests")
-    figure("09_staged_policy_flow.png")
+    chart(charts.policy_flow(CHART_DATA["flow"]))
     st.markdown(
         "Every patient starts with a basic check-up. Low-risk patients are cleared and "
         "high-risk patients referred; only uncertain patients go on to the treadmill and "
@@ -126,14 +119,17 @@ with tab1:
         ),
         width="stretch",
     )
-    figure(
-        "07_auc_by_stage.png",
-        caption="Ranking quality (ROC-AUC) by stage: invasive imaging adds the most.",
+    chart(
+        charts.auc_by_stage(pd.read_csv(REP / "phase4_stage_auc.csv", index_col=0)),
+        caption="Ranking quality (ROC-AUC) by stage and model: invasive imaging adds the most.",
     )
 
 with tab2:
     st.markdown("#### Predicted risk matches observed disease rates")
-    figure("10_calibration_curves.png")
+    chart(
+        charts.calibration(CHART_DATA["calibration"], config.STAGE_NAMES),
+        caption=charts.calibration_caption(CHART_DATA["calibration"]),
+    )
     st.markdown(
         "Points near the diagonal mean honest probabilities: of patients told "
         '"30%", about 30% had heart disease. Average error: 3–5 percentage points.'
@@ -141,7 +137,7 @@ with tab2:
 
 with tab3:
     st.markdown("#### Tested unchanged at three hospitals it never saw")
-    figure("12_external_auc.png")
+    chart(charts.external_auc(pd.read_csv(REP / "phase6_external.csv")))
     st.markdown(
         "- **Hungary:** performance transfers fully.\n"
         "- **VA Long Beach:** clear drop (different population, ~28% of values missing).\n"
@@ -149,11 +145,14 @@ with tab3:
         "Probabilities under-predict at high-disease hospitals; adjusting for the local "
         "disease rate fixes this (below). Decision cutoffs should be re-checked locally."
     )
-    figure("13_external_calibration.png")
+    chart(
+        charts.external_calibration(CHART_DATA["external_calibration"]),
+        caption=charts.external_calibration_caption(CHART_DATA["external_calibration"]),
+    )
 
 with tab4:
     st.markdown("#### Performance by sex and age")
-    figure("14_fairness.png")
+    chart(charts.fairness(pd.read_csv(REP / "phase6_fairness.csv", index_col=0)))
     st.markdown(
         "Ranking is equally good for women and men. Recall for women looks lower, but "
         "rests on 2 missed women out of 18: one with atypical chest pain cleared early "
@@ -163,12 +162,30 @@ with tab4:
 
 with tab5:
     st.markdown("#### What drives each stage's predictions")
-    figure("15_global_importance.png")
+    chart(
+        charts.importance(
+            pd.read_csv(REP / "phase7_importance.csv", index_col=0), config.STAGE_NAMES
+        )
+    )
     st.markdown(
         "As test results arrive, the model relies less on demographics: the "
         "influence of sex falls from 13 → 7 → 4 percentage points."
     )
-    figure("17_case_study.png")
+    st.markdown("#### Case study: a sick woman with atypical chest pain, cleared at the check-up")
+    chart(
+        charts.case_study(CHART_DATA["case_study"]),
+        caption="Coral raises the estimate, blue lowers it. Describes what drove the model, "
+        "not what causes disease.",
+    )
+    first = CHART_DATA["case_study"][0]
+    st.markdown(
+        f"In the honest evaluation (models that never saw her), her check-up risk was "
+        f"**{first['oof_risk']:.1%}**, below the clearing cut-off, so the staged policy "
+        f"reassured her even though she had heart disease. The bars explain the final model, "
+        f"which was trained on all 243 patients including her, so it puts her slightly higher "
+        f"({first['risk']:.1%}). Either way, her atypical chest pain and being female pulled "
+        f"the estimate down: the same pattern behind real-world under-diagnosis of women."
+    )
 
 st.divider()
 st.caption(DISCLAIMER)

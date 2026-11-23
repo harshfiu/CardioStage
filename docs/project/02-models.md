@@ -231,6 +231,7 @@ External by sex: women AUC 0.864 / 0.848, men 0.807 / 0.851 (stages 1 / 2). Miss
 | `models/phase3_*.joblib`, `phase7_shap.joblib` | <1 MB | Phase 3 baselines, SHAP values (written only; never loaded by code) |
 | `models/manifest.json` | <1 KB | SHA-256 of `stage{1,2,3}.joblib`, `phase4_oof.joblib`, `phase5_oof.joblib`; written by `calibration.main` or `python -m cardiostage.integrity` |
 | `reports/*.csv`, `reports/phase*_zones.json` | small | every result table (committed) |
+| `reports/chart_data.json` | ~12 KB | data for the app's Results charts (calibration curves, external calibration, case study, patient flow), exported by `python -m cardiostage.chart_data` (committed) |
 | `site/assets/data/site-data.{json,js}` | ~5 KB | numbers shown on the landing site, exported by `python -m cardiostage.site_data` (committed) |
 
 `models/` is git-ignored; rebuild with `python -m cardiostage.train_all` (~10 minutes), which also rewrites the manifest.
@@ -266,6 +267,7 @@ python -m cardiostage.fairness             # figure 14
 python -m cardiostage.explanations         # figures 15-17
 python -m cardiostage.final_evaluation     # figure 18 (sealed test)
 python -m cardiostage.site_data            # landing-site numbers (site/assets/data/)
+python -m cardiostage.chart_data           # Results-page chart data (reports/chart_data.json)
 ```
 
 **Landing-site export (`site_data.py`):** reads `phase5_strategies*.csv`, `final_test_strategies.csv`, `phase4_stage_auc.csv`, `phase5_zones.json`, `phase6_external.csv`, re-runs `staging.simulate_policy` on the integrity-checked `phase5_oof.joblib` for the patient flow (243 → 26 cleared / 33 referred at stage 1; 184 → 12 / 26 at stage 2; 146 → 28 / 118 at stage 3), and assesses one fixed example patient at stage 1 for the explanation chart. It changes no model or metric. `tests/test_site.py` checks the export against the reports, so re-run it after any retraining.
@@ -273,6 +275,7 @@ python -m cardiostage.site_data            # landing-site numbers (site/assets/d
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | §12–13: Results-chart data export (`chart_data.py`) using the analysis phases' own functions (ECE values verified equal to the reports); case study now records her out-of-fold risk (7.1%, cleared) next to the final model's 9.2%; models and metrics unchanged |
 | 2026-11-23 | §12–13: landing-site data export (`site_data.py`); models and metrics unchanged |
 | 2026-11-23 | §9: explanation speed measured, reproducibility (per-call re-seeding) documented |
 | 2026-11-23 | Added integrity manifest (§12) and the inference input contract (§12.1) after security hardening; models and metrics unchanged |

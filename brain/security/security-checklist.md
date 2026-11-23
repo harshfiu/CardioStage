@@ -203,7 +203,8 @@
 - ✅ Generated artefacts excluded from Git
 - ➖ No containers or cloud deployment of the app
 - ✅ Landing site: static GitHub Pages deployment, least-privilege workflow (`pages: write`, `id-token: write`, `contents: read`)
-- 🔵 Owner: Settings → Pages → Source: GitHub Actions
+- ✅ Owner: Settings → Pages → Source: GitHub Actions (done; site live)
+- ✅ Dev tool `tools/screenshots.py`: while it runs, headless Chrome opens a DevTools port bound to loopback only (verified `127.0.0.1:9333` / `[::1]:9333`), with a throwaway profile; closed when the tool exits. Not part of the app
 
 ### Data privacy
 - ✅ Inputs held only in session memory; never persisted or logged by the app

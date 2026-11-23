@@ -112,7 +112,7 @@ Both fonts are **self-hosted** woff2 (SIL Open Font Licence, from @fontsource 5.
 | Reference lines | Dashed `#b5b4ae` (chance, perfect calibration, zero); dotted `#52514e` for targets (e.g. 97% recall) |
 | Log scales | Only when the range spans orders of magnitude; never hide the starting point (loss curve starts at step 1 = initial guess) |
 | Output | PNG, 150 dpi, `bbox_inches="tight"`, saved to `reports/figures/NN_name.png` |
-| In-app display | Results page shows single-panel charts at **720 px** and multi-panel charts at **1100 px** (`views/results.py` `figure()`), so chart text never outgrows the page's headings |
+| In-app display | The app's Results page no longer shows these PNGs: it redraws the same evidence in Plotly (§5.6). The PNGs remain for the README and docs |
 | Verification | Every chart is rendered and visually inspected before committing (clipping, overlaps, collisions) |
 
 ### 3.1 Figure inventory
@@ -210,6 +210,22 @@ Bordered container, top to bottom:
 ### 5.5 Contribution chart (`ui.contribution_chart`, Plotly)
 Horizontal bars, labels `Measurement = value`, coral `#FF8A65` positive / blue `#5B8FE8` negative (same as the site), values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background, grid `rgba(243,238,230,0.08)`. **Text:** measurement labels 15 px in warm ink `#F3EEE6` (they're content, not axis decoration); value labels 14 px warm ink; axis ticks/title 13–14 px `#A9A196`; 44 px per row, bar gap 0.35.
 
+### 5.6 Results charts (`app/charts.py`, Plotly)
+Nine charts, one per figure the page used to show (sealed test, patient flow, AUC by stage, calibration, external AUC, external calibration, fairness, global importance, case study), drawn from committed data only (`reports/*.csv`, `reports/chart_data.json`).
+
+| Rule | Specification |
+|---|---|
+| Background | Transparent (the page's `#080B12` shows through); grid `rgba(243,238,230,0.08)`; axes `rgba(243,238,230,0.22)` |
+| Text | Category labels (hospitals, groups, measurements) in primary ink `#F3EEE6`; ticks and axis titles `#A9A196`; value labels primary ink, never series colour |
+| Categorical series | Fixed order, validated for the dark surface (dataviz validator: lightness band, chroma, CVD ΔE ≥ 8, contrast ≥ 3:1): `#5B8FE8` blue · `#D95926` orange · `#199E70` aqua · `#C98500` yellow; neutral reference `#A9A196` (Cleveland, "All patients") |
+| Meaning colours | Coral `#FF8A65` raises risk / referred; blue `#5B8FE8` lowers risk; mint `#8EE6C2` reassured; onward `rgba(91,143,232,0.55)` (same as the site) |
+| Marks | Lines 2 px; markers 8–12 px with a 2 px surface ring; 2 px surface gaps between stacked segments; error bars 1.5–2 px |
+| Labels | Selective direct labels; on CI charts the value sits **just past the upper whisker** (never on it); contribution labels use `signed()` (no `-0.0`) |
+| Legends | Required for ≥ 2 series; on multi-panel charts the legend has its own row **above** the panel titles |
+| Numbers that don't fit | Per-panel statistics (ECE values, which calibration the app uses) go in a **caption under the chart**, not inside panels, so they never collide at narrow widths and also serve as a text alternative |
+| Interaction | Hover tooltips with exact values and CIs; no mode bar |
+| Tables | The tabs keep their data tables (the table view for each chart) |
+
 ## 6. Content and voice
 | Rule | Do | Don't |
 |---|---|---|
@@ -235,6 +251,7 @@ Horizontal bars, labels `Measurement = value`, coral `#FF8A65` positive / blue `
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Results page charts redrawn in Plotly (§5.6): dark categorical palette validated, labels beyond whiskers, legend row above panel titles, statistics in captions |
 | 2026-11-23 | **Premium redesign:** new dark warm palette (§2.4–2.5), Fraunces + Inter self-hosted typography (§2A), illustrations and motion rules (§2B), landing site (§3A), app restyle (dark theme, coral/blue contribution chart, secondary submit buttons for contrast), measured contrast ratios |
 | 2026-11-23 | UI polish: sliders for measurements, short example names + description, reset clears example, progressive result card, larger/darker chart text, Results figure widths |
 | 2026-11-23 | Added error, rate-limit and integrity callouts and error-message rules (security hardening) |

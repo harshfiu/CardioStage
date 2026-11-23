@@ -82,7 +82,7 @@ It is a **portfolio and learning project**, not a medical device.
 | FR12 | Screener page with stage forms, a result card per stage, and the next stage's form shown as "recommended" when uncertain, otherwise optional | ✅ |
 | FR13 | Re-submitting a stage clears results of later stages | ✅ |
 | FR14 | Four example patients: low, uncertain-then-cleared, high, and a labelled **known limitation** | ✅ |
-| FR15 | Results page presenting evidence (sealed test, staged policy, calibration, external, fairness, explanations) | ✅ |
+| FR15 | Results page presenting evidence (sealed test, staged policy, calibration, external, fairness, explanations) as interactive charts matching the app theme | ✅ (Plotly since 2026-11-23) |
 | FR16 | About page with method, data and limitations | ✅ |
 | FR17 | Disclaimer on every page | ✅ |
 | FR18 | Help tooltips explaining every medical input in plain English | ✅ |
@@ -115,13 +115,13 @@ It is a **portfolio and learning project**, not a medical device.
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
 | NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off; site and app fonts/libraries self-hosted (no CDN or Google Fonts) |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`, `requirements.txt` pinned |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 98 tests (run in CI) |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 106 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes; WCAG AA contrast; reduced-motion support; usable at phone width | ✅ see [Design system](03-design-system.md) §7 (measured contrast) |
 | NFR11 | Security | Landing site has a strict Content-Security-Policy, no inline scripts, no third-party requests, no forms or cookies | ✅ tested in `test_site.py` |
 | NFR8 | Portability | Python ≥ 3.10; Windows / macOS / Linux paths via `pathlib` | ✅ (built on Python 3.12, Windows) |
-| NFR9 | Documentation | Code commented for beginners; a learning guide per phase; these four project docs kept current | ✅ |
+| NFR9 | Documentation | Code commented for beginners; a learning guide per phase (11, incl. security and the website); these four project docs kept current; README with screenshots | ✅ |
 
 ## 9. Safety and ethics requirements
 | ID | Requirement |
@@ -178,6 +178,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | Look "dark medical-tech, warmed up": near-black, warm off-white, peach actions, Fraunces + Inter, hand-drawn line illustrations; calm, reassuring voice | Owner wanted a premium look with a human touch |
 | 2026-11-23 | Hero: "Fewer tests for those who don't need them. More care for those who do."; personal note signed Harsh Gupta | Owner's choice |
 | 2026-11-23 | Publish site on GitHub Pages; vendor all libraries and fonts (incl. self-hosted app fonts via static serving) | Free hosting; privacy; works offline |
+| 2026-11-23 | Learning guides for security and the website, `v1.0` release, README screenshots, dark Results charts; cloud deployment, new data and remaining hardening deferred | Owner's choice (items 1–4 now, 5–7 later) |
 
 ## 13. Risks and mitigations
 | Risk | Mitigation |
@@ -211,6 +212,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | FR15 (interactive Results charts), NFR5 106 tests, NFR9 (11 guides, screenshots), decision logged |
 | 2026-11-23 | Premium redesign: FR30–36 (landing site, app restyle), NFR3/5/7 updated, NFR11 added, design decisions logged |
 | 2026-11-23 | UI polish: NFR1 restated (decision first, details progressively; measured latencies corrected), NFR5 87 tests |
 | 2026-11-23 | Security hardening: NFR3/5/6 updated, NFR10 and safety/security requirements S7–S12 added, decision logged |

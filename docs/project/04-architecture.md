@@ -54,6 +54,7 @@ CardioStage/
 ├── .streamlit/config.toml      dark theme + self-hosted fonts + security settings (localhost bind, hidden error details, XSRF/CORS on, static serving for fonts)
 ├── app/
 │   ├── streamlit_app.py        entry point: set_page_config + st.navigation
+│   ├── charts.py               Plotly chart builders for the Results page (dark palette, colour tokens shared with ui.py)
 │   ├── ui.py                   shared UI: get_predictor (cached; handles missing/tampered models), render_assessment, contribution_chart, DISCLAIMER
 │   ├── views/                  screener.py (rate limit + error handling) · results.py · about.py
 │   └── static/fonts/           Fraunces + Inter woff2 (OFL), served at /app/static/ (fonts only)
@@ -63,13 +64,15 @@ CardioStage/
 │   ├── processed/              generated cleaned CSV (git-ignored)
 │   └── README.md               source, licence, hospital counts
 ├── docs/
-│   ├── learning/               9 beginner guides + index
+│   ├── learning/               11 beginner guides + index
+│   ├── images/                 README screenshots (made by tools/screenshots.py)
 │   └── project/                these 4 living documents + index
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
 ├── site/                       landing site: index.html · assets/{css,js,img,data} · vendor/ (pinned, sha512-verified libs) · fonts/ · licenses/ (+ NOTICES.html)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      98 pytest tests (see §7)
+├── tests/                      106 pytest tests (see §7)
+├── tools/screenshots.py        dev tool: regenerates README screenshots via headless Chrome (DevTools protocol)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
 ├── constraints.txt             exact versions of all 76 installed packages (transitive pinning)
 ├── pyproject.toml              package metadata, pytest + ruff config
@@ -100,6 +103,8 @@ CardioStage/
 | `final_evaluation.py` | Phase 9 sealed test | `main` | stats, staging, integrity |
 | `eda.py`, `train_baselines.py`, `from_scratch.py` | Phases 2–3 analyses | `main` | data, models |
 | `train_all.py` | Rebuild deployable models: staging → calibration (writes manifest) | `main` | staging, calibration |
+| `site_data.py` | Exports the landing site's numbers (`site/assets/data/site-data.{json,js}`); shared `patient_flow()` | `build`, `patient_flow`, `worked_example`; CLI | integrity, staging, predictor, stats |
+| `chart_data.py` | Exports the extra data the Results page charts need (`reports/chart_data.json`): calibration curves, external calibration, case study (incl. out-of-fold risk), patient flow | `build`; CLI | calibration, explanations, site_data, stats |
 
 **Dependency rules:** analysis scripts depend on core modules, never the reverse. `predictor.py` depends only on core modules and saved bundles. The app depends only on `predictor`, `ratelimit`, `integrity` (error type), `config` and `reports/`. **No module calls `joblib.load` directly**: every pickle goes through `integrity.load`.
 
@@ -185,7 +190,8 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_predictor.py` | 10 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example | yes |
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
 | `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
-| **Total** | **98** | 85 run without models; 13 skip with a "trained models missing" reason | |
+| `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
+| **Total** | **106** | 93 run without models; 13 skip with a "trained models missing" reason | |
 
 Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`; audit: `pip-audit -r requirements.txt`.
 
@@ -243,6 +249,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-19 | Separate static landing site + restyled Streamlit app | animate inside Streamlit via components/iframes; rewrite the app in a JS framework | Streamlit can't host Lenis/GSAP/Vanta on its own pages; a static site gives full design control and free hosting, while the validated app stays unchanged |
 | ADR-20 | Vendor all site libraries and fonts | CDNs, Google Fonts | No third-party requests (privacy), works offline, strict `script-src 'self'` CSP; versions pinned and integrity-checked |
 | ADR-21 | Site numbers generated from reports (`site_data.py`) | hand-typed copy | Site can't drift from results; tests compare it to the reports |
+| ADR-23 | Results page charts redrawn in Plotly from committed data (`charts.py` + `chart_data.json`) | dark re-render of the PNGs by re-running analyses with a theme flag | Analyses are slow and mix computation with plotting; a small export reuses the same functions (values tested equal to reports), charts become interactive and theme-matched, PNGs stay for README/docs |
 | ADR-22 | Site data also emitted as `site-data.js` | `fetch()` the JSON only | Browsers block `fetch` from `file://`; a `<script src>` works locally and under the CSP |
 
 ## 11. Known technical debt
@@ -267,6 +274,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Results page: native Plotly charts (`app/charts.py`, `chart_data.py` → `reports/chart_data.json`), README screenshots + `tools/screenshots.py`, learning guides 10–11; 106 tests; ADR-23 |
 | 2026-11-23 | Premium redesign: landing site `site/` (vendored GSAP/Lenis/Vanta, strict CSP), `site_data.py` export, Pages workflow, dark app theme with self-hosted fonts (`enableStaticServing` for fonts only), 98 tests; ADR-19–22 |
 | 2026-11-23 | UI polish: progressive rendering (`assess` fast core + `add_range`/`add_explanation`), sliders, reproducible SHAP, reset fix; latencies corrected; 87 tests; ADR-17/18 |
 | 2026-11-23 | Merged Dependabot updates: ruff 0.17.6, actions/checkout v7, actions/setup-python v7, gitleaks-action v3 (lint, 84 tests and pip-audit re-verified locally) |
