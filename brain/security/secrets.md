@@ -34,7 +34,7 @@
 ## 2. Environment and configuration handling
 - `src/cardiostage/config.py`: non-sensitive constants only (paths, seed, thresholds, rate limits). Nothing is read from the environment.
 - `.streamlit/config.toml`: theme plus security settings (`address`, XSRF/CORS, `showErrorDetails`, telemetry). No credentials.
-- `requirements.txt`, `constraints.txt`, `pyproject.toml`: package pins and tool settings. No private index URLs or tokens.
+- `pyproject.toml`, `uv.lock`, `requirements.txt`: package pins, checksums and tool settings. No private index URLs or tokens.
 - **If a secret is ever needed:** store it in `.streamlit/secrets.toml` (already ignored) or environment variables. Never in `config.py`. The gitleaks CI job would flag accidental commits.
 
 ## 3. Hardcoded-secret risks

@@ -97,7 +97,7 @@ None.
 | PyPI | `pip install` | Package downloads | Pinned + constrained; audited |
 | PyPI/OSV advisory data | `pip-audit` (developer, CI) | Package names and versions | New (SEC-07 control) |
 | GitHub | `git push`; CI runs; Dependabot | Source, commit metadata (SEC-08) | – |
-| GitHub Actions (third-party code in CI) | Each CI run | Repo checkout (read-only token) | `actions/checkout@v7`, `actions/setup-python@v7`, `gitleaks/gitleaks-action@v3` (major-version tags; kept current by Dependabot) |
+| GitHub Actions (third-party code in CI) | Each CI run | Repo checkout (read-only token) | `actions/checkout`, `astral-sh/setup-uv`, `gitleaks/gitleaks-action` (+ Pages actions), **pinned to commit SHAs**; kept current by Dependabot |
 | Kaggle / UCI | One-time manual download | – | – |
 | img.shields.io | Viewing the README on GitHub | Viewer's browser fetches badges | Not part of the app |
 | GitHub Pages | Visiting the landing site | Standard web request logs at GitHub | Static site only; it loads nothing from other origins |
@@ -120,11 +120,11 @@ None in the app. Streamlit developer options are shown to localhost viewers only
 | Firewall / router | Unverified | Largely moot (loopback socket) | – |
 
 ## 12. Dependencies and supply chain
-- **Direct (pinned in `requirements.txt`):** pandas 3.1.1, numpy 2.5.5, scikit-learn 1.9.1, xgboost 3.4.1, shap 0.54.1, joblib 1.6.0, matplotlib 3.11.2, seaborn 0.13.2, plotly 7.1.0, streamlit 1.67.0, pytest 9.2.0, ruff 0.17.6, pip-audit 2.10.1.
-- **All installed packages (76) pinned** in `constraints.txt`, used by CI via `-c constraints.txt`.
-- **`pip-audit` (2026-11-23):** "No known vulnerabilities found" for `requirements.txt` and for the full environment (only the local `cardiostage` package is skipped, as it isn't on PyPI).
-- **Continuous:** `pip-audit` on every push/PR; Dependabot weekly PRs for pip and GitHub Actions.
-- **Residual (🟡):** no hash pinning; GitHub Actions referenced by major tag rather than commit SHA.
+- **Direct (pinned in `pyproject.toml`):** pandas 3.1.1, numpy 2.5.5, scikit-learn 1.9.1, xgboost 3.4.1, shap 0.54.1, joblib 1.6.0, matplotlib 3.11.2, seaborn 0.13.2, plotly 7.1.0, streamlit 1.67.0, pytest 9.2.0, ruff 0.17.6, pip-audit 2.10.1.
+- **All packages (79) locked with SHA-256 checksums** in `uv.lock` (every platform); CI installs with `uv sync --locked`; `requirements.txt` is a hashed export for pip users (`pip install --require-hashes`).
+- **`pip-audit` (2026-11-23):** "No known vulnerabilities found" for the full environment (only the local `cardiostage` package is skipped, as it isn't on PyPI).
+- **Continuous:** `pip-audit` on every push/PR; Dependabot weekly PRs for uv and GitHub Actions.
+- **GitHub Actions:** all pinned to full commit SHAs (a tag can be moved to different code; a SHA can't).
 - **Deserialisation:** pickle via `integrity.load` only.
 - **Front-end (site only):** vendored GSAP, Lenis 1.3.27, three 0.134.0, Vanta 0.5.24; sha512-verified at download; manual updates (no automated advisory scanning for these files).
 

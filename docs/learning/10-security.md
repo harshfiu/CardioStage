@@ -16,12 +16,12 @@ Machine-learning projects often skip this step: the model is the exciting part, 
 | `src/cardiostage/integrity.py` | SHA-256 fingerprints checked **before** any model file is loaded |
 | `src/cardiostage/ratelimit.py` | Per-session limit: 20 assessments per 60 seconds |
 | `src/cardiostage/predictor.py` | Strict input validation (`to_frame`, `InvalidInputError`) |
-| `.github/workflows/ci.yml`, `.github/dependabot.yml`, `constraints.txt` | Lint, tests, vulnerability audit, secret scan, dependency updates |
+| `.github/workflows/ci.yml`, `.github/dependabot.yml` | Lint, tests, vulnerability audit, secret scan, dependency updates (locking: see Phase 12) |
 | `tests/test_security.py` | 25 tests that prove each control works |
 
 ```bash
 pytest tests/test_security.py -v         # the security controls, tested
-pip-audit -r requirements.txt            # known vulnerabilities in our dependencies
+uv run pip-audit --skip-editable         # known vulnerabilities in our dependencies
 python -m cardiostage.integrity          # re-record model fingerprints (only for files YOU built)
 ```
 
@@ -100,7 +100,7 @@ It's a **pure function** (no Streamlit inside), so tests can pass in fake timest
 
 ### SEC-07: the supply chain
 Your code is a small fraction of what runs: the app installs **76 packages**. Controls:
-- `requirements.txt` pins direct dependencies; `constraints.txt` pins **all 76** to tested versions.
+- Direct dependencies are pinned, and **every** package (incl. indirect ones) is locked to a tested version. *(Phase 10 used a `constraints.txt`; [Phase 12](12-supply-chain.md) replaced it with `uv.lock`, which also records checksums.)*
 - `pip-audit` checks them against the public vulnerability database, locally and in CI.
 - **Dependabot** opens weekly update PRs (you merged the first batch: ruff, `actions/checkout`, `setup-python`, `gitleaks-action`).
 - **gitleaks** scans the full Git history for accidentally committed secrets.

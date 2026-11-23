@@ -11,7 +11,7 @@
 > **Severity:** Critical / High / Medium / Low / Info, rated for the current deployment (local app).
 > **Status:** ✅ Remediated (verified) · 🟡 Partly remediated / residual risk · 🔵 Open: owner action · ⚪ Accepted for current scope.
 
-**Result:** no confirmed vulnerabilities were found. Of the 11 findings (SEC-01–10, SEC-12), **5 are remediated and verified** (SEC-01, 03, 04, 06, 12), **4 are partly remediated** with residual risk documented (SEC-02, 05, 07, 08), and **2 are accepted** for local use (SEC-09, 10). See §6.
+**Result:** no confirmed vulnerabilities were found. Of the 11 findings (SEC-01–10, SEC-12), **6 are remediated and verified** (SEC-01, 03, 04, 06, 07, 12), **3 are partly remediated** with residual risk documented (SEC-02, 05, 08), and **2 are accepted** for local use (SEC-09, 10). See §6.
 
 ---
 
@@ -54,7 +54,7 @@
 | TB2 | **Host ↔ network** | – | Closed: socket bound to `127.0.0.1` |
 | TB3 | **Server ↔ local filesystem** | `integrity.load`, `pd.read_csv`, `st.image` (fixed paths) | Pickles verified before load |
 | TB4 | **Server ↔ third party** | – | Closed: no startup IP lookup |
-| TB5 | **Developer/CI ↔ package index and GitHub Actions** | `pip install -r requirements.txt -c constraints.txt`; actions `checkout@v7`, `setup-python@v7`, `gitleaks-action@v3` | Pinned + constrained; audited |
+| TB5 | **Developer/CI ↔ package index and GitHub Actions** | `uv sync --locked` from `uv.lock` (versions + file checksums); actions pinned to commit SHAs (`checkout`, `setup-uv`, `gitleaks-action`, Pages actions) | Locked with checksums; audited |
 | TB6 | **Local repo ↔ GitHub** | `git push` (HTTPS, no credentials in remote URL) | Unchanged |
 | TB7 | **Public visitor ↔ landing site** (GitHub Pages, HTTPS) | Page views only | Static; strict CSP; vendored scripts only; no data collected by the project |
 
@@ -82,7 +82,7 @@
 | T4 / **SEC-04** | Privacy: third-party IP lookup at startup | Streamlit contacted `checkip.amazonaws.com` (HTTP first) on each headless start | IP + start times disclosed | None (no longer happens) | **Info** (was Low) | Non-wildcard address: startup log now shows only `URL: http://localhost:8501` (no Network/External URL); `04-architecture.md` corrected | – | ✅ Remediated |
 | T5 / **SEC-05** | Tampering → code execution via pickle | Replaced/corrupted `stage*.joblib` executes on load | Arbitrary code execution | Low | **Low** | `integrity.load` verifies SHA-256 vs `manifest.json` before every unpickle (app + all scripts); unlisted/mismatched/missing manifest → refused (tested incl. "refuse before unpickling"); bundles self-built, git-ignored | Attacker able to rewrite both bundle and manifest isn't stopped; pickle format remains | 🟡 Partly remediated |
 | T6 / **SEC-06** | Crafted widget values | Websocket message with out-of-option selectbox values | Previously: traceback in own session | Very low | **Info** (was Low) | `to_frame` validates categories, coded values (`ALLOWED_CODES`), finiteness and `PLAUSIBLE_RANGES` → `InvalidInputError` → friendly message (measurements now use sliders; range enforcement is the engine's, not the widget's) | – | ✅ Remediated |
-| T7 / **SEC-07** | Supply chain | Vulnerable/compromised (transitive) dependency | Code execution | Low | **Low** | `pip-audit`: no known vulnerabilities (requirements + full env, 2026-11-23); `constraints.txt` pins all 76 packages; CI audit on every push; Dependabot weekly | No hash pinning; GitHub Actions pinned by major tag, not commit SHA | 🟡 Partly remediated |
+| T7 / **SEC-07** | Supply chain | Vulnerable/compromised (transitive) dependency | Code execution | Low | **Low** | `pip-audit`: no known vulnerabilities (full env, 2026-11-23); `uv.lock` pins all 79 packages **with SHA-256 checksums for every platform** (`requirements.txt` exported from it with `--hash` lines); CI installs with `uv sync --locked`; GitHub Actions pinned to **commit SHAs**; Dependabot weekly (uv + actions) | Vendored front-end libraries (site only) not scanned automatically | ✅ Remediated |
 | T8 / **SEC-08** | Privacy: email in commit metadata | Viewers of the **public** repo harvest the personal Gmail from the earlier commits | Spam/phishing | Medium (repo confirmed public) | **Low** | Global Git email switched to the GitHub noreply address (2026-11-23): new commits no longer expose it | Earlier commits (up to `09225ff`) still contain the Gmail address; removal needs a destructive history rewrite (not recommended). GitHub "Block command line pushes that expose my email" enabled by the owner, preventing new exposure | 🟡 Partly remediated (history only) |
 | T9 / **SEC-09** | No authentication | Anyone who can reach the server can use it | Unauthorised use | Very low (localhost) | **Info** (High if publicly deployed) | Localhost binding | Auth + TLS required before any shared deployment | ⚪ Accepted (local scope) |
 | T10 / **SEC-10** | Repudiation / no monitoring | Abuse not recorded | No forensics | Low | **Info** | Assessment failures logged to the server console (`logging.getLogger("cardiostage.app")`), without patient inputs in the app's own messages | No access/audit logging | ⚪ Accepted (local scope) |
@@ -93,7 +93,7 @@
 1. **Coffee-shop Wi-Fi.** Another patron scans the network: port 8501 isn't open on any external interface (loopback only), so there's nothing to connect to, sniff or overload. *Residual:* only if the developer deliberately runs with `--server.address 0.0.0.0`.
 2. **Poisoned model file.** A bundle downloaded from elsewhere is dropped into `models/`. Its hash isn't in the local manifest (or doesn't match), so `integrity.load` raises `IntegrityError`, the app shows "Model integrity check failed" and stops **without unpickling**. *Residual:* an attacker who can also rewrite `manifest.json`.
 3. **Crafted input.** A local client sends `fbs="abc"` or `age=inf` over the websocket. `to_frame` raises `InvalidInputError`, the user sees "Some inputs aren't valid…", no model is called and no traceback is shown.
-4. **Dependency compromise.** A malicious transitive release can't be pulled silently (pinned in `constraints.txt`). Known-vulnerable versions are flagged by `pip-audit` in CI and by Dependabot.
+4. **Dependency compromise.** A malicious transitive release can't be pulled silently: every package is pinned in `uv.lock` with checksums, so even a re-uploaded file with the same version number would be rejected. Known-vulnerable versions are flagged by `pip-audit` in CI and by Dependabot.
 
 ## 8. Existing security mechanisms (verified)
 | Mechanism | Evidence |
@@ -120,7 +120,7 @@
 - 🟡 **SEC-08:** done for future commits (noreply email set); historical commits still show the old address. GitHub's "Block command line pushes that expose my email" is now enabled (owner), so only old history remains.
 - 🟡 **SEC-02:** a proxy-level limit if the app is ever shared.
 - 🟡 **SEC-05:** move bundles to a non-executable format (e.g. skops) or a signed manifest stored outside `models/` if bundles are ever distributed.
-- 🟡 **SEC-07:** optional hash pinning; pin GitHub Actions to commit SHAs.
+- ✅ **SEC-07:** done (2026-11-23): `uv.lock` with checksums, CI installs `--locked`, GitHub Actions pinned to commit SHAs. Remaining: review vendored site libraries manually.
 - ⚪ **SEC-09/10:** TLS, authentication and access logging are prerequisites for any shared deployment.
 - 🔍 Confirm the first CI run passes on GitHub after this change is pushed.
 - 🟡 **Landing site:** vendored front-end libraries aren't covered by Dependabot/pip-audit; check for updates manually (e.g. each release). ⚪ `frame-ancestors` can't be set on GitHub Pages (static page with no actions).

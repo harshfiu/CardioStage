@@ -61,10 +61,10 @@
 - **Risk:** CPU exhaustion via repeated assessments (~5.5 s CPU each at stages 2–3).
 - **Residual:** limit is per browser session; many parallel sessions aren't capped (needs a reverse proxy if shared).
 
-#### SEC-07: No dependency scanning; transitive dependencies unpinned (🟡 Partly remediated)
+#### SEC-07: No dependency scanning; transitive dependencies unpinned (✅ Remediated)
 - **Severity:** Low
-- **Evidence (after):** `pip-audit -r requirements.txt` and full-environment audit → **"No known vulnerabilities found"** (2026-11-23); `constraints.txt` pins all 76 installed packages; CI runs `pip-audit` on every push/PR; `.github/dependabot.yml` weekly PRs (pip + GitHub Actions); `pip-audit==2.10.1` pinned in `requirements.txt`.
-- **Residual:** no hash pinning; actions referenced by major tag, not commit SHA.
+- **Evidence (after):** full-environment `pip-audit` → **"No known vulnerabilities found"** (2026-11-23); `uv.lock` pins all 79 packages with SHA-256 checksums (cross-platform); `requirements.txt` is exported from it with `--hash` lines and CI fails if it drifts; CI installs with `uv sync --locked`; all GitHub Actions pinned to full commit SHAs (version in a comment); `.github/dependabot.yml` weekly PRs (uv + GitHub Actions); `pip-audit==2.10.1` pinned in `pyproject.toml`.
+- **Residual:** vendored front-end libraries on the website aren't covered by Dependabot/pip-audit (manual review).
 
 #### SEC-09: No authentication or authorization (⚪ Accepted for local use)
 - **Severity:** Info (localhost-only); **High** if deployed publicly
@@ -179,10 +179,10 @@
 - ✅ `enableCORS = true` set explicitly; `corsAllowedOrigins = []` (default)
 
 ### Dependency security
-- ✅ Direct dependencies pinned; all 76 installed packages constrained (`constraints.txt`)
+- ✅ Direct dependencies pinned (`pyproject.toml`); all 79 packages locked with checksums (`uv.lock`)
 - ✅ `pip-audit`: no known vulnerabilities (2026-11-23); runs in CI
 - ✅ Dependabot weekly update PRs
-- ⚠️ No hash pinning; actions pinned by major tag (SEC-07, 🟡)
+- ✅ Hash pinning (`uv.lock`, hashed `requirements.txt`); GitHub Actions pinned to commit SHAs (SEC-07, ✅)
 - ✅ Landing-site libraries vendored at exact versions, sha512-verified; licences included
 - ⚠️ Vendored front-end libraries not scanned automatically: update/review manually
 

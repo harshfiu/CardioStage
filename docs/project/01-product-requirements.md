@@ -114,13 +114,13 @@ It is a **portfolio and learning project**, not a medical device.
 | NFR1 | Performance | Risk and decision visible within 1 s; full result (range + explanation) within ~6 s per stage on a laptop | ✅ decision ~0.1 s (all stages); full card incl. plausible range (~2 s) and explanation (~3 s) ~0.3 s for stage 1, ~5.5 s for stages 2–3, shown progressively |
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
 | NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off; site and app fonts/libraries self-hosted (no CDN or Google Fonts) |
-| NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`, `requirements.txt` pinned |
+| NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`; every package locked with checksums (`uv.lock`) |
 | NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 106 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes; WCAG AA contrast; reduced-motion support; usable at phone width | ✅ see [Design system](03-design-system.md) §7 (measured contrast) |
 | NFR11 | Security | Landing site has a strict Content-Security-Policy, no inline scripts, no third-party requests, no forms or cookies | ✅ tested in `test_site.py` |
-| NFR8 | Portability | Python ≥ 3.10; Windows / macOS / Linux paths via `pathlib` | ✅ (built on Python 3.12, Windows) |
+| NFR8 | Portability | Python ≥ 3.12 (pandas 3 / numpy 2.5 need 3.11+; tested on 3.12); Windows / macOS / Linux paths via `pathlib`; one lock file for all platforms | ✅ (built on Windows, CI on Linux) |
 | NFR9 | Documentation | Code commented for beginners; a learning guide per phase (11, incl. security and the website); these four project docs kept current; README with screenshots | ✅ |
 
 ## 9. Safety and ethics requirements
@@ -179,6 +179,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | Hero: "Fewer tests for those who don't need them. More care for those who do."; personal note signed Harsh Gupta | Owner's choice |
 | 2026-11-23 | Publish site on GitHub Pages; vendor all libraries and fonts (incl. self-hosted app fonts via static serving) | Free hosting; privacy; works offline |
 | 2026-11-23 | Learning guides for security and the website, `v1.0` release, README screenshots, dark Results charts; cloud deployment, new data and remaining hardening deferred | Owner's choice (items 1–4 now, 5–7 later) |
+| 2026-11-23 | Items 5–7 started in order 7 → 5 → 6: uv lock + actions pinned to SHAs; full app online on Hugging Face Spaces (free tier first, consent gate, no login, no tracking, skops models, host URL); free public datasets, test then retrain as v2.0 with a new sealed test | Owner's answers; owner asked to be asked for consent wherever it might be needed |
 
 ## 13. Risks and mitigations
 | Risk | Mitigation |
@@ -212,6 +213,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | NFR4/NFR8: uv lock with checksums; Python ≥ 3.12 stated honestly (was ≥ 3.10, which pandas 3 can't run on); decisions for items 5–7 logged |
 | 2026-11-23 | FR15 (interactive Results charts), NFR5 106 tests, NFR9 (11 guides, screenshots), decision logged |
 | 2026-11-23 | Premium redesign: FR30–36 (landing site, app restyle), NFR3/5/7 updated, NFR11 added, design decisions logged |
 | 2026-11-23 | UI polish: NFR1 restated (decision first, details progressively; measured latencies corrected), NFR5 87 tests |

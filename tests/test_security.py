@@ -8,11 +8,11 @@ Tests for the security controls (see brain/security/).
 """
 
 import math
+import tomllib
 from pathlib import Path
 
 import numpy as np
 import pytest
-import tomllib
 
 from cardiostage import config, integrity, ratelimit
 from cardiostage.predictor import CardioStagePredictor, InvalidInputError

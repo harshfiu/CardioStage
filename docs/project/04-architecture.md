@@ -64,7 +64,7 @@ CardioStage/
 │   ├── processed/              generated cleaned CSV (git-ignored)
 │   └── README.md               source, licence, hospital counts
 ├── docs/
-│   ├── learning/               11 beginner guides + index
+│   ├── learning/               12 beginner guides + index
 │   ├── images/                 README screenshots (made by tools/screenshots.py)
 │   └── project/                these 4 living documents + index
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
@@ -74,9 +74,9 @@ CardioStage/
 ├── tests/                      106 pytest tests (see §7)
 ├── tools/screenshots.py        dev tool: regenerates README screenshots via headless Chrome (DevTools protocol)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
-├── constraints.txt             exact versions of all 76 installed packages (transitive pinning)
-├── pyproject.toml              package metadata, pytest + ruff config
-├── requirements.txt            pinned direct dependencies
+├── pyproject.toml              package metadata, pinned direct dependencies (+ dev group), pytest + ruff config
+├── uv.lock                     every package (79) with exact version + SHA-256 checksums, all platforms
+├── requirements.txt            generated from uv.lock (hashed) for plain-pip installs and hosting platforms
 ├── LICENSE                     MIT (code); CC BY 4.0 note (data)
 └── README.md
 ```
@@ -193,14 +193,15 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
 | **Total** | **106** | 93 run without models; 13 skip with a "trained models missing" reason | |
 
-Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`; audit: `pip-audit -r requirements.txt`.
+Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; format: `uv run ruff format src tests app tools`; audit: `uv run pip-audit --skip-editable`.
 
 ## 8. Tooling, CI and supply chain
-- **Virtual environment** `.venv/`; `pip install -r requirements.txt -c constraints.txt && pip install -e .`.
-- **Pinning:** `requirements.txt` pins direct dependencies; `constraints.txt` pins **all** installed packages (incl. transitive) to tested versions. Constraints only fix versions, so platform-specific packages aren't forced onto other OSes. No hash pinning (see §11).
+- **Environment:** `uv sync` builds `.venv/` exactly from `uv.lock` (the project is installed editable; dev tools from the `dev` group). Without uv: `pip install -r requirements.txt --require-hashes && pip install -e . --no-deps`.
+- **Pinning:** `pyproject.toml` pins direct dependencies (`==`); `uv.lock` pins **every** package (79, incl. transitive and platform-specific ones such as Linux-only `nvidia-nccl-cu13`) with SHA-256 checksums for every platform; `requirements.txt` is exported from the lock (`uv export --no-dev --no-emit-project`), with `--hash` lines. The lock was created against the previously tested versions, so no library changed (all 76 earlier versions identical).
 - **CI** (`.github/workflows/ci.yml`, on push/PR to `main`, `permissions: contents: read`):
-  - *quality* job (Ubuntu, Python 3.12): install with constraints → `ruff check` → `pytest -q -rs` (model tests skip) → `pip-audit -r requirements.txt`.
-  - *secrets* job: `gitleaks/gitleaks-action@v3` (with `actions/checkout@v7`, `actions/setup-python@v7`) over the full history (`fetch-depth: 0`).
+  - *quality* job (Ubuntu, Python 3.12 via `astral-sh/setup-uv`): `uv sync --locked` (fails if the lock is stale) → `requirements.txt` must equal a fresh export → `ruff check` → `pytest -q -rs` (model tests skip) → `pip-audit --skip-editable`.
+  - *secrets* job: `gitleaks/gitleaks-action` over the full history (`fetch-depth: 0`).
+  - **Every action is pinned to a full commit SHA** with its version in a comment (e.g. `actions/checkout@3d3c42e… # v7.0.1`), in both `ci.yml` and `pages.yml`.
 - **Pages** (`.github/workflows/pages.yml`, on push to `main` touching `site/**`, or manual): `configure-pages` → `upload-pages-artifact` (path `site`) → `deploy-pages`; permissions `contents: read, pages: write, id-token: write`; one deployment at a time. Requires Settings → Pages → Source: *GitHub Actions*.
 - **Vendored front-end libraries** (`site/vendor/`): copied from release tarballs whose npm `sha512` integrity was verified; GSAP from the official `gsap` repo's `dist/`. Not covered by Dependabot: update manually (re-download, verify, re-test in a browser). Licences in `site/licenses/`.
 - **Dependabot** (`.github/dependabot.yml`): weekly update PRs for pip and GitHub Actions.
@@ -245,7 +246,8 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-15 | Per-session in-app rate limit | proxy limits only | No proxy exists for local use; pure function is testable |
 | ADR-17 | Progressive result rendering instead of speeding up inference | threads, all-core forests, fewer replicas | Measured: per-call overhead dominates, parallelism was slower; changing replicas/background would alter validated outputs |
 | ADR-18 | Sliders for measurements | number inputs | Streamlit's number input calls `preventDefault()` on wheel events (`NumberInput.js`), blocking page scroll; sliders don't, and show the valid range |
-| ADR-16 | Constraints file instead of hash lockfile | `pip-compile --generate-hashes` | Cross-platform safe pinning of transitive deps without per-platform hash maintenance |
+| ADR-16 | ~~Constraints file instead of hash lockfile~~ (superseded by ADR-24) | `pip-compile --generate-hashes` | Was: cross-platform pinning without per-platform hash maintenance |
+| ADR-24 | `uv` lockfile with checksums; actions pinned to commit SHAs | pip-tools per-platform hashed files; keep constraints | One cross-platform lock with hashes for every wheel; `--locked` installs fail on drift; a hashed `requirements.txt` export keeps plain-pip installs (and hosting platforms) working; SHAs can't be re-pointed like tags |
 | ADR-19 | Separate static landing site + restyled Streamlit app | animate inside Streamlit via components/iframes; rewrite the app in a JS framework | Streamlit can't host Lenis/GSAP/Vanta on its own pages; a static site gives full design control and free hosting, while the validated app stays unchanged |
 | ADR-20 | Vendor all site libraries and fonts | CDNs, Google Fonts | No third-party requests (privacy), works offline, strict `script-src 'self'` CSP; versions pinned and integrity-checked |
 | ADR-21 | Site numbers generated from reports (`site_data.py`) | hand-typed copy | Site can't drift from results; tests compare it to the reports |
@@ -256,7 +258,6 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 - Bundles are large (stages 2–3 ~80 MB each, mostly the 20 uncertainty copies of RF ensembles); deployment would need Git LFS / release assets or fewer replicas (and a safer format than pickle, e.g. skops).
 - The integrity manifest lives beside the bundles in `models/`; it detects swapped/corrupted files but not an attacker who can rewrite both.
 - The rate limit is per browser session; many parallel sessions would need a reverse proxy.
-- No hash pinning of dependencies (constraints pin versions only).
 - `calibration.main` re-tunes models per fold (duplicating Phase 4 work) for simplicity; ~6 min.
 - Headless browser screenshots of the app are unreliable; the app is verified functionally with `AppTest`.
 - `predictor.CHOICES` duplicates category lists implied by the data; a mismatch would be caught by tests but not prevented by design.
@@ -269,11 +270,12 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | Different recall target | `config.SCREENING_RECALL` / `RULE_OUT_RECALL` | `train_all`, evaluations, app text, docs |
 | New page | `app/views/*.py` + `st.Page` in `streamlit_app.py` | AppTest smoke test |
 | New pickle loaded by code | add to `integrity.stage_bundle_paths()`; load via `integrity.load` | `python -m cardiostage.integrity` or `train_all` |
-| Dependency upgrade | `requirements.txt`, then `pip freeze --exclude-editable > constraints.txt` (keep header) | `pytest`, `pip-audit` |
+| Dependency upgrade | Change the pin in `pyproject.toml` (or merge a Dependabot PR), `uv lock`, then `uv export --locked --no-dev --no-emit-project --format requirements-txt -o requirements.txt` | `uv run pytest`, `uv run pip-audit --skip-editable` |
 
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Supply chain (SEC-07 ✅): `uv.lock` with checksums replaces `constraints.txt`; dependencies moved to `pyproject.toml`; hashed `requirements.txt` export; CI on `uv sync --locked`; all actions pinned to commit SHAs; Dependabot on uv; `requires-python >=3.12`; ADR-24 |
 | 2026-11-23 | Results page: native Plotly charts (`app/charts.py`, `chart_data.py` → `reports/chart_data.json`), README screenshots + `tools/screenshots.py`, learning guides 10–11; 106 tests; ADR-23 |
 | 2026-11-23 | Premium redesign: landing site `site/` (vendored GSAP/Lenis/Vanta, strict CSP), `site_data.py` export, Pages workflow, dark app theme with self-hosted fonts (`enableStaticServing` for fonts only), 98 tests; ADR-19–22 |
 | 2026-11-23 | UI polish: progressive rendering (`assess` fast core + `add_range`/`add_explanation`), sliders, reproducible SHAP, reset fix; latencies corrected; 87 tests; ADR-17/18 |

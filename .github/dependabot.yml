@@ -2,12 +2,16 @@
 # fixes (SEC-07). CI then runs the tests and pip-audit on each proposal.
 version: 2
 updates:
-  - package-ecosystem: pip
+  # Python packages: updates pyproject.toml pins and uv.lock (with checksums).
+  # After merging one, regenerate requirements.txt (CI checks it matches):
+  #   uv export --locked --no-dev --no-emit-project --format requirements-txt -o requirements.txt
+  - package-ecosystem: uv
     directory: "/"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
 
+  # GitHub Actions: updates the pinned commit SHAs and their version comments.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

@@ -15,5 +15,6 @@ A step-by-step record of how CardioStage was built, written for someone starting
 | 9 | [Final evaluation & polish](09-final.md) | Opening the sealed test set, exact confidence intervals, linting, presenting ML work |
 | 10 | [Security hardening](10-security.md) | Threat models, honest severity ratings, localhost binding, pickle safety (SHA-256), input validation, rate limiting, supply chain |
 | 11 | [The website & the redesign](11-website-and-design.md) | Static sites, Lenis/GSAP/Vanta, never hand-typing a statistic, measured contrast, Content-Security-Policy, Plotly charts, a failing test that revealed a real subtlety |
+| 12 | [Locking the supply chain](12-supply-chain.md) | Version pins vs checksums, `uv` lockfiles, generated vs hand-edited files, pinning CI actions to commits |
 
 **Suggested reading order:** in sequence. Each guide builds on the previous ones. Every guide lists the files it covers and the commands to reproduce its results.
