@@ -64,15 +64,16 @@ CardioStage/
 │   ├── raw/heart_disease_uci.csv   original data (committed, never edited)
 │   ├── processed/              generated cleaned CSV (git-ignored)
 │   └── README.md               source, licence, hospital counts
+├── deploy/models.json          SHA-256 manifest of the released skops model archive + its 63 files (committed)
 ├── docs/
-│   ├── learning/               12 beginner guides + index
+│   ├── learning/               13 beginner guides + index
 │   ├── images/                 README screenshots (made by tools/screenshots.py)
 │   └── project/                these 4 living documents + index
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
 ├── site/                       landing site: index.html · assets/{css,js,img,data} · vendor/ (pinned, sha512-verified libs) · fonts/ · licenses/ (+ NOTICES.html)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      106 pytest tests (see §7)
+├── tests/                      122 pytest tests (see §7)
 ├── tools/screenshots.py        dev tool: regenerates README screenshots via headless Chrome (DevTools protocol)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
 ├── pyproject.toml              package metadata, pinned direct dependencies (+ dev group), pytest + ruff config
@@ -193,9 +194,9 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
 | `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
 | `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
-| `test_public.py` | 6 | nothing runs before consent, consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
+| `test_public.py` | 7 | nothing runs before consent, `*.streamlit.app` counts as public (safety net), consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
 | `test_model_store.py` | 9 | verified archive download extracted (archive not kept, nothing re-fetched), tampered archive / tampered member / oversized download rejected with no leftovers, plain HTTP and path-traversal names refused, mismatched local file refused before anything loads, trusted-types list unchanged, **skops models give identical results to the trained originals** (risk, range, zone, flags, explanation) | 1 (equivalence) |
-| **Total** | **121** | 107 run without models; 14 skip with a "trained models missing" reason | |
+| **Total** | **122** | 108 run without models; 14 skip with a "trained models missing" reason | |
 
 Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; format: `uv run ruff format src tests app tools`; audit: `uv run pip-audit --skip-editable`.
 
@@ -212,6 +213,27 @@ Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; for
 - **Last audit** (2026-11-23): `pip-audit` found **no known vulnerabilities** in `requirements.txt` or the full environment.
 - **Line endings** normalised to LF via `.gitattributes`. **Ignored:** `.venv/`, caches, `data/processed/*`, `models/*`, `.streamlit/secrets.toml`.
 - **Git workflow:** commits on `main`, pushed to `github.com/harshfiu/CardioStage`.
+
+## 8A. Public deployment (Streamlit Community Cloud)
+**URL:** https://cardiostage.streamlit.app (free tier; US-hosted; sleeps after 12 h idle, any visitor can wake it).
+
+```
+GitHub repo (main) ──► Community Cloud build: uv sync from uv.lock ──► streamlit run app/streamlit_app.py
+                                                                         │ secret CARDIOSTAGE_DEPLOYMENT=public
+visitor ──HTTPS──► consent screen ──► screener ──► predictor.load_bundles (public → skops only)
+                                                      │ first start: model_store.download()
+GitHub release models-v1 ──HTTPS──► cardiostage-models.zip ──verify SHA-256 (archive + 63 files)──► skops.load(trusted=TRUSTED_TYPES)
+```
+
+| Concern | Implementation |
+|---|---|
+| Configuration | Community Cloud secret `CARDIOSTAGE_DEPLOYMENT = "public"` (exposed as an environment variable); a `*.streamlit.app` Host header also counts as public, so the privacy wording is right even if the secret is missing |
+| Dependencies | Community Cloud picks `uv.lock` first (exact, checksummed); Python 3.12 |
+| Models | `models-v1` GitHub pre-release asset `cardiostage-models.zip` (267 MB): 3 main skops files + 60 range files (one per range copy, because skops is extremely slow on one huge file); manifest `deploy/models.json` |
+| Startup | First load: download (~30 s) + skops load (~60 s locally, about a minute measured live); cached for every visitor afterwards |
+| Memory | ~0.7–0.8 GB with all models (host cap 2.7 GB) |
+| Host overrides | `showErrorDetails` reset to `"none"` in code; XSRF off and usage statistics forced by the host (disclosed; see `brain/security/` SEC-13/14) |
+| Updating models | retrain → `python -m cardiostage.model_store export <release URL>` → upload the new archive to a new release tag → commit `deploy/models.json` |
 
 ## 9. Security and privacy
 Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Controls in place:
@@ -251,6 +273,8 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-17 | Progressive result rendering instead of speeding up inference | threads, all-core forests, fewer replicas | Measured: per-call overhead dominates, parallelism was slower; changing replicas/background would alter validated outputs |
 | ADR-18 | Sliders for measurements | number inputs | Streamlit's number input calls `preventDefault()` on wheel events (`NumberInput.js`), blocking page scroll; sliders don't, and show the valid range |
 | ADR-16 | ~~Constraints file instead of hash lockfile~~ (superseded by ADR-24) | `pip-compile --generate-hashes` | Was: cross-platform pinning without per-platform hash maintenance |
+| ADR-25 | Host the public app on Streamlit Community Cloud (free) | Hugging Face Spaces (needs PRO since Streamlit runs as a paid Docker Space); in-browser rewrite | Free, made for Streamlit, deploys from the repo and `uv.lock`; trade-offs (forced telemetry, settings overrides, no custom headers) accepted and disclosed by the owner |
+| ADR-26 | skops models split per range copy, shipped as one SHA-pinned release archive | one skops file per stage; pickles + manifest; Git LFS | One-file conversion was pathologically slow (40+ min, unfinished); split files take ~6 s each; one archive keeps the release to a single upload; release assets avoid LFS bandwidth limits and keep Git history small |
 | ADR-24 | `uv` lockfile with checksums; actions pinned to commit SHAs | pip-tools per-platform hashed files; keep constraints | One cross-platform lock with hashes for every wheel; `--locked` installs fail on drift; a hashed `requirements.txt` export keeps plain-pip installs (and hosting platforms) working; SHAs can't be re-pointed like tags |
 | ADR-19 | Separate static landing site + restyled Streamlit app | animate inside Streamlit via components/iframes; rewrite the app in a JS framework | Streamlit can't host Lenis/GSAP/Vanta on its own pages; a static site gives full design control and free hosting, while the validated app stays unchanged |
 | ADR-20 | Vendor all site libraries and fonts | CDNs, Google Fonts | No third-party requests (privacy), works offline, strict `script-src 'self'` CSP; versions pinned and integrity-checked |
@@ -279,6 +303,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | Public deployment: Streamlit Community Cloud (§8A), consent screen, `model_store` (skops, release archive, SHA-pinned manifest), shared rate limit, error-detail override, Host-based public detection; ADR-25/26 |
 | 2026-11-23 | Supply chain (SEC-07 ✅): `uv.lock` with checksums replaces `constraints.txt`; dependencies moved to `pyproject.toml`; hashed `requirements.txt` export; CI on `uv sync --locked`; all actions pinned to commit SHAs; Dependabot on uv; `requires-python >=3.12`; ADR-24 |
 | 2026-11-23 | Results page: native Plotly charts (`app/charts.py`, `chart_data.py` → `reports/chart_data.json`), README screenshots + `tools/screenshots.py`, learning guides 10–11; 106 tests; ADR-23 |
 | 2026-11-23 | Premium redesign: landing site `site/` (vendored GSAP/Lenis/Vanta, strict CSP), `site_data.py` export, Pages workflow, dark app theme with self-hosted fonts (`enableStaticServing` for fonts only), 98 tests; ADR-19–22 |

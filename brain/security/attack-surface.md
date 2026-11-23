@@ -40,6 +40,16 @@ Added with the 2026-11-23 redesign. A **static** page served by GitHub Pages: no
 | Data exposure | Only aggregate results already in `reports/` plus one synthetic example patient; no real patient rows |
 | Deployment | `.github/workflows/pages.yml`: `contents: read`, `pages: write`, `id-token: write`; uploads only `site/` |
 
+## 1B. Online app (Streamlit Community Cloud, since 2026-11-24)
+| Endpoint | Purpose | Auth | Notes |
+|---|---|---|---|
+| `https://cardiostage.streamlit.app/` (+ `/results`, `/about`) | The app, behind the platform's proxy | None (public) | HTTP → HTTPS redirect (verified); app embedded via the platform's `/~/+/` path |
+| Websocket (platform-proxied `/_stcore/stream`) | All interaction | None | Consent gate first; inputs validated; per-session + shared rate limits |
+| Other Streamlit routes (health, host-config, media, upload) | Framework | – | Same code as local; no uploader in the app; XSRF forced off by the host (SEC-13) |
+| Outbound: `github.com/.../releases/download/models-v1/cardiostage-models.zip` | Model download at first start | – | HTTPS, SHA-256 verified (SEC-15) |
+
+Not present: login, database, file storage, analytics code in the app (the platform's own statistics are disclosed, SEC-14).
+
 ## 2. Internal endpoints
 None. No internal API, service, queue or admin port.
 

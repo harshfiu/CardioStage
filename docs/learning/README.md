@@ -16,5 +16,6 @@ A step-by-step record of how CardioStage was built, written for someone starting
 | 10 | [Security hardening](10-security.md) | Threat models, honest severity ratings, localhost binding, pickle safety (SHA-256), input validation, rate limiting, supply chain |
 | 11 | [The website & the redesign](11-website-and-design.md) | Static sites, Lenis/GSAP/Vanta, never hand-typing a statistic, measured contrast, Content-Security-Policy, Plotly charts, a failing test that revealed a real subtlety |
 | 12 | [Locking the supply chain](12-supply-chain.md) | Version pins vs checksums, `uv` lockfiles, generated vs hand-edited files, pinning CI actions to commits |
+| 13 | [Going online](13-going-online.md) | Choosing a host from current facts, consent screens, failing safe, skops vs pickle, measuring a slowdown, verified downloads, shared rate limits, CI-only failures |
 
 **Suggested reading order:** in sequence. Each guide builds on the previous ones. Every guide lists the files it covers and the commands to reproduce its results.

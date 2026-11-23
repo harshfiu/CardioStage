@@ -57,31 +57,32 @@
 
 #### SEC-02: No rate limiting or resource limits (🟡 Partly remediated)
 - **Severity:** Medium → now **Low**
-- **Evidence (after):** `src/cardiostage/ratelimit.py` sliding window; `config.RATE_LIMIT_MAX_ASSESSMENTS = 20`, `RATE_LIMIT_WINDOW_SECONDS = 60`; enforced in `screener.run_stage` with a "please wait" warning; 3 tests. Localhost binding removes network abusers.
-- **Risk:** CPU exhaustion via repeated assessments (~5.5 s CPU each at stages 2–3).
-- **Residual:** limit is per browser session; many parallel sessions aren't capped (needs a reverse proxy if shared).
+- **Evidence (after):** `src/cardiostage/ratelimit.py` sliding window; `config.RATE_LIMIT_MAX_ASSESSMENTS = 20`, `RATE_LIMIT_WINDOW_SECONDS = 60`; enforced in `screener.run_stage` with a "please wait" warning; 3 tests. **Since the public deployment:** `ratelimit.SharedLimiter` caps all sessions together at 40 assessments / 60 s (thread-safe; 2 tests).
+- **Risk:** CPU exhaustion via repeated assessments (~6 s CPU each at stages 2–3 on the free host).
+- **Residual:** no IP-level limiting (the free host has no configurable proxy); a determined attacker can still keep the shared quota busy (a nuisance, not a data risk).
 
 #### SEC-07: No dependency scanning; transitive dependencies unpinned (✅ Remediated)
 - **Severity:** Low
 - **Evidence (after):** full-environment `pip-audit` → **"No known vulnerabilities found"** (2026-11-23); `uv.lock` pins all 79 packages with SHA-256 checksums (cross-platform); `requirements.txt` is exported from it with `--hash` lines and CI fails if it drifts; CI installs with `uv sync --locked`; all GitHub Actions pinned to full commit SHAs (version in a comment); `.github/dependabot.yml` weekly PRs (uv + GitHub Actions); `pip-audit==2.10.1` pinned in `pyproject.toml`.
 - **Residual:** vendored front-end libraries on the website aren't covered by Dependabot/pip-audit (manual review).
 
-#### SEC-09: No authentication or authorization (⚪ Accepted for local use)
-- **Severity:** Info (localhost-only); **High** if deployed publicly
-- **Evidence:** no auth code. The app is reachable only from the local machine.
-- **Required before sharing:** reverse-proxy authentication or `st.login` (with `cookieSecret` in `secrets.toml`) plus TLS.
+#### SEC-09: No authentication or authorization (⚪ Accepted for the public demo)
+- **Severity:** Info for the current use (a public educational demo with nothing to protect: no accounts, no stored data); would be High for any real clinical use.
+- **Evidence:** no auth code, by the owner's decision (2026-11-24: "no login"). TLS is provided by the host. Consent screen, validation and rate limits apply to everyone.
+- **Required for any non-demo use:** `st.login` or proxy authentication, audit logging, and a host whose security settings you control.
 
-#### SEC-10: No security logging or monitoring (⚪ Accepted for local use)
+#### SEC-10: No security logging or monitoring (⚪ Accepted)
 - **Severity:** Info
 - **Evidence (after):** unexpected assessment failures are now logged to the server console (`logging.getLogger("cardiostage.app").exception`); no access/audit log.
-- **Required before sharing:** proxy access logs. Never log patient inputs.
+- **Public deployment:** the host keeps its own platform logs (owner-visible). The app deliberately records no inputs (privacy). Never log patient inputs.
 
 ### Potential risks requiring verification
 
-#### SEC-05: Pickle deserialisation of model bundles (🟡 Partly remediated)
+#### SEC-05: Pickle deserialisation of model bundles (✅ Remediated)
 - **Severity:** Low (High if bundles were ever obtained from untrusted sources)
 - **Evidence (after):** `src/cardiostage/integrity.py` writes `models/manifest.json` (SHA-256 of `stage{1,2,3}.joblib`, `phase4_oof.joblib`, `phase5_oof.joblib`) from `calibration.main` or `python -m cardiostage.integrity`. **All** pickle loads in `src/` and `app/` go through `integrity.load`, which refuses unlisted/mismatched files or a missing manifest **before unpickling**. The app shows "Model integrity check failed" and stops. 4 tests, including refuse-before-unpickle and verification of the real bundles.
-- **Residual / verify:** an attacker with write access to `models/` could rewrite both bundle and manifest. Keep `models/` writable only by you; never load third-party bundles; use skops or an externally stored signed manifest if bundles are ever distributed.
+- **Distribution (2026-11-24):** the bundles are now distributed for the public app, so the planned fix was applied: they are converted to **skops**, which loads only an explicitly reviewed list of types (`model_store.TRUSTED_TYPES`; each type reviewed: our two classes, numpy dtype, scikit-learn tree/calibration/CV/Bunch, XGBoost Booster/classifier). The archive and every file are pinned by SHA-256 in the committed `deploy/models.json`. The online app never unpickles anything. Verified: skops models give results identical to the originals (max difference 0).
+- **Residual:** locally, `models/*.joblib` are still pickles you built yourself (fingerprint-checked); keep `models/` writable only by you.
 
 #### SEC-06: Crafted widget values outside UI options (✅ Remediated)
 - **Severity:** Low → now **Info**
@@ -149,6 +150,15 @@
 - ➖ No project API
 - ✅ Streamlit agent API disabled (403)
 - ✅ Static serving on for self-hosted fonts only (test-enforced; traversal → 400; `nosniff`)
+
+### Public deployment
+- ✅ HTTPS enforced by the host (HTTP → HTTPS, verified)
+- ✅ Consent screen before anything runs (tested; verified live)
+- ✅ Online models: skops only, SHA-256-pinned archive + members, reviewed trusted types (SEC-15)
+- ✅ `showErrorDetails` forced back to `"none"` despite the host override (SEC-13, tested)
+- ✅ Shared rate limit across visitors (40/min) + per-session limit (20/min)
+- ✅ Public privacy wording guaranteed by a `*.streamlit.app` Host check even if the deployment secret is missing
+- ⚪ No login (public educational demo, SEC-09); host telemetry and viewer count (SEC-14) and XSRF-off / no custom headers (SEC-13) accepted and disclosed
 
 ### Rate limiting / abuse
 - ✅ Per-session limit: 20 assessments / 60 s (tested)

@@ -231,6 +231,7 @@ External by sex: women AUC 0.864 / 0.848, men 0.807 / 0.851 (stages 1 / 2). Miss
 | `models/phase3_*.joblib`, `phase7_shap.joblib` | <1 MB | Phase 3 baselines, SHAP values (written only; never loaded by code) |
 | `models/manifest.json` | <1 KB | SHA-256 of `stage{1,2,3}.joblib`, `phase4_oof.joblib`, `phase5_oof.joblib`; written by `calibration.main` or `python -m cardiostage.integrity` |
 | `reports/*.csv`, `reports/phase*_zones.json` | small | every result table (committed) |
+| `models/skops/*.skops`, `models/cardiostage-models.zip` | ~267 MB (archive) | safe-format copies of the three bundles for the public app (3 main + 60 range files); archive published as the `models-v1` GitHub release; fingerprints in `deploy/models.json` (`python -m cardiostage.model_store`). Verified to give results identical to the joblib bundles |
 | `reports/chart_data.json` | ~12 KB | data for the app's Results charts (calibration curves, external calibration, case study, patient flow), exported by `python -m cardiostage.chart_data` (committed) |
 | `site/assets/data/site-data.{json,js}` | ~5 KB | numbers shown on the landing site, exported by `python -m cardiostage.site_data` (committed) |
 
@@ -275,6 +276,7 @@ python -m cardiostage.chart_data           # Results-page chart data (reports/ch
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | §12: skops export for the public app (identical results verified); models and metrics unchanged |
 | 2026-11-23 | §12–13: Results-chart data export (`chart_data.py`) using the analysis phases' own functions (ECE values verified equal to the reports); case study now records her out-of-fold risk (7.1%, cleared) next to the final model's 9.2%; models and metrics unchanged |
 | 2026-11-23 | §12–13: landing-site data export (`site_data.py`); models and metrics unchanged |
 | 2026-11-23 | §9: explanation speed measured, reproducibility (per-call re-seeding) documented |

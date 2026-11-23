@@ -55,6 +55,16 @@ def test_public_and_local_wording(monkeypatch):
     assert "never sent anywhere" in local and "usage statistics" not in local
 
 
+def test_streamlit_cloud_address_counts_as_public():
+    """Safety net: a *.streamlit.app address means public, even if the setting is missing."""
+    assert consent.host_is_streamlit_cloud("cardiostage.streamlit.app")
+    assert consent.host_is_streamlit_cloud("CardioStage.Streamlit.App:443")
+    assert not consent.host_is_streamlit_cloud("localhost:8501")
+    assert not consent.host_is_streamlit_cloud("127.0.0.1")
+    assert not consent.host_is_streamlit_cloud("streamlit.app.evil.example")
+    assert not consent.host_is_streamlit_cloud("")
+
+
 def test_error_details_forced_to_none():
     """Community Cloud overrides config.toml with `false` (= tracebacks); the app resets it."""
     from streamlit import config

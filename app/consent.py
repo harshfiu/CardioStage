@@ -22,8 +22,25 @@ import streamlit as st
 STREAMLIT_PRIVACY_URL = "https://streamlit.io/privacy-policy"
 
 
+def host_is_streamlit_cloud(host: str) -> bool:
+    """True for addresses served by Streamlit Community Cloud (e.g. cardiostage.streamlit.app)."""
+    host = (host or "").split(":")[0].strip().lower()
+    return host == "streamlit.app" or host.endswith(".streamlit.app")
+
+
 def is_public_deployment() -> bool:
-    return os.environ.get("CARDIOSTAGE_DEPLOYMENT", "").strip().lower() == "public"
+    """
+    Public if the deployment says so (CARDIOSTAGE_DEPLOYMENT=public) OR the
+    visitor reached the app through a *.streamlit.app address. The second
+    check is a safety net: if the setting is ever forgotten on Community
+    Cloud, visitors still see the correct (public) privacy wording.
+    """
+    if os.environ.get("CARDIOSTAGE_DEPLOYMENT", "").strip().lower() == "public":
+        return True
+    try:
+        return host_is_streamlit_cloud(st.context.headers.get("Host", ""))
+    except Exception:  # no browser request (e.g. tests, scripts)
+        return False
 
 
 def data_handling_text(public: bool) -> str:
