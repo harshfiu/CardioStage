@@ -5,7 +5,7 @@ The visual and content rules for CardioStage's charts, app and written outputs. 
 | | |
 |---|---|
 | **Last updated** | 2026-11-23 |
-| **Applies to** | `reports/figures/*`, the Streamlit app (`app/`), README and docs |
+| **Applies to** | the landing site (`site/`), the Streamlit app (`app/`), `reports/figures/*`, README and docs |
 | **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Architecture](04-architecture.md) |
 
 ---
@@ -14,9 +14,10 @@ The visual and content rules for CardioStage's charts, app and written outputs. 
 1. **Honest before impressive.** Show uncertainty (confidence intervals, plausible ranges, "undetermined") rather than bare numbers. Never round away a limitation.
 2. **Plain language first, jargon second.** Every medical or ML term is explained where it appears ("ST depression: how far the ECG dips during exercise").
 3. **Safety is part of the design.** Disclaimers are visible, never hidden; wording never diagnoses.
-4. **One meaning per colour.** Orange always means *disease / raises risk*; blue always means *healthy / lowers risk*.
+4. **One meaning per colour.** Orange/coral always means *disease / raises risk*; blue always means *healthy / lowers risk*; mint means *reassured*. Peach is the brand/action colour and never carries a medical meaning.
 5. **Colour is never the only signal.** Every coloured element also has a label, icon or text.
 6. **Show the mechanism.** Prefer charts that explain *why* (contributions, flows) over decoration.
+7. **Calm, warm, human.** The product voice is reassuring, not alarming; hand-drawn single-line illustrations and a personal note make it feel made by a person. Motion is tasteful and never sits next to a risk number.
 
 ## 2. Colour tokens
 ### 2.1 Semantic colours (charts and app)
@@ -46,14 +47,56 @@ Within the **same chart**, a categorical series must not reuse a semantic colour
 ### 2.3 Sequential
 Single-hue **Blues** (light → dark) for magnitudes, e.g. the missing-data heatmap (0–100% missing). Never a rainbow.
 
-### 2.4 App theme (`.streamlit/config.toml`)
+The static PNG figures above keep their light palette (they're also embedded in the README and docs, which most people read on white). In the dark app they're shown as white "cards".
+
+### 2.4 Product palette: site and app ("dark medical-tech, warmed up")
+Shared by `site/assets/css/site.css` (`:root` tokens) and `.streamlit/config.toml`.
+
+| Token | Hex | Role |
+|---|---|---|
+| `--bg` | `#080B12` | Page background (near-black navy) |
+| `--surface` / app secondary bg | `rgba(22,24,32,0.78)` / `#14161D` | Cards, inputs |
+| `--ink` | `#F3EEE6` | Primary text (warm off-white) |
+| `--ink-2` | `#C9C2B6` | Body text on dark |
+| `--ink-3` | `#A9A196` | Captions, axis labels |
+| `--warm` | `#F2B880` | Brand/action: primary buttons (site), eyebrows, links, sliders |
+| `--blue` | `#5B8FE8` | Heartbeat line, "lowers risk", check-up stage, uncertain |
+| `--coral` | `#FF8A65` | "Raises risk", referred |
+| `--mint` | `#8EE6C2` | Reassured / cleared |
+| `--line` | `rgba(242,184,128,0.14)` | Hairline borders |
+| app `borderColor` | `#2A2620` | Widget borders |
+
+### 2.5 App theme (`.streamlit/config.toml`)
 | Setting | Value |
 |---|---|
-| `base` | light |
-| `primaryColor` | `#2a78d6` |
-| `backgroundColor` | `#fcfcfb` |
-| `secondaryBackgroundColor` | `#f1f0ec` |
-| `textColor` | `#1a1a19` |
+| `base` | dark |
+| `primaryColor` / `linkColor` | `#F2B880` |
+| `backgroundColor` | `#080B12` (sidebar `#0D0F15`) |
+| `secondaryBackgroundColor` | `#14161D` (sidebar `#1A1D26`) |
+| `textColor` | `#F3EEE6` |
+| `greenColor` / `blueColor` / `redColor` / `orangeColor` | `#8EE6C2` / `#5B8FE8` / `#FF8A65` / `#F2B880` (status boxes keep the site's meanings) |
+| `font` / `headingFont` | Inter / Fraunces (weight 500), self-hosted via `[[theme.fontFaces]]` from `app/static/fonts/` |
+| `baseRadius`, `showWidgetBorder` | `12px`, true |
+
+**Buttons:** Streamlit draws primary buttons with white text, which on peach is only **1.76:1** contrast (fails WCAG). App form buttons therefore use the default (secondary) style: peach border/text on hover, warm text on dark, readable. The site's peach buttons use dark text (`#1A0F06`, 10.7:1).
+
+## 2A. Typography
+| Use | Font | Notes |
+|---|---|---|
+| Headlines (site h1–h3, app headings), the personal note | **Fraunces** 400/500/600 (serif) | Warm, editorial; h1 `clamp(40px, 6vw, 76px)` on the site |
+| Body, UI, numbers | **Inter** 400/500/600 | `font-variant-numeric: tabular-nums` for statistics |
+| Eyebrows | Inter 600, 12–13 px, uppercase, letter-spacing 0.14em, peach | "HONEST BY DESIGN" |
+
+Both fonts are **self-hosted** woff2 (SIL Open Font Licence, from @fontsource 5.3.0), so neither the site nor the app contacts Google Fonts.
+
+## 2B. Illustrations and motion (site)
+- **Illustrations:** hand-drawn-style single-line SVGs (heart held in a hand, stage icons, notebook with ECG and pen), 1.6–2 px strokes in `--ink`, with a peach or blue accent. Drawn on with GSAP DrawSVG.
+- **Hero background:** Vanta NET (three.js) in blue on `--bg`, 9 points; it **runs only while the hero is on screen** (IntersectionObserver), to save battery.
+- **Scrolling:** Lenis smooth scrolling synced to GSAP's ticker; anchor links scroll with a −72 px offset (sticky nav).
+- **Reveals:** headline words rise in with SplitText (`mask: "words"`, accessible `aria: "auto"`); cards fade up; chart bars grow (`scaleX`); big stats count up. Small numbers (e.g. "3 hospitals") are shown directly, because a count-up reads "1 hospitals" mid-way.
+- **How it works:** pinned for 1400 px of scroll at ≥ 900 px widths; a blue line and dot advance and each stage card lights up (`.is-active`). On narrower screens, cards activate as they scroll into view.
+- **Reduced motion:** with `prefers-reduced-motion: reduce`, none of the motion code runs (no Lenis, GSAP or Vanta); all content is visible and static.
+- **The app has no motion** beyond Streamlit's own spinners; nothing animates near a risk estimate.
 
 ## 3. Chart rules
 | Rule | Specification |
@@ -94,6 +137,27 @@ Single-hue **Blues** (light → dark) for magnitudes, e.g. the missing-data heat
 | 17 | `17_case_study.png` | Missed woman explained at stages 1 and 3 | `explanations.py` |
 | 18 | `18_final_test.png` | Sealed test AUC vs CV estimates | `final_evaluation.py` |
 
+## 3A. Landing site (`site/`)
+A static page (no backend) published with GitHub Pages. Section order:
+
+| # | Section | Content |
+|---|---|---|
+| 1 | Sticky nav | Logo · How it works · Results · Honest by design · Why I built this · GitHub (outline button) |
+| 2 | Hero | Eyebrow "Explainable heart-disease screening"; h1 **"Fewer tests for those who don't need them. More care for those who do."**; lede; peach "Try the screener" + "See how it works"; heart-in-hand illustration; ECG line; Vanta NET background |
+| 3 | Stats row | 40% fewer invasive tests · 0 sick patients missed on the sealed test (of 28) · 3 hospitals checked |
+| 4 | How it works (pinned) | 3 stage cards with icons and the real patient-flow numbers |
+| 5 | Results | Comparison card (staged vs everyone gets every test) + "Where people stop along the way" flow chart |
+| 6 | Honest by design | 3 feature cards (calibrated / explains itself / open about limits) + "An example: why 33%?" contribution chart |
+| 7 | Tested beyond home | Per-hospital ROC-AUC with 95% CIs, stage 1 (blue) and stage 2 (peach) |
+| 8 | Limitations | 5 plain-language limitations |
+| 9 | Why I built this | Notebook illustration + the builder's personal note, signed **Harsh Gupta · builder of CardioStage** |
+| 10 | CTA | "Try it on your own computer." · "Setup guide on GitHub" (+ "Open the local app" only when the page is served from localhost) |
+| 11 | Footer | Disclaimer, MIT licence, UCI data credit, Third-party notices |
+
+**Charts on the site** are built with plain DOM elements (no chart library) from `window.CARDIOSTAGE_DATA` (generated by `python -m cardiostage.site_data`), so **no statistic on the site is hand-typed**. Each chart has an `aria-label`/`role="img"` text equivalent. The contribution chart uses a 3-column grid (label · bar · value) so values never collide with labels; on phones the label moves above the bar.
+
+**Layout:** container max 1200 px (32 px gutters; 16 px on phones); breakpoints 640 / 760 / 900 px; no horizontal scrolling at 371 px (verified).
+
 ## 4. App layout
 | Page | Icon | Structure |
 |---|---|---|
@@ -110,7 +174,7 @@ Layout: `layout="wide"`; forms use 3 columns (stage 1–2) or 2 columns (stage 3
 - Every input has a `help=` tooltip in plain English with normal ranges where useful.
 - "Not measured" is available wherever real data is often missing (cholesterol checkbox; blood sugar, ECG, slope, vessels, thallium options).
 - **Measurements use sliders**, not number boxes: age 18–100, BP 60–250, cholesterol 80–700, heart rate 60–230, ST depression −3.0–7.0 (step 0.1). Streamlit's number input blocks mouse-wheel page scrolling (`preventDefault()` on wheel); sliders don't, and they make the valid range visible. The Stage 1 caption tells users they can click a slider and use the arrow keys for exact values.
-- One primary button per form: "Assess risk" / "Add treadmill results" / "Add imaging results".
+- One submit button per form: "Assess risk" / "Add treadmill results" / "Add imaging results" (secondary style for contrast, see §2.5).
 
 ### 5.2 Result card (`ui.render_assessment`)
 Bordered container, top to bottom:
@@ -144,7 +208,7 @@ Bordered container, top to bottom:
 **Error-message rules:** say what happened and what to do next, in plain English; never show stack traces, file paths or internal values (`client.showErrorDetails = "none"`); no result is shown when an assessment fails.
 
 ### 5.5 Contribution chart (`ui.contribution_chart`, Plotly)
-Horizontal bars, labels `Measurement = value`, orange positive / blue negative, values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background. **Text:** measurement labels 15 px in primary ink `#1a1a19` (they're content, not axis decoration); value labels 14 px primary ink; axis ticks/title 13–14 px `#52514e`; 44 px per row, bar gap 0.35.
+Horizontal bars, labels `Measurement = value`, coral `#FF8A65` positive / blue `#5B8FE8` negative (same as the site), values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background, grid `rgba(243,238,230,0.08)`. **Text:** measurement labels 15 px in warm ink `#F3EEE6` (they're content, not axis decoration); value labels 14 px warm ink; axis ticks/title 13–14 px `#A9A196`; 44 px per row, bar gap 0.35.
 
 ## 6. Content and voice
 | Rule | Do | Don't |
@@ -164,12 +228,14 @@ Horizontal bars, labels `Measurement = value`, orange positive / blue negative, 
 ## 7. Accessibility
 - The categorical palette is colour-blind-validated for adjacent series; charts with more than 4 series are avoided.
 - Every status box carries an icon **and** a text headline; charts carry direct labels.
-- Light theme with dark text (`#1a1a19` on `#fcfcfb`); secondary text `#52514e`.
+- Measured contrast (WCAG 2.1) on `#080B12`: ink 17.0:1, ink-2 11.1:1, ink-3 7.7:1 (7.1:1 on cards), peach 11.2:1, mint 13.4:1, coral 8.5:1, blue 6.1:1: all pass AA, most AAA. Dark text on peach buttons 10.7:1. White on peach (1.76:1) is **not used**.
+- Site: skip link, semantic landmarks and headings, visible focus rings, SplitText keeps words readable to screen readers, decorative SVGs `aria-hidden`, full `prefers-reduced-motion` support, `<noscript>` note (all text content is in the HTML; only charts need JavaScript).
 - Tooltips supplement, never replace, visible labels.
 
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | **Premium redesign:** new dark warm palette (§2.4–2.5), Fraunces + Inter self-hosted typography (§2A), illustrations and motion rules (§2B), landing site (§3A), app restyle (dark theme, coral/blue contribution chart, secondary submit buttons for contrast), measured contrast ratios |
 | 2026-11-23 | UI polish: sliders for measurements, short example names + description, reset clears example, progressive result card, larger/darker chart text, Results figure widths |
 | 2026-11-23 | Added error, rate-limit and integrity callouts and error-message rules (security hardening) |
 | 2026-11-23 | Document created at v1.0 |

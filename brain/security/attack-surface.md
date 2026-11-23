@@ -23,9 +23,22 @@ The only network-facing component is the **Streamlit server**, and it now listen
 | `/_stcore/upload_file/<session>/<file>` | PUT/DELETE | Framework upload route (**no uploader in the app**) | XSRF token | Unauthenticated PUT → **403**, re-verified after remediation |
 | `/_stcore/agent/openapi.json` | GET | Describes the experimental agent API | None | States the API is switched off |
 | `/_stcore/agent/interact`, `/_stcore/agent/mcp` | POST/… | Experimental agent API | – | **Disabled** (default `enableAgentApi = false`); POST → **403** |
-| Static serving (`/app/static/…`) | – | – | – | Disabled (default) |
+| Static serving (`/app/static/…`) | GET | Self-hosted app fonts | None | **Enabled (2026-11-23)** for `app/static/fonts/*.woff2` only (test `test_app_static_folder_serves_fonts_only`). Probes: font → 200 `application/octet-stream` + `X-Content-Type-Options: nosniff`; directory listing → 404; unknown file → 404; `../` traversal (raw and `%2e%2e`) → **400** |
 
 **Deliberate sharing:** running with `--server.address 0.0.0.0` re-exposes all of the above to the network **without TLS or login**. Documented as an operator choice in `.streamlit/config.toml` and `docs/project/04-architecture.md`.
+
+## 1A. Public landing site (`site/`, GitHub Pages)
+Added with the 2026-11-23 redesign. A **static** page served by GitHub Pages: no server code, no forms, no cookies, no analytics, no user input, and it never runs the model.
+
+| Aspect | Control / evidence |
+|---|---|
+| Content-Security-Policy | `<meta>` CSP: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`; no `unsafe-inline`/`unsafe-eval` (test `test_index_has_strict_csp`). Note: `frame-ancestors` can't be set by a meta tag and GitHub Pages doesn't allow custom headers, so the page could be framed elsewhere; it has no actions to clickjack (⚪ accepted) |
+| XSS | No inline scripts/styles or `style=` attributes (tested); charts built with `createElement`/`textContent`, never `innerHTML`; the only data is the committed, generated `site-data.js` |
+| Third-party requests | None: GSAP, Lenis, three.js, Vanta and both fonts are vendored (test `test_no_external_resources_loaded`). Links to GitHub are plain navigation |
+| Vendored code (supply chain) | npm tarballs verified against their published `sha512` integrity before extraction; GSAP from the official repo's `dist/`. Exact versions: GSAP 3 (repo clone), Lenis 1.3.27, three 0.134.0, Vanta 0.5.24. **Not tracked by Dependabot or pip-audit**: review and update manually (🟡 residual) |
+| Licences | Lenis/three/Vanta MIT, fonts OFL (texts in `site/licenses/`); GSAP under its standard "no charge" licence (not open source), credited in `NOTICES.html` |
+| Data exposure | Only aggregate results already in `reports/` plus one synthetic example patient; no real patient rows |
+| Deployment | `.github/workflows/pages.yml`: `contents: read`, `pages: write`, `id-token: write`; uploads only `site/` |
 
 ## 2. Internal endpoints
 None. No internal API, service, queue or admin port.
@@ -87,6 +100,8 @@ None.
 | GitHub Actions (third-party code in CI) | Each CI run | Repo checkout (read-only token) | `actions/checkout@v7`, `actions/setup-python@v7`, `gitleaks/gitleaks-action@v3` (major-version tags; kept current by Dependabot) |
 | Kaggle / UCI | One-time manual download | – | – |
 | img.shields.io | Viewing the README on GitHub | Viewer's browser fetches badges | Not part of the app |
+| GitHub Pages | Visiting the landing site | Standard web request logs at GitHub | Static site only; it loads nothing from other origins |
+| Google Fonts / CDNs | – | – | **Not used**: site and app fonts/libraries are self-hosted |
 
 ## 10. Admin surfaces
 None in the app. Streamlit developer options are shown to localhost viewers only. The "Deploy" toolbar button links to Streamlit Community Cloud (no deployment config or credentials exist). Retraining needs shell access.
@@ -101,6 +116,7 @@ None in the app. Streamlit developer options are shown to localhost viewers only
 | Error details to users | Full tracebacks | **None** | `showErrorDetails = "none"` |
 | Reverse proxy / WAF | None | None (in-app per-session rate limit only) | – |
 | CI | None | GitHub Actions, read-only permissions | `.github/workflows/ci.yml` |
+| Public website | None | Static landing site on GitHub Pages (no backend) | `.github/workflows/pages.yml`, §1A |
 | Firewall / router | Unverified | Largely moot (loopback socket) | – |
 
 ## 12. Dependencies and supply chain
@@ -110,6 +126,7 @@ None in the app. Streamlit developer options are shown to localhost viewers only
 - **Continuous:** `pip-audit` on every push/PR; Dependabot weekly PRs for pip and GitHub Actions.
 - **Residual (🟡):** no hash pinning; GitHub Actions referenced by major tag rather than commit SHA.
 - **Deserialisation:** pickle via `integrity.load` only.
+- **Front-end (site only):** vendored GSAP, Lenis 1.3.27, three 0.134.0, Vanta 0.5.24; sha512-verified at download; manual updates (no automated advisory scanning for these files).
 
 ## 13. Surface summary
 | Surface | Present? | Exposure now |

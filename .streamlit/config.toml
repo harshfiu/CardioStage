@@ -1,9 +1,60 @@
+# CardioStage app configuration: theme (matches the landing site and
+# docs/project/03-design-system.md) and security settings (brain/security/).
+
 [theme]
-base = "light"
-primaryColor = "#2a78d6"
-backgroundColor = "#fcfcfb"
-secondaryBackgroundColor = "#f1f0ec"
-textColor = "#1a1a19"
+base = "dark"
+primaryColor = "#F2B880"             # warm peach: buttons, sliders, focus
+backgroundColor = "#080B12"          # near-black navy
+secondaryBackgroundColor = "#14161D" # cards, inputs
+textColor = "#F3EEE6"                # warm off-white
+linkColor = "#F2B880"
+borderColor = "#2A2620"
+showWidgetBorder = true
+baseRadius = "12px"
+font = "Inter, system-ui, sans-serif"
+headingFont = "Fraunces, Georgia, serif"
+headingFontWeights = 500
+# Status colours used by success/info/error boxes, same meanings as the site:
+greenColor = "#8EE6C2"   # reassured / below threshold
+blueColor = "#5B8FE8"    # uncertain / lowers risk
+redColor = "#FF8A65"     # referred / raises risk
+orangeColor = "#F2B880"
+
+# Self-hosted fonts (SIL Open Font Licence), served from app/static/fonts/.
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/inter-latin-400-normal.woff2"
+weight = "400"
+style = "normal"
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/inter-latin-500-normal.woff2"
+weight = "500"
+style = "normal"
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/inter-latin-600-normal.woff2"
+weight = "600"
+style = "normal"
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "app/static/fonts/fraunces-latin-400-normal.woff2"
+weight = "400"
+style = "normal"
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "app/static/fonts/fraunces-latin-500-normal.woff2"
+weight = "500"
+style = "normal"
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "app/static/fonts/fraunces-latin-600-normal.woff2"
+weight = "600"
+style = "normal"
+
+[theme.sidebar]
+backgroundColor = "#0D0F15"
+secondaryBackgroundColor = "#1A1D26"
 
 [server]
 headless = true
@@ -18,6 +69,9 @@ address = "localhost"
 # Defaults kept explicit so they can't be switched off by accident (R-5):
 enableXsrfProtection = true
 enableCORS = true
+# Serves app/static/ at /app/static/ (self-hosted font files only, so the
+# app makes no requests to Google Fonts or any other third party).
+enableStaticServing = true
 
 [client]
 # Security (SEC-03): never show tracebacks (local paths, code) to users.

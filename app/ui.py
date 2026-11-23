@@ -10,8 +10,8 @@ from cardiostage.explain import LABELS
 from cardiostage.integrity import IntegrityError
 from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
 
-UP, DOWN = "#eb6834", "#2a78d6"
-TEXT_PRIMARY, TEXT_SECONDARY = "#1a1a19", "#52514e"
+UP, DOWN = "#FF8A65", "#5B8FE8"  # coral raises risk, blue lowers it (as on the site)
+TEXT_PRIMARY, TEXT_SECONDARY = "#F3EEE6", "#A9A196"  # warm off-white, warm grey (dark theme)
 
 DISCLAIMER = (
     "**Educational project, not a medical device.** CardioStage was trained on 243 patients "
@@ -73,7 +73,7 @@ def contribution_chart(explanation, top: int = 8) -> go.Figure:
             range=[-limit, limit],
             zeroline=True,
             zerolinecolor=TEXT_SECONDARY,
-            gridcolor="#ebeae6",
+            gridcolor="rgba(243,238,230,0.08)",
         ),
         # Measurement labels: same size and ink as body text, so they read as
         # content, not as faint axis decoration.

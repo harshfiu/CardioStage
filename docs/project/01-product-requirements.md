@@ -87,6 +87,17 @@ It is a **portfolio and learning project**, not a medical device.
 | FR17 | Disclaimer on every page | ✅ |
 | FR18 | Help tooltips explaining every medical input in plain English | ✅ |
 
+### 7.2a Landing site (`site/`)
+| ID | Requirement | Status |
+|---|---|---|
+| FR30 | A public, static landing page explaining the idea, results, honesty features, limitations and the builder's motivation, published on GitHub Pages | ✅ (publishes once Pages is enabled) |
+| FR31 | Every number on the site generated from the project's reports (`site_data.py`), never hand-typed; tested | ✅ |
+| FR32 | Key results rebuilt as web charts: staged vs all-tests comparison, patient flow, example explanation, per-hospital AUC with CIs | ✅ |
+| FR33 | Premium, calm motion (Lenis smooth scroll, GSAP reveals/pinning/line drawing, Vanta NET hero) that switches off entirely under `prefers-reduced-motion` | ✅ |
+| FR34 | Clear path to try it: "Setup guide on GitHub" (and a local-app link when viewed on localhost); disclaimer in the footer | ✅ |
+| FR35 | Personal "Why I built this" note signed by the builder | ✅ |
+| FR36 | App restyled to match the site (dark warm theme, Fraunces/Inter, same risk colours) without changing behaviour | ✅ |
+
 ### 7.3 Pipeline and evaluation
 | ID | Requirement | Status |
 |---|---|---|
@@ -102,12 +113,13 @@ It is a **portfolio and learning project**, not a medical device.
 |---|---|---|---|
 | NFR1 | Performance | Risk and decision visible within 1 s; full result (range + explanation) within ~6 s per stage on a laptop | ✅ decision ~0.1 s (all stages); full card incl. plausible range (~2 s) and explanation (~3 s) ~0.3 s for stage 1, ~5.5 s for stages 2–3, shown progressively |
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
-| NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off |
+| NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off; site and app fonts/libraries self-hosted (no CDN or Google Fonts) |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`, `requirements.txt` pinned |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow and security controls | ✅ 87 tests (run in CI) |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 98 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
-| NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes | ✅ see [Design system](03-design-system.md) |
+| NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes; WCAG AA contrast; reduced-motion support; usable at phone width | ✅ see [Design system](03-design-system.md) §7 (measured contrast) |
+| NFR11 | Security | Landing site has a strict Content-Security-Policy, no inline scripts, no third-party requests, no forms or cookies | ✅ tested in `test_site.py` |
 | NFR8 | Portability | Python ≥ 3.10; Windows / macOS / Linux paths via `pathlib` | ✅ (built on Python 3.12, Windows) |
 | NFR9 | Documentation | Code commented for beginners; a learning guide per phase; these four project docs kept current | ✅ |
 
@@ -162,6 +174,10 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | **MIT** licence | Portfolio-friendly |
 | 2026-11-23 | Maintain these four project docs with every change | Owner's request |
 | 2026-11-23 | Security assessment (`brain/security/`) and implement all fixes | Owner's request; localhost binding, validation, integrity checks, rate limiting, CI |
+| 2026-11-23 | **Premium redesign:** separate static landing site (Lenis, GSAP, Vanta NET) + restyled Streamlit app | Streamlit can't host those libraries; full design control; app behaviour unchanged |
+| 2026-11-23 | Look "dark medical-tech, warmed up": near-black, warm off-white, peach actions, Fraunces + Inter, hand-drawn line illustrations; calm, reassuring voice | Owner wanted a premium look with a human touch |
+| 2026-11-23 | Hero: "Fewer tests for those who don't need them. More care for those who do."; personal note signed Harsh Gupta | Owner's choice |
+| 2026-11-23 | Publish site on GitHub Pages; vendor all libraries and fonts (incl. self-hosted app fonts via static serving) | Free hosting; privacy; works offline |
 
 ## 13. Risks and mitigations
 | Risk | Mitigation |
@@ -195,6 +211,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Premium redesign: FR30–36 (landing site, app restyle), NFR3/5/7 updated, NFR11 added, design decisions logged |
 | 2026-11-23 | UI polish: NFR1 restated (decision first, details progressively; measured latencies corrected), NFR5 87 tests |
 | 2026-11-23 | Security hardening: NFR3/5/6 updated, NFR10 and safety/security requirements S7–S12 added, decision logged |
 | 2026-11-23 | Document created at v1.0 completion (all 9 phases) |

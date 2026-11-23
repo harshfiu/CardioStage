@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Security: only this site's own files may load. No external scripts, fonts,
+  styles or connections; no inline scripts or style attributes.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>CardioStage · Staged, explainable heart-disease screening</title>
+<meta name="description" content="CardioStage: an educational machine-learning project that screens for heart disease step by step, asking for invasive tests only when they're likely to change the answer.">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/lenis.css">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="brand" href="#top" aria-label="CardioStage, back to top">
+      <svg class="brand__mark" viewBox="0 0 30 30" aria-hidden="true"><path class="ink-warm" d="M15 25c-6-4-10-8-10-12.5A5 5 0 0 1 15 9a5 5 0 0 1 10 3.5C25 17 21 21 15 25z"/><path class="ink-blue" d="M7 15h4l1.6-3 2.4 6 1.8-4.5 1 1.5H23"/></svg>
+      <span>CardioStage</span>
+    </a>
+    <nav aria-label="Sections">
+      <ul class="nav__links">
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#honest">Honest by design</a></li>
+        <li><a href="#why">Why I built this</a></li>
+        <li><a class="pill" href="https://github.com/harshfiu/CardioStage">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero__bg" id="hero-bg" aria-hidden="true"></div>
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="container hero__inner">
+    <div class="hero__copy">
+      <span class="eyebrow eyebrow--pill">Explainable heart-disease screening</span>
+      <h1 class="hero__title" id="hero-title">Fewer tests for those who don't need them. More care for those who do.</h1>
+      <p class="lead">CardioStage starts with a simple check-up and only suggests the next, more invasive test when it's likely to change the answer. Every estimate comes with a clear explanation.</p>
+      <div class="actions">
+        <a class="btn btn--primary" href="#start">Try the screener</a>
+        <a class="btn btn--ghost" href="#how">See how it works</a>
+      </div>
+    </div>
+    <svg class="hero__art draw" viewBox="0 0 440 360" role="img" aria-label="Line drawing of a hand gently holding a heart, its outline continuing as a heartbeat line">
+      <path class="ink-warm glow-warm" d="M150 150c-20-28 -6-62 26-62c18 0 30 10 36 24c6-14 18-24 36-24c32 0 46 34 26 62c-14 20-38 38-62 56c-24-18-48-36-62-56z"/>
+      <path class="ink-light" d="M60 250c30 6 58 4 84 -4c18-6 34-6 50 2c16 8 34 10 52 6c26-6 52-22 74-40c10-8 24-6 28 6c4 12-4 22-16 30c-34 24-70 40-112 46c-40 6-80 2-120-8"/>
+      <path class="ink-light ink-soft" d="M144 246c8-14 20-22 34-24c12-2 22 2 30 10"/>
+      <path class="ink-blue glow-blue" d="M212 206 L212 214 L226 214 L234 196 L244 232 L254 206 L262 214 L300 214 C330 214 360 200 420 200"/>
+    </svg>
+  </div>
+  <svg class="hero__ecg draw" viewBox="0 0 1200 80" preserveAspectRatio="none" aria-hidden="true">
+    <path class="ink-blue glow-blue" d="M0 50 H360 L384 50 L398 34 L412 50 L440 50 L456 6 L474 74 L492 42 L506 50 H760 L784 50 L798 34 L812 50 L840 50 L856 6 L874 74 L892 42 L906 50 H1200"/>
+  </svg>
+</section>
+
+<!-- HEADLINE NUMBERS -->
+<section class="container stats" aria-label="Headline results">
+  <div class="card stat reveal">
+    <span class="stat__value"><span data-count="invasive_reduction" data-suffix="%">40%</span></span>
+    <span class="stat__label">fewer invasive tests</span>
+    <span class="stat__note">than giving everyone every test, while catching the same sick patients (cross-validation; 95% CI <span data-bind="invasive_ci">33–46%</span>)</span>
+  </div>
+  <div class="card stat reveal">
+    <span class="stat__value"><span data-count="sealed_missed">0</span> of <span data-bind="sealed_sick">28</span></span>
+    <span class="stat__label">sick patients missed</span>
+    <span class="stat__note">on a test set kept sealed until the very end (exact 95% CI for recall: <span data-bind="sealed_recall_ci">87.7–100%</span>)</span>
+  </div>
+  <div class="card stat reveal">
+    <span class="stat__value"><span data-bind="hospitals">3</span> hospitals</span>
+    <span class="stat__label">tested without retraining</span>
+    <span class="stat__note">Hungary, Switzerland and VA Long Beach, including where it struggles</span>
+  </div>
+</section>
+
+<!-- HOW IT WORKS (pinned on wide screens) -->
+<section class="how" id="how">
+  <div class="container how__inner">
+    <div class="section-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>One step at a time, the way a careful doctor would.</h2>
+      <p class="lead lead--sm">Each stage asks only for what's needed. If the answer is already clear, you stop there.</p>
+    </div>
+    <div class="how__track" aria-hidden="true"><span class="how__line"></span><span class="how__dot"></span></div>
+    <ol class="stages">
+      <li class="card stage" data-stage="1">
+        <svg class="stage__icon draw" viewBox="0 0 72 72" aria-hidden="true"><path class="ink-warm" d="M20 12v16a12 12 0 0 0 24 0V12"/><path class="ink-warm" d="M32 40v8a10 10 0 0 0 20 0v-6"/><circle class="ink-light" cx="52" cy="38" r="5"/><path class="ink-light" d="M16 12h8M40 12h8"/></svg>
+        <span class="stage__num">Stage 1</span>
+        <h3>A simple check-up</h3>
+        <p>Age, symptoms, blood pressure, cholesterol and blood sugar. Things any clinic can measure in one visit.</p>
+        <p class="stage__flow" data-flow="1">Of 243 people: 26 reassured, 33 referred, 184 go on to one more test.</p>
+        <ul class="tags" aria-label="Possible outcomes">
+          <li class="tag tag--clear">Low risk: reassured</li>
+          <li class="tag tag--refer">High risk: referred</li>
+          <li class="tag tag--next">Unsure: one more test</li>
+        </ul>
+      </li>
+      <li class="card stage" data-stage="2">
+        <svg class="stage__icon draw" viewBox="0 0 72 72" aria-hidden="true"><circle class="ink-light" cx="40" cy="14" r="5"/><path class="ink-light" d="M38 21l-6 14 8 6-4 14M32 35l-10 6M38 25l10 8"/><path class="ink-warm" d="M10 60h52l-4-6H14z"/></svg>
+        <span class="stage__num">Stage 2</span>
+        <h3>A treadmill test</h3>
+        <p>Watching the heart under gentle exercise: how fast it can beat, and how its rhythm changes.</p>
+        <p class="stage__flow" data-flow="2"></p>
+      </li>
+      <li class="card stage" data-stage="3">
+        <svg class="stage__icon draw" viewBox="0 0 72 72" aria-hidden="true"><path class="ink-light" d="M36 16a20 20 0 1 1 -0.1 0"/><path class="ink-warm" d="M26 38c4-6 8-6 10 0s6 6 10 0"/><path class="ink-light" d="M10 64h52"/></svg>
+        <span class="stage__num">Stage 3</span>
+        <h3>Detailed imaging</h3>
+        <p>An X-ray of the arteries and a heart scan, kept for the people who genuinely need them.</p>
+        <p class="stage__flow" data-flow="3"></p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="container split" id="results">
+  <div class="section-head reveal">
+    <span class="eyebrow">Results</span>
+    <h2>The same safety, with far fewer invasive tests.</h2>
+    <p class="lead lead--sm">Both approaches are set to catch <span data-bind="target_recall">97%</span> of sick patients. CardioStage gets there while sparing about four in ten people the dye X-ray and the nuclear scan.</p>
+  </div>
+  <figure class="card chart reveal" id="chart-compare" aria-labelledby="compare-caption">
+    <figcaption id="compare-caption" class="chart__caption">People needing invasive tests (<span data-bind="cv_patients">243</span> patients, predictions on unseen folds)</figcaption>
+    <div class="bars" data-chart="compare"></div>
+    <p class="chart__foot" data-bind="compare_foot"></p>
+  </figure>
+</section>
+
+<section class="container" aria-labelledby="flow-title">
+  <figure class="card chart reveal" id="chart-flow" aria-labelledby="flow-title">
+    <figcaption><h3 class="chart__title" id="flow-title">Where people stop along the way</h3>
+      <span class="chart__caption">Each bar is one stage: reassured, referred, or sent on to the next test.</span></figcaption>
+    <div class="flow" data-chart="flow"></div>
+    <ul class="legend" aria-label="Legend">
+      <li><span class="swatch swatch--clear"></span>Reassured (low risk)</li>
+      <li><span class="swatch swatch--refer"></span>Referred (high risk)</li>
+      <li><span class="swatch swatch--next"></span>One more test</li>
+    </ul>
+  </figure>
+</section>
+
+<!-- HONEST BY DESIGN -->
+<section class="container honest" id="honest">
+  <div class="section-head reveal">
+    <span class="eyebrow">Honest by design</span>
+    <h2>A number you can understand, and trust.</h2>
+  </div>
+  <div class="grid-3">
+    <div class="card feature reveal"><h3>It means what it says</h3><p>When CardioStage says 30%, about 30 in 100 such patients had heart disease. Typically within 3–5 points.</p></div>
+    <div class="card feature reveal"><h3>It explains itself</h3><p>Every estimate shows which measurements raised or lowered it, in plain language.</p></div>
+    <div class="card feature reveal"><h3>It's open about its limits</h3><p>It flags patients unlike anyone it learned from, and says plainly where it can go wrong.</p></div>
+  </div>
+  <figure class="card chart reveal" aria-labelledby="explain-title">
+    <figcaption><h3 class="chart__title" id="explain-title">An example: why <span data-bind="example_risk">33%</span>?</h3>
+      <span class="chart__caption">A 54-year-old man at the check-up stage. Starting from a typical patient's <span data-bind="example_base">46%</span>, each measurement nudges the estimate. Contributions in percentage points; they describe the model, not causes of disease.</span></figcaption>
+    <div class="explain" data-chart="explain"></div>
+  </figure>
+</section>
+
+<!-- TESTED BEYOND HOME -->
+<section class="container section" aria-labelledby="hosp-title">
+  <div class="section-head reveal">
+    <span class="eyebrow">Tested beyond home</span>
+    <h2 id="hosp-title">Trained in Cleveland. Checked in three other hospitals.</h2>
+    <p class="lead lead--sm">Ranking quality (ROC-AUC, 0.5 = coin flip, 1.0 = perfect) with 95% intervals. Hungary looks like Cleveland; VA Long Beach is harder; Switzerland had only 8 healthy patients, so we honestly can't tell.</p>
+  </div>
+  <figure class="card chart reveal" aria-label="ROC-AUC by hospital for the check-up and treadmill stages">
+    <div class="hosp" data-chart="hospitals"></div>
+    <ul class="legend" aria-label="Legend"><li><span class="swatch swatch--blue"></span>Check-up stage</li><li><span class="swatch swatch--warm"></span>+ Treadmill stage</li></ul>
+  </figure>
+</section>
+
+<!-- LIMITATIONS -->
+<section class="container" id="limits" aria-labelledby="limits-title">
+  <div class="card limits reveal">
+    <span class="eyebrow">What it can't do</span>
+    <h2 id="limits-title">Limitations, stated plainly.</h2>
+    <ul class="limits__list">
+      <li>Learned from 243 patients at one US hospital in the 1980s. Medicine and people have changed since.</li>
+      <li>Everyone in the data was already referred for heart tests, so its patterns don't apply to the general public.</li>
+      <li>Its decision thresholds were tuned in Cleveland; any new setting would need to check them again.</li>
+      <li>The imaging stage couldn't be checked at other hospitals, which lacked that data.</li>
+      <li>A woman with atypical chest pain was reassured too early in testing, mirroring how heart disease in women is often under-recognised.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- WHY I BUILT THIS -->
+<section class="container" id="why" aria-labelledby="why-title">
+  <div class="card why reveal">
+    <svg class="why__art draw" viewBox="0 0 220 220" role="img" aria-label="Line drawing of an open notebook with a pencil sketching a heartbeat">
+      <path class="ink-light" d="M30 60c26-10 52-10 80 4c28-14 54-14 80-4v110c-26-10-52-10-80 4c-28-14-54-14-80-4z"/>
+      <path class="ink-light ink-soft" d="M110 64v110"/>
+      <path class="ink-warm" d="M44 120h18l6-12 8 24 6-16 4 4h16"/>
+      <path class="ink-blue" d="M150 150l34-60 10 6-34 60-12 6z"/>
+    </svg>
+    <div class="why__copy">
+      <span class="eyebrow" id="why-title">Why I built this</span>
+      <blockquote class="why__quote">
+        <p>I built CardioStage as my first real dive into medicine, and I chose the heart because it demands more attention to detail than almost anything else. It was also the first time I'd challenged myself with a project where the people behind the data are real, and where every percentage truly matters. What surprised me most was how many factors can shift a heart-risk estimate, far more than I expected. This isn't a medical-grade tool, and I'm still learning both machine learning and medicine, but I gave it everything I had, and I'll keep improving it as I discover new methods and better ways to evaluate it.</p>
+        <footer><strong>Harsh Gupta</strong> · builder of CardioStage</footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="container" id="start" aria-labelledby="start-title">
+  <div class="card cta reveal">
+    <div>
+      <h2 id="start-title">Try it on your own computer.</h2>
+      <p>Three commands to set up. Everything stays on your machine; nothing is sent anywhere.</p>
+    </div>
+    <div class="actions">
+      <a class="btn btn--primary" href="https://github.com/harshfiu/CardioStage#quick-start">Setup guide on GitHub</a>
+      <a class="btn btn--ghost is-hidden" id="local-app" href="http://localhost:8501">Open the local app</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <p><strong>An educational project, not a medical device.</strong> Trained on 243 patients from a 1980s dataset. Please don't use it to make decisions about anyone's health. If you have chest pain, contact a doctor or emergency services.</p>
+    <p>MIT licence · UCI Heart Disease data (CC BY 4.0) · <a href="licenses/NOTICES.html">Third-party notices</a></p>
+  </div>
+</footer>
+
+<noscript><p class="noscript">This page works without JavaScript, but charts and animation need it. All results are also in the <a href="https://github.com/harshfiu/CardioStage">GitHub README</a>.</p></noscript>
+
+<script src="assets/data/site-data.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="vendor/DrawSVGPlugin.min.js"></script>
+<script src="vendor/SplitText.min.js"></script>
+<script src="vendor/lenis.min.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/vanta.net.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

@@ -142,10 +142,13 @@
 - ✅ No raw HTML rendering
 - ✅ User-influenced text rendered only after validation/numeric formatting
 - ✅ XSRF protection explicitly on (verified 403)
+- ✅ Landing site: strict CSP without `unsafe-inline`; no inline scripts/styles; DOM built without `innerHTML` (tested)
+- ⚪ Landing site can't send `frame-ancestors` (GitHub Pages, meta CSP); no actions to clickjack
 
 ### API security
 - ➖ No project API
-- ✅ Streamlit agent API disabled (403); static serving off
+- ✅ Streamlit agent API disabled (403)
+- ✅ Static serving on for self-hosted fonts only (test-enforced; traversal → 400; `nosniff`)
 
 ### Rate limiting / abuse
 - ✅ Per-session limit: 20 assessments / 60 s (tested)
@@ -180,6 +183,8 @@
 - ✅ `pip-audit`: no known vulnerabilities (2026-11-23); runs in CI
 - ✅ Dependabot weekly update PRs
 - ⚠️ No hash pinning; actions pinned by major tag (SEC-07, 🟡)
+- ✅ Landing-site libraries vendored at exact versions, sha512-verified; licences included
+- ⚠️ Vendored front-end libraries not scanned automatically: update/review manually
 
 ### Logging / monitoring
 - ✅ Patient inputs never written to logs or disk by the app
@@ -196,7 +201,9 @@
 - ✅ Telemetry disabled
 - ✅ CI with least-privilege permissions
 - ✅ Generated artefacts excluded from Git
-- ➖ No containers or cloud deployment
+- ➖ No containers or cloud deployment of the app
+- ✅ Landing site: static GitHub Pages deployment, least-privilege workflow (`pages: write`, `id-token: write`, `contents: read`)
+- 🔵 Owner: Settings → Pages → Source: GitHub Actions
 
 ### Data privacy
 - ✅ Inputs held only in session memory; never persisted or logged by the app
@@ -204,6 +211,7 @@
 - ✅ Training data public and de-identified
 - ✅ Disclaimer against real-patient use on every page
 - ⚠️ Developer email in earlier public commits (SEC-08, 🟡); new commits private
+- ✅ No third-party requests from the site or app (fonts and libraries self-hosted; no analytics or cookies)
 
 ### Error handling
 - ✅ `showErrorDetails = "none"`

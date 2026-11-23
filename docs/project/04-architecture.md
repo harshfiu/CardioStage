@@ -4,8 +4,8 @@ How the code is organised, how data flows from the raw CSV to an on-screen expla
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-23 (security hardening) |
-| **Stack** | Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.17 · pip-audit 2.10 |
+| **Last updated** | 2026-11-23 (premium redesign: landing site + app restyle) |
+| **Stack** | Landing site: static HTML/CSS/JS with vendored GSAP 3 (ScrollTrigger, DrawSVG, SplitText), Lenis 1.3.27, three.js r134 + Vanta 0.5.24 NET, self-hosted Fraunces/Inter · App: Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.17 · pip-audit 2.10 |
 | **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Design system](03-design-system.md) · Security: [`brain/security/`](../../brain/security/threat-model.md) |
 
 ---
@@ -31,21 +31,32 @@ How the code is organised, how data flows from the raw CSV to an on-screen expla
              │     ├─ views/results.py  ──► reports/*.csv, figures                                  │
              │     └─ views/about.py         ui.py: cached loading, result card, chart, disclaimer │
              └─────────────────────────────────────────────────────────────────────────────────────┘
+
+ reports/ + models/ ──► site_data.py ──► site/assets/data/site-data.{json,js}
+                                                   │
+             ┌──────────── PUBLIC: landing site (static, GitHub Pages) ────────────┐
+             │  site/index.html + assets/{css,js} + vendor/ (GSAP, Lenis, Vanta)    │
+             │  no backend, no patient input, no third-party requests (strict CSP)  │
+             └──────────────────────────────────────────────────────────────────────┘
 ```
 
 Everything runs **locally**. There's no server-side database and no external API. The app server listens on **localhost only** (`.streamlit/config.toml` `server.address = "localhost"`), so it isn't reachable from other devices. Because of that specific address, Streamlit also **skips its startup public-IP lookup** (`checkip.amazonaws.com`), which it performs only when bound to all interfaces in headless mode. No network calls are made during inference.
+
+The **landing site** (`site/`) is a separate, purely static page that explains the project; it's published to GitHub Pages by `.github/workflows/pages.yml`. It never runs the model and takes no input: its numbers are exported from the real reports by `python -m cardiostage.site_data`. Lenis/GSAP/Vanta live only on the site, because Streamlit pages can't host custom scripts outside iframes.
 
 ## 2. Repository layout
 ```
 CardioStage/
 ├── .github/
 │   ├── workflows/ci.yml        CI: ruff, pytest, pip-audit; gitleaks secret scan (read-only permissions)
+│   ├── workflows/pages.yml     deploys site/ to GitHub Pages (pages: write, id-token: write)
 │   └── dependabot.yml          weekly dependency / GitHub Actions update PRs
-├── .streamlit/config.toml      theme + security settings (localhost bind, hidden error details, XSRF/CORS on)
+├── .streamlit/config.toml      dark theme + self-hosted fonts + security settings (localhost bind, hidden error details, XSRF/CORS on, static serving for fonts)
 ├── app/
 │   ├── streamlit_app.py        entry point: set_page_config + st.navigation
 │   ├── ui.py                   shared UI: get_predictor (cached; handles missing/tampered models), render_assessment, contribution_chart, DISCLAIMER
-│   └── views/                  screener.py (rate limit + error handling) · results.py · about.py
+│   ├── views/                  screener.py (rate limit + error handling) · results.py · about.py
+│   └── static/fonts/           Fraunces + Inter woff2 (OFL), served at /app/static/ (fonts only)
 ├── brain/security/             threat model, secrets, attack surface, security checklist
 ├── data/
 │   ├── raw/heart_disease_uci.csv   original data (committed, never edited)
@@ -56,8 +67,9 @@ CardioStage/
 │   └── project/                these 4 living documents + index
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
+├── site/                       landing site: index.html · assets/{css,js,img,data} · vendor/ (pinned, sha512-verified libs) · fonts/ · licenses/ (+ NOTICES.html)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      87 pytest tests (see §7)
+├── tests/                      98 pytest tests (see §7)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
 ├── constraints.txt             exact versions of all 76 installed packages (transitive pinning)
 ├── pyproject.toml              package metadata, pytest + ruff config
@@ -150,6 +162,8 @@ render_assessment(result, predictor) ─► progressive:
 | `server.headless` | `true` | Don't auto-open a browser |
 | `server.enableXsrfProtection` | `true` (explicit) | Cross-site request forgery protection |
 | `server.enableCORS` | `true` (explicit) | Cross-origin protection |
+| `server.enableStaticServing` | `true` | Serves `app/static/` (font files only, enforced by a test) so the app needs no Google Fonts |
+| `[theme]` | dark, peach primary, Fraunces/Inter `fontFaces` | See Design system §2.5 |
 | `client.showErrorDetails` | `"none"` | No tracebacks shown to users (SEC-03) |
 | `browser.gatherUsageStats` | `false` | No telemetry |
 | `server.enableAgentApi` | not set (default `false`) | Experimental agent API stays off |
@@ -170,7 +184,8 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_explain.py` | 5 | encode/decode, SHAP additivity, baseline, text | no |
 | `test_predictor.py` | 10 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example | yes |
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
-| **Total** | **87** | 74 run without models; 13 skip with a "trained models missing" reason | |
+| `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
+| **Total** | **98** | 85 run without models; 13 skip with a "trained models missing" reason | |
 
 Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format src tests app`; audit: `pip-audit -r requirements.txt`.
 
@@ -180,6 +195,8 @@ Run `pytest` (~1 min). Lint: `ruff check src tests app`; format: `ruff format sr
 - **CI** (`.github/workflows/ci.yml`, on push/PR to `main`, `permissions: contents: read`):
   - *quality* job (Ubuntu, Python 3.12): install with constraints → `ruff check` → `pytest -q -rs` (model tests skip) → `pip-audit -r requirements.txt`.
   - *secrets* job: `gitleaks/gitleaks-action@v3` (with `actions/checkout@v7`, `actions/setup-python@v7`) over the full history (`fetch-depth: 0`).
+- **Pages** (`.github/workflows/pages.yml`, on push to `main` touching `site/**`, or manual): `configure-pages` → `upload-pages-artifact` (path `site`) → `deploy-pages`; permissions `contents: read, pages: write, id-token: write`; one deployment at a time. Requires Settings → Pages → Source: *GitHub Actions*.
+- **Vendored front-end libraries** (`site/vendor/`): copied from release tarballs whose npm `sha512` integrity was verified; GSAP from the official `gsap` repo's `dist/`. Not covered by Dependabot: update manually (re-download, verify, re-test in a browser). Licences in `site/licenses/`.
 - **Dependabot** (`.github/dependabot.yml`): weekly update PRs for pip and GitHub Actions.
 - **Last audit** (2026-11-23): `pip-audit` found **no known vulnerabilities** in `requirements.txt` or the full environment.
 - **Line endings** normalised to LF via `.gitattributes`. **Ignored:** `.venv/`, caches, `data/processed/*`, `models/*`, `.streamlit/secrets.toml`.
@@ -191,7 +208,8 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 |---|---|
 | Network exposure | Listens on `127.0.0.1` only (verified: not reachable via the LAN address); no startup third-party IP lookup |
 | Request forgery / origins | XSRF and CORS protection explicitly enabled (unauthenticated upload PUT → 403) |
-| Framework surfaces | Agent API off (default; 403); static serving off; developer toolbar only for localhost |
+| Framework surfaces | Agent API off (default; 403); static serving **on for `app/static/` fonts only** (test-enforced); developer toolbar only for localhost |
+| Landing site | Static only; strict CSP meta (`default-src 'self'`, no `unsafe-inline`/`unsafe-eval`, `object-src 'none'`, `base-uri 'none'`); DOM built with element APIs (no `innerHTML`); all scripts/fonts self-hosted (no third-party requests); no forms, cookies or analytics |
 | Input validation | Categories, coded values, finite numbers and plausible ranges enforced in `predictor.to_frame`; measurements entered with sliders bounded to the same ranges |
 | Error handling | `showErrorDetails = "none"`; assessments wrapped in try/except with friendly messages; details only in the server console |
 | Abuse | Per-session rate limit (20 assessments / 60 s) |
@@ -222,6 +240,10 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-17 | Progressive result rendering instead of speeding up inference | threads, all-core forests, fewer replicas | Measured: per-call overhead dominates, parallelism was slower; changing replicas/background would alter validated outputs |
 | ADR-18 | Sliders for measurements | number inputs | Streamlit's number input calls `preventDefault()` on wheel events (`NumberInput.js`), blocking page scroll; sliders don't, and show the valid range |
 | ADR-16 | Constraints file instead of hash lockfile | `pip-compile --generate-hashes` | Cross-platform safe pinning of transitive deps without per-platform hash maintenance |
+| ADR-19 | Separate static landing site + restyled Streamlit app | animate inside Streamlit via components/iframes; rewrite the app in a JS framework | Streamlit can't host Lenis/GSAP/Vanta on its own pages; a static site gives full design control and free hosting, while the validated app stays unchanged |
+| ADR-20 | Vendor all site libraries and fonts | CDNs, Google Fonts | No third-party requests (privacy), works offline, strict `script-src 'self'` CSP; versions pinned and integrity-checked |
+| ADR-21 | Site numbers generated from reports (`site_data.py`) | hand-typed copy | Site can't drift from results; tests compare it to the reports |
+| ADR-22 | Site data also emitted as `site-data.js` | `fetch()` the JSON only | Browsers block `fetch` from `file://`; a `<script src>` works locally and under the CSP |
 
 ## 11. Known technical debt
 - Bundles are large (stages 2–3 ~80 MB each, mostly the 20 uncertainty copies of RF ensembles); deployment would need Git LFS / release assets or fewer replicas (and a safer format than pickle, e.g. skops).
@@ -245,6 +267,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-23 | Premium redesign: landing site `site/` (vendored GSAP/Lenis/Vanta, strict CSP), `site_data.py` export, Pages workflow, dark app theme with self-hosted fonts (`enableStaticServing` for fonts only), 98 tests; ADR-19–22 |
 | 2026-11-23 | UI polish: progressive rendering (`assess` fast core + `add_range`/`add_explanation`), sliders, reproducible SHAP, reset fix; latencies corrected; 87 tests; ADR-17/18 |
 | 2026-11-23 | Merged Dependabot updates: ruff 0.17.6, actions/checkout v7, actions/setup-python v7, gitleaks-action v3 (lint, 84 tests and pip-audit re-verified locally) |
 | 2026-11-23 | Security hardening: localhost binding, hidden error details, input validation, rate limiting, integrity manifest, constraints file, CI (ruff/pytest/pip-audit/gitleaks), Dependabot; 84 tests; ADR-12–16; corrected the network-call statement in §1 |

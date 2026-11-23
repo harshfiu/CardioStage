@@ -306,7 +306,7 @@ def stage1_form():
             key="fbs",
             help="Above 120 mg/dl after fasting suggests diabetes.",
         )
-        if st.form_submit_button("Assess risk", type="primary"):
+        if st.form_submit_button("Assess risk"):
             run_stage(1)
 
 
@@ -343,7 +343,7 @@ def stage2_form():
             key="slope",
             help="Upsloping is usually normal; flat or downsloping are warning signs.",
         )
-        if st.form_submit_button("Add treadmill results", type="primary"):
+        if st.form_submit_button("Add treadmill results"):
             run_stage(2)
 
 
@@ -362,7 +362,7 @@ def stage3_form():
             help="Number of major vessels (0-3) visible with dye.",
         )
         c2.selectbox("Thallium scan result", list(THAL), format_func=THAL.get, key="thal")
-        if st.form_submit_button("Add imaging results", type="primary"):
+        if st.form_submit_button("Add imaging results"):
             run_stage(3)
 
 

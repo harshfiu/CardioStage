@@ -20,6 +20,7 @@
 - **Listens on `127.0.0.1:8501` only** (`.streamlit/config.toml` `server.address = "localhost"`). Verified with `netstat` (`TCP 127.0.0.1:8501 LISTENING`) and an HTTP request to the machine's LAN address, which failed (`URLError`). Before remediation it listened on `0.0.0.0:8501` and `[::]:8501`.
 - **No backend API, database, authentication, user accounts, file uploads, webhooks, cloud deployment or containers** exist.
 - **CI exists** (`.github/workflows/ci.yml`: lint, tests, `pip-audit`, gitleaks) with read-only permissions, plus Dependabot (`.github/dependabot.yml`).
+- A **static landing site** (`site/`) is published on GitHub Pages by `.github/workflows/pages.yml`. It has no backend or input, loads nothing from other origins, and uses a strict CSP (see [attack-surface.md §1A](attack-surface.md)).
 - Predictions come from **locally generated model bundles** (`models/stage{1,2,3}.joblib`, git-ignored), loaded with pickle **only after a SHA-256 check** against `models/manifest.json` (`src/cardiostage/integrity.py`).
 
 ## 2. Assets
@@ -55,6 +56,7 @@
 | TB4 | **Server ↔ third party** | – | Closed: no startup IP lookup |
 | TB5 | **Developer/CI ↔ package index and GitHub Actions** | `pip install -r requirements.txt -c constraints.txt`; actions `checkout@v7`, `setup-python@v7`, `gitleaks-action@v3` | Pinned + constrained; audited |
 | TB6 | **Local repo ↔ GitHub** | `git push` (HTTPS, no credentials in remote URL) | Unchanged |
+| TB7 | **Public visitor ↔ landing site** (GitHub Pages, HTTPS) | Page views only | Static; strict CSP; vendored scripts only; no data collected by the project |
 
 ## 5. Entry points
 | ID | Entry point | Reachable from | Notes |
@@ -68,6 +70,8 @@
 | EP7 | `models/*.joblib` | local filesystem | Verified against `manifest.json` before unpickling |
 | EP8 | Dependency installation / CI | PyPI, GitHub | Constraints + `pip-audit` + Dependabot |
 | EP9 | CLI scripts (`python -m cardiostage.*`) | local shell | No listeners |
+| EP10 | `/app/static/fonts/*.woff2` (Streamlit static serving) | localhost | Fonts only (tested); traversal → 400; `nosniff` |
+| EP11 | Landing site (GitHub Pages) | internet | Static files from `site/`; no input |
 
 ## 6. Threats, impact, likelihood, severity, mitigations, status
 | ID | Threat | Attack scenario | Impact | Likelihood (now) | Severity (now) | Existing mitigations | Missing / residual | Status |
@@ -101,7 +105,9 @@
 | Input validation | `predictor.to_frame` (`CHOICES`, `ALLOWED_CODES`, finiteness, `PLAUSIBLE_RANGES`); 11 attack values tested (the earlier Streamlit `number_input` clamping no longer applies: measurements use sliders since 2026-11-23) |
 | Rate limiting | `ratelimit.check_and_record`, `config.RATE_LIMIT_*`; 3 tests |
 | Pickle integrity | `integrity.py`; `manifest.json` written by `calibration.main` / `python -m cardiostage.integrity`; no direct `joblib.load` in `src/` or `app/` outside `integrity.py`; 4 tests |
-| Agent API off, static serving off | Defaults; 403 probe |
+| Agent API off | Default; 403 probe |
+| Static serving limited to fonts | `enableStaticServing = true` with `app/static/` holding only `.woff2` (test-enforced); traversal probes → 400 |
+| Landing-site hardening | Strict CSP, no inline code, no external loads (3 tests in `test_site.py`); vendored libs sha512-verified |
 | Developer options hidden remotely | `client.toolbarMode = "auto"` |
 | Telemetry off | `gatherUsageStats = false` |
 | Session isolation | Shared predictor holds only models + public training data |
@@ -117,3 +123,4 @@
 - 🟡 **SEC-07:** optional hash pinning; pin GitHub Actions to commit SHAs.
 - ⚪ **SEC-09/10:** TLS, authentication and access logging are prerequisites for any shared deployment.
 - 🔍 Confirm the first CI run passes on GitHub after this change is pushed.
+- 🟡 **Landing site:** vendored front-end libraries aren't covered by Dependabot/pip-audit; check for updates manually (e.g. each release). ⚪ `frame-ancestors` can't be set on GitHub Pages (static page with no actions).
