@@ -2,10 +2,14 @@
 
 import streamlit as st
 
+from consent import data_handling_text, is_public_deployment
 from ui import DISCLAIMER
 
 st.title("ℹ️ About CardioStage")
 st.warning(DISCLAIMER, icon="⚕️")
+
+st.markdown("### Your privacy")
+st.markdown(data_handling_text(is_public_deployment()))
 
 st.markdown("""
 ### The idea

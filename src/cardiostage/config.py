@@ -186,3 +186,9 @@ NOVELTY_QUANTILE = 0.01
 # A full 3-stage screening uses 3, so 20/minute never affects normal use.
 RATE_LIMIT_MAX_ASSESSMENTS = 20
 RATE_LIMIT_WINDOW_SECONDS = 60
+# Shared cap across ALL visitors of one running app (matters once the app is
+# public): the free host has ~2 CPU cores, i.e. roughly 20 heavy stage-2/3
+# assessments a minute. Beyond 40/minute everyone would just get slow
+# answers, so new requests are asked to wait briefly instead.
+GLOBAL_RATE_LIMIT_MAX_ASSESSMENTS = 40
+GLOBAL_RATE_LIMIT_WINDOW_SECONDS = 60

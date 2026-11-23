@@ -229,6 +229,12 @@ def patient() -> dict:
     }
 
 
+@st.cache_resource
+def shared_limiter() -> ratelimit.SharedLimiter:
+    # cache_resource: ONE limiter object shared by every session of this app.
+    return ratelimit.SharedLimiter()
+
+
 def run_stage(stage: int):
     # Abuse protection (SEC-02): cap assessments per browser session.
     allowed, st.session_state.assessment_times, wait = ratelimit.check_and_record(
@@ -237,6 +243,15 @@ def run_stage(stage: int):
     if not allowed:
         st.warning(
             f"Too many assessments in a short time. Please wait {wait:.0f} seconds and try again.",
+            icon="⏳",
+        )
+        return
+    # ...and across all visitors together, so a public server stays responsive.
+    allowed, wait = shared_limiter().try_acquire(time.time())
+    if not allowed:
+        st.warning(
+            f"CardioStage is busy with many assessments right now. Please wait {wait:.0f} "
+            "seconds and try again.",
             icon="⏳",
         )
         return

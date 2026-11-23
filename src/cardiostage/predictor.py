@@ -93,6 +93,36 @@ class ModelsNotFoundError(FileNotFoundError):
     pass
 
 
+def load_bundles() -> dict:
+    """
+    The three stage bundles, from the safest source available.
+
+    Public deployment (CARDIOSTAGE_DEPLOYMENT=public): skops files only,
+    downloaded and fingerprint-checked if missing; never a pickle.
+    Locally: the trained joblib bundles when present (fingerprint-checked by
+    integrity.load, SEC-05), otherwise the skops files. Set
+    CARDIOSTAGE_MODEL_FORMAT=skops to force skops locally.
+    """
+    import os
+
+    from cardiostage import model_store
+
+    public = os.environ.get("CARDIOSTAGE_DEPLOYMENT", "").strip().lower() == "public"
+    force_skops = os.environ.get("CARDIOSTAGE_MODEL_FORMAT", "").strip().lower() == "skops"
+    paths = {s: config.MODELS_DIR / f"stage{s}.joblib" for s in config.STAGES}
+    if not public and not force_skops and all(p.exists() for p in paths.values()):
+        return {s: integrity.load(p) for s, p in paths.items()}
+    if public and not model_store.available():
+        model_store.download()  # verified against deploy/models.json before use
+    if model_store.available():
+        return model_store.load_bundles()
+    raise ModelsNotFoundError(
+        "Trained models not found. Either build them (~10 minutes):  "
+        "python -m cardiostage.train_all   or download the released ones:  "
+        "python -m cardiostage.model_store download"
+    )
+
+
 @dataclass
 class Assessment:
     stage: int
@@ -135,19 +165,8 @@ class CardioStagePredictor:
 
     @classmethod
     def load(cls) -> "CardioStagePredictor":
-        paths = {s: config.MODELS_DIR / f"stage{s}.joblib" for s in config.STAGES}
-        missing = [p.name for p in paths.values() if not p.exists()]
-        if missing:
-            raise ModelsNotFoundError(
-                f"Trained models not found ({', '.join(missing)}). "
-                "Build them with:  python -m cardiostage.train_all"
-            )
-        # Bundles are pickles: loading one can run code. integrity.load checks
-        # each file matches the fingerprint recorded when it was built (SEC-05)
-        # and raises IntegrityError otherwise.
-        bundles = {s: integrity.load(p) for s, p in paths.items()}
         train, _ = split_cleveland(load_clean())
-        return cls(bundles, train)
+        return cls(load_bundles(), train)
 
     def explainer(self, stage: int) -> StageExplainer:
         # Built on first use and reused: creating one takes a moment.

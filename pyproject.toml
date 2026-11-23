@@ -37,6 +37,8 @@ dependencies = [
     "plotly==7.1.0",        # interactive charts inside the Streamlit app
     # --- App ---
     "streamlit==1.67.0",    # turns Python scripts into an interactive web app
+    # --- Deployment ---
+    "skops==0.16.0",        # safe model format: loads only explicitly trusted types (no pickle code execution)
 ]
 
 [dependency-groups]
@@ -62,4 +64,4 @@ select = ["E", "F", "W", "I"]
 ignore = ["E501"]   # long lines: some explanatory strings read better unbroken
 
 [tool.ruff.lint.isort]
-known-first-party = ["cardiostage", "ui"]
+known-first-party = ["cardiostage", "ui", "charts", "consent", "app_helpers"]

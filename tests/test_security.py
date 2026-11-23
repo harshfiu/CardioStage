@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from app_helpers import accept_consent
 from cardiostage import config, integrity, ratelimit
 from cardiostage.predictor import CardioStagePredictor, InvalidInputError
 
@@ -186,7 +187,9 @@ def test_app_shows_friendly_errors_not_tracebacks(monkeypatch, error, expected_t
         raise error
 
     monkeypatch.setattr(CardioStagePredictor, "assess", failing_assess)
-    at = AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=180).run()
+    at = accept_consent(
+        AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=180).run()
+    )
     next(b for b in at.button if b.label == "Assess risk").click().run()
 
     assert not at.exception  # no traceback element rendered

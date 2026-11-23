@@ -8,6 +8,7 @@ import streamlit as st
 from cardiostage import config
 from cardiostage.explain import LABELS
 from cardiostage.integrity import IntegrityError
+from cardiostage.model_store import ModelStoreError
 from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
 from charts import DOWN, TEXT_PRIMARY, TEXT_SECONDARY, UP, signed  # shared colour tokens
 
@@ -19,7 +20,9 @@ DISCLAIMER = (
 )
 
 
-@st.cache_resource(show_spinner="Loading CardioStage models (first time only, ~15 seconds)...")
+@st.cache_resource(
+    show_spinner="Loading CardioStage models. The first visit after the app wakes up can take a few minutes; after that it's instant..."
+)
 def get_predictor() -> CardioStagePredictor:
     # cache_resource: load the models ONCE and share them across every page,
     # rerun and visitor, instead of reloading on each click.
@@ -31,6 +34,15 @@ def load_predictor_or_stop() -> CardioStagePredictor:
         return get_predictor()
     except ModelsNotFoundError as e:
         st.error(f"{e}")
+        st.stop()
+    except ModelStoreError as e:
+        # Released model files missing, unreachable or not matching their
+        # recorded fingerprints: never load them (SEC-05).
+        logging.getLogger("cardiostage.app").error("Model files unavailable: %s", e)
+        st.error(
+            "**The models couldn't be loaded right now.** Please try again in a few minutes. "
+            "(For the developer: the model files are missing or failed their fingerprint check.)"
+        )
         st.stop()
     except IntegrityError as e:
         # A model file failed its SHA-256 check: never load it (SEC-05).

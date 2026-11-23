@@ -97,6 +97,10 @@ It is a **portfolio and learning project**, not a medical device.
 | FR34 | Clear path to try it: "Setup guide on GitHub" (and a local-app link when viewed on localhost); disclaimer in the footer | ✅ |
 | FR35 | Personal "Why I built this" note signed by the builder | ✅ |
 | FR36 | App restyled to match the site (dark warm theme, Fraunces/Inter, same risk colours) without changing behaviour | ✅ |
+| FR37 | Public online version of the full screener (all stages, range, explanation) at a stable URL, on free hosting | 🔧 in progress |
+| FR38 | Consent screen before any use: educational-only, emergency advice, how inputs are handled (incl. the host's own statistics) | ✅ |
+| FR39 | Online models loaded only from the skops format with a reviewed trusted-types list, downloaded over HTTPS and verified against committed fingerprints | ✅ (code) |
+| FR40 | A shared rate limit across all visitors so a public server stays responsive | ✅ |
 
 ### 7.3 Pipeline and evaluation
 | ID | Requirement | Status |

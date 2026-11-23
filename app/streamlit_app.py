@@ -10,7 +10,18 @@ st.navigation gives each page a proper title and icon in the sidebar
 
 import streamlit as st
 
+from consent import require_consent
+
 st.set_page_config(page_title="CardioStage", page_icon="🫀", layout="wide")
+
+# Security (SEC-03): never show tracebacks to visitors. .streamlit/config.toml
+# already says "none", but Streamlit Community Cloud overrides that file with
+# `false`, which in this Streamlit version means "stacktrace". The option is
+# scriptable, so setting it here wins in every environment.
+st.set_option("client.showErrorDetails", "none")
+
+# Nothing else runs until the visitor has read and accepted the notice.
+require_consent()
 
 navigation = st.navigation(
     [

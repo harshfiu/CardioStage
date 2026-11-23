@@ -193,6 +193,9 @@ Bordered container, top to bottom:
 | high / refer | `st.error` | ⚠️ | "High estimated risk" / "Above the screening threshold" |
 | uncertain | `st.info` | 🔎 | "Uncertain" (+ suggested next test) |
 
+### 5.3a Consent screen (`app/consent.py`)
+Shown once per browser session before any page runs: title → "Before you start" → `st.warning` (⚕️) *educational project, not a medical device; an estimate that can be wrong; not a diagnosis; chest pain → call your local emergency number* → plain-language data-handling text (local: "runs on this computer… never sent anywhere"; public: processed on Streamlit Community Cloud in the US only to compute the estimate, not stored/logged/shared by CardioStage, the host collects its own usage statistics and an anonymous viewer count, with a link to Streamlit's privacy notice; never asks for identifying details) → checkbox "I understand…" → primary **Continue** button, disabled until ticked. The same data-handling text appears on the About page under "Your privacy".
+
 ### 5.4 Other callouts
 | Callout | Component | Icon |
 |---|---|---|
@@ -203,6 +206,8 @@ Bordered container, top to bottom:
 | Invalid input ("Some inputs aren't valid, so no assessment was made: …") | `st.error` | 🚫 |
 | Unexpected failure ("Something went wrong while assessing this patient…"): never a traceback | `st.error` | 🚫 |
 | Rate limit ("Too many assessments in a short time. Please wait N seconds…") | `st.warning` | ⏳ |
+| Shared limit ("CardioStage is busy with many assessments right now. Please wait N seconds…") | `st.warning` | ⏳ |
+| Models unavailable ("The models couldn't be loaded right now. Please try again in a few minutes.") | `st.error` (stops the page) | – |
 | Model integrity failure ("**Model integrity check failed.** … Rebuild the models with `python -m cardiostage.train_all`.") | `st.error` (stops the page) | – |
 
 **Error-message rules:** say what happened and what to do next, in plain English; never show stack traces, file paths or internal values (`client.showErrorDetails = "none"`); no result is shown when an assessment fails.

@@ -55,6 +55,7 @@ CardioStage/
 ├── app/
 │   ├── streamlit_app.py        entry point: set_page_config + st.navigation
 │   ├── charts.py               Plotly chart builders for the Results page (dark palette, colour tokens shared with ui.py)
+│   ├── consent.py              consent screen shown before anything runs; local vs public wording (CARDIOSTAGE_DEPLOYMENT)
 │   ├── ui.py                   shared UI: get_predictor (cached; handles missing/tampered models), render_assessment, contribution_chart, DISCLAIMER
 │   ├── views/                  screener.py (rate limit + error handling) · results.py · about.py
 │   └── static/fonts/           Fraunces + Inter woff2 (OFL), served at /app/static/ (fonts only)
@@ -93,7 +94,8 @@ CardioStage/
 | `uncertainty.py` | Subsample ensemble ranges; novelty detection | `SubsampleEnsemble`, `NoveltyDetector`, `straddles` | preprocessing |
 | `calibration.py` | Phase 5: calibration comparison, uncertainty evaluation, final bundles + integrity manifest (`--report-only` mode) | `make_variant`, `expected_calibration_error`, `main` | staging, uncertainty, integrity |
 | `integrity.py` | **SHA-256 manifest** for every pickle the code loads; verify-before-unpickle | `write_manifest`, `verify`, `load`, `IntegrityError`; CLI `python -m cardiostage.integrity` | config |
-| `ratelimit.py` | Pure sliding-window limiter (per browser session) | `check_and_record(timestamps, now)` | config |
+| `ratelimit.py` | Sliding-window limits: per browser session (pure function) and shared by all sessions (thread-safe) | `check_and_record(timestamps, now)`, `SharedLimiter.try_acquire(now)` | config |
+| `model_store.py` | Safe model files for the public app: skops export, manifest (`deploy/models.json`), verified HTTPS download from a GitHub release, loading with an explicit trusted-types list | `export`, `write_manifest`, `download`, `available`, `load_bundles`, `TRUSTED_TYPES`; CLI | integrity, config |
 | `stats.py` | Bootstrap CIs, exact proportion CIs, prior shift | `bootstrap_ci`, `exact_proportion_ci`, `prior_shift` | scipy, numpy |
 | `explain.py` | SHAP permutation explainer on original features, text formatting | `StageExplainer`, `explanation_text`, `format_value` | shap |
 | `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment in a fast core + optional add-ons | `CardioStagePredictor.load()`, `.assess(patient, stage, explain=, with_range=)` → `Assessment`; `.add_range()`, `.add_explanation()`; `InvalidInputError` | data, explain, integrity |
@@ -158,7 +160,7 @@ render_assessment(result, predictor) ─► progressive:
 | Training | parallel grid search (`n_jobs=-1`), parallel replicas/SHAP chunks (joblib) | full rebuild ~10 min on 20 cores |
 
 ## 6. Configuration
-**Python (`config.py`):** `RANDOM_SEED=42`, `TEST_SIZE=0.2`, `CV_FOLDS=5`, `CV_REPEATS=3`, `SCREENING_RECALL=0.97`, `RULE_OUT_RECALL=0.99`, `RULE_IN_PRECISION=0.90`, `CALIBRATION_METHODS`, `N_REPLICAS=20`, `REPLICA_FRACTION=0.8`, `UNCERTAINTY_PERCENTILES=(10, 90)`, `USE_UNCERTAINTY_GUARD=False`, `NOVELTY_QUANTILE=0.01`, `RATE_LIMIT_MAX_ASSESSMENTS=20`, `RATE_LIMIT_WINDOW_SECONDS=60`, stage feature lists, feature types, paths. Input validation limits (`CHOICES`, `ALLOWED_CODES`, `PLAUSIBLE_RANGES`) live in `predictor.py`.
+**Python (`config.py`):** `RANDOM_SEED=42`, `TEST_SIZE=0.2`, `CV_FOLDS=5`, `CV_REPEATS=3`, `SCREENING_RECALL=0.97`, `RULE_OUT_RECALL=0.99`, `RULE_IN_PRECISION=0.90`, `CALIBRATION_METHODS`, `N_REPLICAS=20`, `REPLICA_FRACTION=0.8`, `UNCERTAINTY_PERCENTILES=(10, 90)`, `USE_UNCERTAINTY_GUARD=False`, `NOVELTY_QUANTILE=0.01`, `RATE_LIMIT_MAX_ASSESSMENTS=20`, `RATE_LIMIT_WINDOW_SECONDS=60`, `GLOBAL_RATE_LIMIT_MAX_ASSESSMENTS=40`, `GLOBAL_RATE_LIMIT_WINDOW_SECONDS=60`, stage feature lists, feature types, paths. Input validation limits (`CHOICES`, `ALLOWED_CODES`, `PLAUSIBLE_RANGES`) live in `predictor.py`.
 
 **Streamlit (`.streamlit/config.toml`):**
 | Setting | Value | Purpose |
@@ -191,7 +193,9 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
 | `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
 | `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
-| **Total** | **106** | 93 run without models; 13 skip with a "trained models missing" reason | |
+| `test_public.py` | 6 | nothing runs before consent, consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
+| `test_model_store.py` | 9 | verified archive download extracted (archive not kept, nothing re-fetched), tampered archive / tampered member / oversized download rejected with no leftovers, plain HTTP and path-traversal names refused, mismatched local file refused before anything loads, trusted-types list unchanged, **skops models give identical results to the trained originals** (risk, range, zone, flags, explanation) | 1 (equivalence) |
+| **Total** | **121** | 107 run without models; 14 skip with a "trained models missing" reason | |
 
 Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; format: `uv run ruff format src tests app tools`; audit: `uv run pip-audit --skip-editable`.
 

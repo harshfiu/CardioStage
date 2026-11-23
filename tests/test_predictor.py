@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from app_helpers import accept_consent
 from cardiostage import config
 
 MODELS_PRESENT = all((config.MODELS_DIR / f"stage{s}.joblib").exists() for s in config.STAGES)
@@ -85,7 +86,7 @@ def test_app_runs_full_flow():
     from streamlit.testing.v1 import AppTest
 
     app = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
-    at = AppTest.from_file(str(app), default_timeout=180).run()
+    at = accept_consent(AppTest.from_file(str(app), default_timeout=180).run())
     assert not at.exception
     at.selectbox(key="example").set_value("Uncertain, then cleared").run()
     assert at.session_state.age == 54  # example loaded into the form
@@ -128,7 +129,7 @@ def test_reset_clears_example_and_inputs():
     from streamlit.testing.v1 import AppTest
 
     app = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
-    at = AppTest.from_file(str(app), default_timeout=180).run()
+    at = accept_consent(AppTest.from_file(str(app), default_timeout=180).run())
     at.selectbox(key="example").set_value("Known limitation").run()
     assert at.session_state.age == 57 and any("known weakness" in i.value for i in at.info)
     next(b for b in at.button if b.label == "Reset all inputs").click().run()

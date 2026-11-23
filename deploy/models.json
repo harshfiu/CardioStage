@@ -1,0 +1,268 @@
+{
+  "about": "Fingerprints of the released skops model files (cardiostage.model_store).",
+  "base_url": "https://github.com/harshfiu/CardioStage/releases/download/models-v1/",
+  "archive": {
+    "name": "cardiostage-models.zip",
+    "bytes": 266884030,
+    "sha256": "ff038d5f1ab2a7ab79aa68877be4d5181794ef54f30765f6f9d50b5d5b320c2b"
+  },
+  "replicas": {
+    "1": 20,
+    "2": 20,
+    "3": 20
+  },
+  "files": {
+    "stage1-range-00.skops": {
+      "bytes": 12037,
+      "sha256": "92329d03cfebe657b71324dcb33101474a0b1ea45bd323e6c9d036b4c1b85498"
+    },
+    "stage1-range-01.skops": {
+      "bytes": 12032,
+      "sha256": "4a23f58d530452614618975cc55472a8e9b7c68b423e4f5798474655c6e8fd5a"
+    },
+    "stage1-range-02.skops": {
+      "bytes": 12045,
+      "sha256": "1e04fa6a89762d7d48690092df285fbcadb7f7f6c03a9af803034aca2b2d0890"
+    },
+    "stage1-range-03.skops": {
+      "bytes": 11990,
+      "sha256": "66e3f3dbadd16653a6bce2341f5bf9de62c0835ede9f3f577a2ab48154d15366"
+    },
+    "stage1-range-04.skops": {
+      "bytes": 12068,
+      "sha256": "669aed988d6b574362bfed0f8ca4e002678eed3af10bb2cf0f13b4c74eb6c63f"
+    },
+    "stage1-range-05.skops": {
+      "bytes": 12020,
+      "sha256": "01e3e496b30257cff5044edbe5b372b04a234d79e6b7a4125a769f0766c465c6"
+    },
+    "stage1-range-06.skops": {
+      "bytes": 12062,
+      "sha256": "bb870405c3cf25ea82a9909e30908eb547e4362d4e80ba5f923179cde9e6fb34"
+    },
+    "stage1-range-07.skops": {
+      "bytes": 12051,
+      "sha256": "a3c57b7cffcced2d55c302c181dd74326a97fab94a2e85edb8a5e0e7e8eda836"
+    },
+    "stage1-range-08.skops": {
+      "bytes": 12017,
+      "sha256": "88e0b04f62a86ebacd08cb10651ca3fddd7cdf3cb0eabfcc17f3b1398ee1000a"
+    },
+    "stage1-range-09.skops": {
+      "bytes": 12041,
+      "sha256": "3770dee45ae6a1ad23b969cb086750bfd54df6443efec9fa46078d11c45b19de"
+    },
+    "stage1-range-10.skops": {
+      "bytes": 12051,
+      "sha256": "41aa7795e748648f07aa51bb46e55e8bb70dd5329ba87953d562529bb70d57fb"
+    },
+    "stage1-range-11.skops": {
+      "bytes": 12030,
+      "sha256": "7117a6f73fd04ddcc42c18b5d38851efe864a5b77e7a059852a3a6dfd8f89ee7"
+    },
+    "stage1-range-12.skops": {
+      "bytes": 12107,
+      "sha256": "321250fa7bf03c6f1a520b53ffc6c7b7b41504e08a3b0e9d59b36f4f6eac48f5"
+    },
+    "stage1-range-13.skops": {
+      "bytes": 12058,
+      "sha256": "cc40fddc2119d45381907b49673e5dd67d5a80958d9fd5c405e61e5cf7477090"
+    },
+    "stage1-range-14.skops": {
+      "bytes": 12067,
+      "sha256": "1dd79f22ec31190e74faa992f4c4bfb711daf84a3871f61c712c4a0459c37fa5"
+    },
+    "stage1-range-15.skops": {
+      "bytes": 12072,
+      "sha256": "2676bc85d76411f7c78f51581222634a2b1e597370d8882d1065d81c203dfa9e"
+    },
+    "stage1-range-16.skops": {
+      "bytes": 12045,
+      "sha256": "4d2b29935b39fa2ad3eccd533b480ec5ee9fe10a2733aa1058a7513951626bfd"
+    },
+    "stage1-range-17.skops": {
+      "bytes": 12030,
+      "sha256": "8f8660deee0bb0f8ff1f433adea0283f618dce56f04eddf3bb19a81bea479e8a"
+    },
+    "stage1-range-18.skops": {
+      "bytes": 12051,
+      "sha256": "166e10c14817dcc72719a1bf5181ea5c2f6388315672a6c0c4b5588361f64f3f"
+    },
+    "stage1-range-19.skops": {
+      "bytes": 12051,
+      "sha256": "d622d40265e20551954ae6dffea7fd7364cb3e8223da899b099e4f1c5f48d428"
+    },
+    "stage1.skops": {
+      "bytes": 1883957,
+      "sha256": "bc0a0cf5f73e9909d045192098034d25c645ee12826c3c27c2f66af19765d06d"
+    },
+    "stage2-range-00.skops": {
+      "bytes": 6046387,
+      "sha256": "d0ecbfc7549796cd73e2758cd37b97705df9ad8ac9a33975d6248932e275c3ef"
+    },
+    "stage2-range-01.skops": {
+      "bytes": 6026627,
+      "sha256": "fcbbae3abf68fc3cfd1d24b26ee1ab380efefa4f4c609cfecbab2d8b3a41de2f"
+    },
+    "stage2-range-02.skops": {
+      "bytes": 6017860,
+      "sha256": "255941ee81582e1997aa3f4f7c4c63136ccedf77c0cbc65475290377976870ad"
+    },
+    "stage2-range-03.skops": {
+      "bytes": 6031161,
+      "sha256": "f1c62cdc19514fbeeba9dda97bdc9972ecebffe772e066b01146a8dee388806c"
+    },
+    "stage2-range-04.skops": {
+      "bytes": 6023378,
+      "sha256": "585505037dbc42c482ee04fd27194d75d4d48b1ee6da179cd519538ac73cec7f"
+    },
+    "stage2-range-05.skops": {
+      "bytes": 6028652,
+      "sha256": "b33318560552786a9a1f7f8a8879254475c7243e2acfeb9494299ce3541ba21a"
+    },
+    "stage2-range-06.skops": {
+      "bytes": 6021460,
+      "sha256": "2226ee1f37f35b346afe849c71a697ba35da9a479f0e5382f008042420730b8e"
+    },
+    "stage2-range-07.skops": {
+      "bytes": 6032318,
+      "sha256": "14fd111de9080a6fc22591564ff9f6bc74b06fdbba5eed03271cf21a58e8c63e"
+    },
+    "stage2-range-08.skops": {
+      "bytes": 6040766,
+      "sha256": "748535c5f11a7a21dd9535819cbafb91a11472343f914f121de0b88e6ef18a58"
+    },
+    "stage2-range-09.skops": {
+      "bytes": 6027349,
+      "sha256": "536c9e75694da54c8d696ada3461843a7db55343d47f7522c1caf5b20a60b892"
+    },
+    "stage2-range-10.skops": {
+      "bytes": 6007728,
+      "sha256": "4bf268da315a8577872066bf393b3bd0164521f03813b9db8a858cf69064ad71"
+    },
+    "stage2-range-11.skops": {
+      "bytes": 6022652,
+      "sha256": "01cf957d27342802be9be16461d6a264f36e585779b191ebbd9d72e3b41907c1"
+    },
+    "stage2-range-12.skops": {
+      "bytes": 6007662,
+      "sha256": "8bca734908cd76be491572a9e8d9075a72919db689ef7f456c46fd172c9f54ac"
+    },
+    "stage2-range-13.skops": {
+      "bytes": 6011197,
+      "sha256": "e2439797991939b925ab23361519b20dc86eda4fa905122a1578d072afc83700"
+    },
+    "stage2-range-14.skops": {
+      "bytes": 6043394,
+      "sha256": "96e5dd38e73e9aa3378f590c398db8cab8878507afbb9bda589581045641dc36"
+    },
+    "stage2-range-15.skops": {
+      "bytes": 6015602,
+      "sha256": "8b82636e1056972982a714a98352dc6f5f40d9ca397fa07fc47b5c96b87e882d"
+    },
+    "stage2-range-16.skops": {
+      "bytes": 6022555,
+      "sha256": "054c1994e353ca56f299a2f0539c108b9f8fff2af29d164c0a694e36540b536a"
+    },
+    "stage2-range-17.skops": {
+      "bytes": 6048799,
+      "sha256": "9b45d858355b99f7489344525d3fcbeac0918eda04f22386d9fea4a773c27ba5"
+    },
+    "stage2-range-18.skops": {
+      "bytes": 6029118,
+      "sha256": "2565f6c7e88bd062f7f141bdb1b57e37ab1a28d7ae4506016990a16b27de7a72"
+    },
+    "stage2-range-19.skops": {
+      "bytes": 6026738,
+      "sha256": "06b3793ca52383f3bb70cea400a7018ad8ab26b6f521108320a2e7a2f58c1fb9"
+    },
+    "stage2.skops": {
+      "bytes": 9638585,
+      "sha256": "bd75d2ad740e85302d146e4311f52aa749d7834340a732c325c0036b33fdac63"
+    },
+    "stage3-range-00.skops": {
+      "bytes": 6274893,
+      "sha256": "1d0dee49997130c574d398acd7effe24d62ca91f19e4f4e1334ba40ce7b426fb"
+    },
+    "stage3-range-01.skops": {
+      "bytes": 6312115,
+      "sha256": "b11cae63d06ae6fe46ee5c68ab11a2b07855f7790e9c639e6619d1f5a0654754"
+    },
+    "stage3-range-02.skops": {
+      "bytes": 6269264,
+      "sha256": "c8d7ae09ec05a1ee4648bfd2fb6784de67cb7e11854abab80da73fb9359ed0a2"
+    },
+    "stage3-range-03.skops": {
+      "bytes": 6239260,
+      "sha256": "cd10722b2b29c05166c1e854319992cb51768faf40938ad5c3666f803622ce10"
+    },
+    "stage3-range-04.skops": {
+      "bytes": 6288907,
+      "sha256": "f25478aa2fa32975d8bb749fff43f82ba501ba6785c86fbf22983cbe2ff069f3"
+    },
+    "stage3-range-05.skops": {
+      "bytes": 6237240,
+      "sha256": "eac41921eeced07cf0de33bc41bf8d2feb2abc864f3cafda1fd9df3f3b8454ae"
+    },
+    "stage3-range-06.skops": {
+      "bytes": 6218628,
+      "sha256": "f158925431e246fc3d4beedf70de0044a4464ce6e67efc67a7cadda063168907"
+    },
+    "stage3-range-07.skops": {
+      "bytes": 6226373,
+      "sha256": "c7a869e1781db39eb1f40e8a47d22aa4d6e073978dfdbf972a447e47d907bd1b"
+    },
+    "stage3-range-08.skops": {
+      "bytes": 6222375,
+      "sha256": "ad9273212244ca2c27943d473e21c4da5a35e8b8c1738d6e657ac52bf8e658ed"
+    },
+    "stage3-range-09.skops": {
+      "bytes": 6237772,
+      "sha256": "6ed9e0931f0d6b526122426175a837fd5925c8e36520c8ab39b52e6ba2c88afc"
+    },
+    "stage3-range-10.skops": {
+      "bytes": 6221810,
+      "sha256": "ade22f94a50dbffdd2439325062af4634609fa2f5875b17ce6b4748cbe2b9c37"
+    },
+    "stage3-range-11.skops": {
+      "bytes": 6224584,
+      "sha256": "36c8309cbcda5020aac888bd929315820b675c70e87ed81a2847a1fed99e900d"
+    },
+    "stage3-range-12.skops": {
+      "bytes": 6179428,
+      "sha256": "2cf283715ade7f8665dd8616d19d557de5131c0b8d308622a37ca7ef572cdc6e"
+    },
+    "stage3-range-13.skops": {
+      "bytes": 6211279,
+      "sha256": "81e05cb1be8d03fb2e29365a055e77bf195d0e9c999dca960e8ded82a11b107d"
+    },
+    "stage3-range-14.skops": {
+      "bytes": 6233222,
+      "sha256": "f337cfda97efcaa0345c28ab1c8185772642f9e4df2a513508c376a267b4b550"
+    },
+    "stage3-range-15.skops": {
+      "bytes": 6213255,
+      "sha256": "fb38e6e9399db18435260ae97ebe5af9af9aa74dfc1b9be2b9d0c549c1f912fa"
+    },
+    "stage3-range-16.skops": {
+      "bytes": 6186753,
+      "sha256": "3b689987f5865f4176920f5ecf7e817aada539f3c16984277d7749ed3e0b829d"
+    },
+    "stage3-range-17.skops": {
+      "bytes": 6195912,
+      "sha256": "8eaa371299ecb024b2704fba89a02f7e40f474876786d20225604b8c06ff9b31"
+    },
+    "stage3-range-18.skops": {
+      "bytes": 6175596,
+      "sha256": "0e708fccf47f61ac4c31ae00f28d6509b225be746e29aa3fc07cc8257c70096e"
+    },
+    "stage3-range-19.skops": {
+      "bytes": 6156496,
+      "sha256": "f3975d996536f4d74007bd39f35016c0c301ccfab40f7b806e7dd788e57580f3"
+    },
+    "stage3.skops": {
+      "bytes": 10056596,
+      "sha256": "9935f75eef90940f4edd3c17e9d57c9504685adc13496c4f00134afa070d0c31"
+    }
+  }
+}
