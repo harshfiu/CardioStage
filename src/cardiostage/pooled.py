@@ -11,9 +11,10 @@ hospital that has each stage's measurements:
                          (Iran has no exercise test)
     stage 3 (imaging)    Cleveland (other hospitals are 90-99% missing)
 
-Sealed test (v2): 20% of EVERY hospital, stratified by hospital and outcome,
-set aside before anything else and opened once at the very end. (v1's
-Cleveland test set was already opened, so v2 needs a fresh one.)
+Sealed test (v2): Cleveland keeps v1's 61 test patients (v2 reuses v1's
+stage-2/3 models, trained on the other 243, so a new Cleveland split would
+leak); every other hospital contributes a fresh 20%, stratified by outcome.
+Opened once, at the very end.
 
 Leave-one-hospital-out (LOHO): for each hospital H, train without H and test
 on H. That's the honest answer to "how will this do at a hospital it has
@@ -36,7 +37,7 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 
 from cardiostage import config
 from cardiostage.calibration import expected_calibration_error
-from cardiostage.data import load_clean
+from cardiostage.data import load_clean, split_cleveland
 from cardiostage.external_iran import load_iran, to_cardiostage
 from cardiostage.models import MODEL_NAMES
 from cardiostage.staging import grid_search
@@ -61,12 +62,22 @@ def load_pooled() -> pd.DataFrame:
 
 
 def split_v2(df: pd.DataFrame):
-    """(train, sealed_test): 20% of every hospital, stratified by hospital and outcome."""
-    strata = df[config.HOSPITAL_COLUMN] + "_" + df[config.TARGET_COLUMN].astype(str)
-    train, test = train_test_split(
-        df, test_size=TEST_SIZE_V2, stratify=strata, random_state=config.RANDOM_SEED
+    """
+    (train, sealed_test) for v2.
+
+    Cleveland keeps EXACTLY v1's split (243 train / 61 test): v2 reuses v1's
+    stage-2/3 models, which trained on those 243, so any other Cleveland split
+    would put their training patients into the test set (leakage). Every other
+    hospital: a fresh 20%, stratified by outcome.
+    """
+    cle = df[df[config.HOSPITAL_COLUMN] == config.TRAIN_HOSPITAL]
+    cle_train, cle_test = split_cleveland(cle)  # same rows, order and seed as v1
+    rest = df[df[config.HOSPITAL_COLUMN] != config.TRAIN_HOSPITAL]
+    strata = rest[config.HOSPITAL_COLUMN] + "_" + rest[config.TARGET_COLUMN].astype(str)
+    rest_train, rest_test = train_test_split(
+        rest, test_size=TEST_SIZE_V2, stratify=strata, random_state=config.RANDOM_SEED
     )
-    return train.copy(), test.copy()
+    return pd.concat([cle_train, rest_train]).copy(), pd.concat([cle_test, rest_test]).copy()
 
 
 def stage_data(df: pd.DataFrame, stage: int) -> pd.DataFrame:

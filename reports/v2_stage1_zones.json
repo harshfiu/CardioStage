@@ -1,0 +1,8 @@
+{
+  "chosen": "logistic_regression",
+  "calibration": "sigmoid",
+  "zones": {
+    "rule_out_below": 0.1693691119609713,
+    "rule_in_from": 0.8960711522847741
+  }
+}

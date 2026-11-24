@@ -59,3 +59,21 @@ def test_stage_hospitals(data):
     assert set(pooled.stage_data(data, 1)[config.HOSPITAL_COLUMN]) == set(pooled.HOSPITALS)
     assert "Iran" not in set(pooled.stage_data(data, 2)[config.HOSPITAL_COLUMN])  # no exercise test
     assert set(pooled.stage_data(data, 3)[config.HOSPITAL_COLUMN]) == {"Cleveland"}
+
+
+def test_cleveland_split_is_exactly_v1s(data, split):
+    """No v2 test patient may have trained v1's stage-2/3 models (leakage)."""
+    import pandas as pd
+
+    from cardiostage.data import load_clean, split_cleveland
+
+    uci = load_clean()
+    _, v1_test = split_cleveland(uci)
+    _, test = split
+    v2_cle = test[test[config.HOSPITAL_COLUMN] == "Cleveland"]
+    assert len(v2_cle) == len(v1_test) == 61
+    assert sorted(v2_cle.index) == sorted(v1_test.index)  # the same patients...
+    cols = config.STAGES[3] + [config.TARGET_COLUMN]
+    pd.testing.assert_frame_equal(  # ...with the same values
+        v2_cle.loc[v1_test.index, cols], v1_test[cols], check_dtype=False
+    )

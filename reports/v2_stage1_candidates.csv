@@ -1,0 +1,21 @@
+held_out,candidate,auc
+Cleveland,logistic_regression,0.797911547911548
+Cleveland,random_forest,0.805009555009555
+Cleveland,xgboost,0.793953043953044
+Cleveland,ensemble,0.8029620529620529
+Hungary,logistic_regression,0.8241610738255034
+Hungary,random_forest,0.8276352151598894
+Hungary,xgboost,0.830714567706277
+Hungary,ensemble,0.8342676667982629
+Switzerland,logistic_regression,0.7282608695652174
+Switzerland,random_forest,0.7608695652173914
+Switzerland,xgboost,0.6992753623188406
+Switzerland,ensemble,0.7264492753623188
+VA Long Beach,logistic_regression,0.6968788755684167
+VA Long Beach,random_forest,0.6547126911947085
+VA Long Beach,xgboost,0.6749689954526664
+VA Long Beach,ensemble,0.6776560562215791
+Iran,logistic_regression,0.7327636759654854
+Iran,random_forest,0.7258105051520481
+Iran,xgboost,0.7326380162519895
+Iran,ensemble,0.736701013655022

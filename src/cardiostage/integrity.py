@@ -83,7 +83,12 @@ def load(path: Path, manifest_path: Path = MANIFEST_PATH):
 def stage_bundle_paths() -> list:
     """Every pickle the code loads back: stage bundles + saved out-of-fold predictions."""
     paths = [config.MODELS_DIR / f"stage{s}.joblib" for s in config.STAGES]
-    for extra in ("phase4_oof.joblib", "phase5_oof.joblib"):
+    for extra in (
+        "phase4_oof.joblib",
+        "phase5_oof.joblib",
+        "v2_stage1_oof.joblib",
+        "v1_stage1.joblib",
+    ):
         if (config.MODELS_DIR / extra).exists():
             paths.append(config.MODELS_DIR / extra)
     return paths
