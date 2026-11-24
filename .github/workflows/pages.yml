@@ -21,14 +21,16 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Two jobs, as in GitHub's official Pages template. With upload and deploy in
+# ONE job, deploy-pages intermittently failed with "No artifacts named
+# github-pages were found" (twice in five runs): the uploaded artifact isn't
+# always registered yet when the next step asks for it. A separate deploy job
+# starts only after the build job, and its artifact, are complete.
 jobs:
-  deploy:
-    name: Deploy site/ to GitHub Pages
+  build:
+    name: Package site/
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -38,5 +40,14 @@ jobs:
         with:
           path: site
 
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
