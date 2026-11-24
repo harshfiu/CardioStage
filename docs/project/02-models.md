@@ -237,6 +237,33 @@ A second candidate (Mendeley "Cardiovascular_Disease_Dataset", India, 1,000 rows
 6. SHAP explains the model, not causation; tree components create step-shaped effects (age ~57, chol ~230).
 7. The plausible range is not a validated error detector.
 
+## 11A. Version 2.0 (stage 1 learned from five hospitals)
+**Why:** v1 failed the Iran test (§10.4). **What changed:** only stage 1; stages 2–3 are v1's Cleveland models.
+
+| Item | v2 stage 1 |
+|---|---|
+| Training data | 976 patients: Cleveland 243 (v1's exact training split), Hungary 234, VA Long Beach 159, Switzerland 98, Iran 242 (`pooled.split_v2`) |
+| Sealed test | 245: Cleveland's 61 = v1's test patients (prevents leakage into v1's stage-2/3 models); a fresh 20% of every other hospital |
+| Iran cholesterol | Treated as not measured (estimated, modern statin era; it made pooling learn "lower cholesterol = more risk": −0.06 → +0.14 after the fix) |
+| Model | **Logistic regression**, uncalibrated (lowest Brier). LOHO rule preferred random forest (0.769 vs 0.758, within noise), but the forest failed sanity checks (missing-cholesterol shortcut, non-monotonic cholesterol); owner chose LR |
+| Zones | clear < **14.4%**, refer ≥ **94.6%** (99% recall / 90% precision on pooled out-of-fold predictions) |
+| Sanity checks (every retrain) | cholesterol never lowers risk; missing cholesterol isn't a shortcut; typical angina > non-anginal; older riskier |
+| Example (55-year-old man, typical angina, chol 240) | v1 32% → v2 84% |
+
+**Leave-one-hospital-out (training data, `reports/v2_loho.csv`):** pooled vs Cleveland-only stage-1 AUC on the unseen hospital: Iran 0.74 vs 0.67, Cleveland 0.80 vs 0.84, Hungary 0.83 vs 0.85, VA 0.68 vs 0.68, Switzerland 0.73 vs 0.74. Stage 2: within noise, so not pooled.
+
+**Final exam (`reports/v2_final_*`).** The exam script was committed before opening (`815d371`).
+
+| Stage 1, 245 sealed patients | v1 | v2, first look (official, first v2) | v2, second look (fixed model, slightly optimistic) |
+|---|---|---|---|
+| AUC, all | 0.767 | 0.836 | **0.841** |
+| ECE | 0.148 | 0.053 | **0.040** |
+| Sick wrongly cleared | 10 | 1 | **0** |
+| Iran AUC | 0.747 | 0.930 | 0.932 |
+| VA Long Beach AUC | 0.833 | 0.663 | 0.713 |
+
+VA investigation: v1 was lucky on VA's 40 test patients (0.69 on VA's other 159); both strategies score about 0.69–0.70 at VA on unseen-hospital tests. Typical angina (Iran test, 33 patients, 97% sick): v1 28%, v2 81%, so the **warning stays** (owner: until completely unnecessary). Cleveland 3-stage policy: recall 100% for both; treadmill 69% → 92%, invasive 49% → 54%.
+
 ## 12. Artefacts
 | File | Size | Contents |
 |---|---|---|
@@ -292,6 +319,7 @@ python -m cardiostage.chart_data           # Results-page chart data (reports/ch
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | §11A: version 2.0 (pooled stage 1, cholesterol fix, LR + sanity checks, first and second look) |
 | 2026-11-24 | §10.4: external test on Iran (Z-Alizadeh Sani): stage-1 AUC 0.675, recall 0.68; typical-angina underestimation; India dataset rejected; limitation 0 added |
 | 2026-11-24 | §12: skops export for the public app (identical results verified); models and metrics unchanged |
 | 2026-11-23 | §12–13: Results-chart data export (`chart_data.py`) using the analysis phases' own functions (ECE values verified equal to the reports); case study now records her out-of-fold risk (7.1%, cleared) next to the final model's 9.2%; models and metrics unchanged |

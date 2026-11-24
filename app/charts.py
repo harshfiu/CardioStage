@@ -516,3 +516,45 @@ def external_calibration_caption(ext: dict) -> str:
         for h, e in ext.items()
     ]
     return "Calibration error (ECE) before → after adjusting: " + "; ".join(parts) + "."
+
+
+# ---- Version 2 ----------------------------------------------------------------
+def v2_vs_v1(table) -> go.Figure:
+    """Stage-1 ROC-AUC (95% CI) per hospital on the sealed test: v1 vs v2 (same patients)."""
+    hospitals = [h for h in table["hospital"].unique() if h != "All hospitals"] + ["All hospitals"]
+    fig = go.Figure()
+    for version, color, name, offset in (
+        ("v1", SERIES[1], "v1 (Cleveland only)", -0.13),
+        ("v2", SERIES[0], "v2 (five hospitals)", 0.13),
+    ):
+        sub = table[table["version"] == version].set_index("hospital").loc[hospitals]
+        ci = [parse_ci(s) for s in sub["roc_auc"]]
+        ys = [i + offset for i in range(len(hospitals))]
+        fig.add_trace(
+            go.Scatter(
+                x=[c["value"] for c in ci],
+                y=ys,
+                mode="markers",
+                marker=dict(size=11, color=color, line=dict(color=SURFACE, width=2)),
+                name=name,
+                customdata=[[c["low"], c["high"], h] for c, h in zip(ci, hospitals)],
+                hovertemplate=(
+                    f"{name}<br>%{{customdata[2]}}: AUC %{{x:.3f}} "
+                    "[%{customdata[0]:.3f}, %{customdata[1]:.3f}]<extra></extra>"
+                ),
+                **_ci_error(ci, "x"),
+            )
+        )
+    fig.add_vline(x=0.5, line=dict(color=REFERENCE, dash="dash", width=1))
+    fig.update_yaxes(
+        tickvals=list(range(len(hospitals))),
+        ticktext=hospitals,
+        autorange="reversed",
+        tickfont=dict(size=13, color=TEXT_PRIMARY),
+        showgrid=False,
+    )
+    fig.update_xaxes(
+        range=[0.4, 1.02],
+        title_text="Stage-1 ROC-AUC on the sealed test (95% CI) · dashed = coin flip",
+    )
+    return _style(fig, 420)

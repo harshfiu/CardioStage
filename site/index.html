@@ -76,9 +76,9 @@
     <span class="stat__note">on a test set kept sealed until the very end (exact 95% CI for recall: <span data-bind="sealed_recall_ci">87.7–100%</span>)</span>
   </div>
   <div class="card stat reveal">
-    <span class="stat__value"><span data-bind="hospitals">3</span> hospitals</span>
-    <span class="stat__label">tested without retraining</span>
-    <span class="stat__note">Hungary, Switzerland and VA Long Beach, including where it struggles</span>
+    <span class="stat__value"><span data-bind="hospitals">5</span> hospitals</span>
+    <span class="stat__label">learned from in version 2</span>
+    <span class="stat__note">Cleveland, Hungary, Switzerland, VA Long Beach and Iran: the check-up model now learns from all of them</span>
   </div>
 </section>
 
@@ -171,7 +171,7 @@
 <section class="container section" aria-labelledby="hosp-title">
   <div class="section-head reveal">
     <span class="eyebrow">Tested beyond home</span>
-    <h2 id="hosp-title">Trained in Cleveland. Checked in three other hospitals.</h2>
+    <h2 id="hosp-title">Version 1: trained in Cleveland, checked in three other hospitals.</h2>
     <p class="lead lead--sm">Ranking quality (ROC-AUC, 0.5 = coin flip, 1.0 = perfect) with 95% intervals. Hungary looks like Cleveland; VA Long Beach is harder; Switzerland had only 8 healthy patients, so we honestly can't tell.</p>
   </div>
   <figure class="card chart reveal" aria-label="ROC-AUC by hospital for the check-up and treadmill stages">
@@ -180,13 +180,33 @@
   </figure>
 </section>
 
+<!-- VERSION 2 -->
+<section class="container section" id="v2" aria-labelledby="v2-title">
+  <div class="section-head reveal">
+    <span class="eyebrow">Version 2</span>
+    <h2 id="v2-title">Then we tested it on modern patients, and learned from them.</h2>
+    <p class="lead lead--sm">On 303 patients from Iran (2010s), version 1 missed about a third of sick patients: it had learned from 1980s Cleveland that <em>typical angina</em> means low risk. Version 2's check-up model learns from all five hospitals. Same sealed-test patients for both versions below.</p>
+  </div>
+  <figure class="card chart reveal" aria-label="Check-up stage ROC-AUC per hospital on the sealed test, version 1 versus version 2">
+    <div class="hosp" data-chart="v2"></div>
+    <ul class="legend" aria-label="Legend"><li><span class="swatch swatch--blue"></span>Version 2 (five hospitals)</li><li><span class="swatch swatch--warm"></span>Version 1 (Cleveland only)</li></ul>
+    <figcaption class="chart__caption">Ranking quality (ROC-AUC) with 95% intervals, 245 sealed-test patients. Overall: <strong data-bind="v1_auc">0.78</strong> → <strong data-bind="v2_auc">0.84</strong>. Sick patients wrongly reassured at the check-up: <strong data-bind="v1_cleared">9</strong> → <strong data-bind="v2_cleared">0</strong>.</figcaption>
+  </figure>
+  <ul class="limits__list v2__notes reveal">
+    <li><strong>Typical angina, then and now:</strong> in Iran, <span data-bind="ta_actual">97%</span> of these patients were sick. Version 1 estimated <span data-bind="ta_v1">28%</span>, version 2 <span data-bind="ta_v2">81%</span>: much better, still somewhat low, so the app keeps its warning.</li>
+    <li><strong>An honest weak spot:</strong> at VA Long Beach, version 2 ranks its 40 test patients worse than version 1 did. Version 1 was unusually lucky there; on hospitals neither version saw, both score about 0.70 at VA.</li>
+    <li><strong>A flaw we caught and fixed:</strong> pooling first taught the model that lower cholesterol means more risk, because Iran's cholesterol is estimated, in a modern population. That value is now treated as not measured.</li>
+    <li><strong>Two looks at the test:</strong> these numbers are a second look after that fix, so they're slightly optimistic. The first, unbiased look at the first version 2 was AUC <span data-bind="first_auc">0.84</span> with <span data-bind="first_cleared">1</span> sick patient wrongly reassured.</li>
+  </ul>
+</section>
+
 <!-- LIMITATIONS -->
 <section class="container" id="limits" aria-labelledby="limits-title">
   <div class="card limits reveal">
     <span class="eyebrow">What it can't do</span>
     <h2 id="limits-title">Limitations, stated plainly.</h2>
     <ul class="limits__list">
-      <li><strong>Tested on modern patients from Iran, it missed about a third of sick patients.</strong> It badly underestimates "typical angina", a classic warning sign, because its 1980s training data showed the opposite. The app now warns about this, and a multi-hospital version 2 is in progress.</li>
+      <li><strong>Version 1 missed about a third of sick patients in a modern test (Iran).</strong> Version 2 learns from five hospitals and fixes most of that, but still somewhat underestimates "typical angina" (the app warns about it) and did worse than version 1 at VA Long Beach.</li>
       <li>Learned from 243 patients at one US hospital in the 1980s. Medicine and people have changed since.</li>
       <li>Everyone in the data was already referred for heart tests, so its patterns don't apply to the general public.</li>
       <li>Its decision thresholds were tuned in Cleveland; any new setting would need to check them again.</li>

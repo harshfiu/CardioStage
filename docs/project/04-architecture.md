@@ -66,14 +66,14 @@ CardioStage/
 │   └── README.md               source, licence, hospital counts
 ├── deploy/models.json          SHA-256 manifest of the released skops model archive + its 63 files (committed)
 ├── docs/
-│   ├── learning/               13 beginner guides + index
+│   ├── learning/               14 beginner guides + index
 │   ├── images/                 README screenshots (made by tools/screenshots.py)
 │   └── project/                these 4 living documents + index
 ├── models/                     generated artefacts + manifest.json (git-ignored except .gitkeep)
 ├── reports/                    result CSV/JSON (committed) + figures/ (committed)
 ├── site/                       landing site: index.html · assets/{css,js,img,data} · vendor/ (pinned, sha512-verified libs) · fonts/ · licenses/ (+ NOTICES.html)
 ├── src/cardiostage/            the installable package (see §3)
-├── tests/                      122 pytest tests (see §7)
+├── tests/                      140 pytest tests (see §7)
 ├── tools/screenshots.py        dev tool: regenerates README screenshots via headless Chrome (DevTools protocol)
 ├── .gitattributes / .gitignore line endings (LF) / ignored paths
 ├── pyproject.toml              package metadata, pinned direct dependencies (+ dev group), pytest + ruff config
@@ -100,6 +100,9 @@ CardioStage/
 | `stats.py` | Bootstrap CIs, exact proportion CIs, prior shift | `bootstrap_ci`, `exact_proportion_ci`, `prior_shift` | scipy, numpy |
 | `explain.py` | SHAP permutation explainer on original features, text formatting | `StageExplainer`, `explanation_text`, `format_value` | shap |
 | `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment in a fast core + optional add-ons | `CardioStagePredictor.load()`, `.assess(patient, stage, explain=, with_range=)` → `Assessment`; `.add_range()`, `.add_explanation()`; `InvalidInputError` | data, explain, integrity |
+| `pooled.py` | v2 data: five hospitals in one table (Iran cholesterol not used), `split_v2` (Cleveland = v1's exact split; others 20%), stage hospital sets, leave-one-hospital-out comparison | `load_pooled`, `split_v2`, `stage_data`, `loho` | data, external_iran, staging |
+| `v2_stage1.py` | Trains v2 stage 1: LOHO candidate comparison, calibration, zones, sanity checks, bundle (v1 backup `v1_stage1.joblib`) | `main`, `sanity_checks`, `MODEL_CHOICE` | pooled, calibration, staging, uncertainty, integrity |
+| `v2_final.py` | v2 final exam, v1 vs v2 on the sealed test; `first_look` / `second_look` labels | `main(label)` | pooled, staging, stats |
 | `external_iran.py` | External test on the Iranian Z-Alizadeh Sani cohort: column mapping (documented assumptions), stage-1 evaluation with `external_validation.evaluate` | `load_iran`, `to_cardiostage`, `main` | external_validation, predictor, stats |
 | `external_validation.py` | Phase 6a analysis | `main` | stats, calibration, integrity |
 | `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging, integrity |
@@ -193,12 +196,13 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_explain.py` | 5 | encode/decode, SHAP additivity, baseline, text | no |
 | `test_predictor.py` | 14 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example, typical-angina caution rule + carried at every stage | yes (rule test: no) |
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
-| `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
+| `test_site.py` | 12 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON, v2 numbers match reports | no (site data is committed) |
 | `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
 | `test_public.py` | 7 | nothing runs before consent, `*.streamlit.app` counts as public (safety net), consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
 | `test_model_store.py` | 9 | verified archive download extracted (archive not kept, nothing re-fetched), tampered archive / tampered member / oversized download rejected with no leftovers, plain HTTP and path-traversal names refused, mismatched local file refused before anything loads, trusted-types list unchanged, **skops models give identical results to the trained originals** (risk, range, zone, flags, explanation) | 1 (equivalence) |
 | `test_external_iran.py` | 6 | published data fingerprint, shape/outcome, chest-pain/cholesterol/other mappings, every mapped patient passes the app's input validation | no |
-| **Total** | **132** | 115 run without models; 17 skip with a "trained models missing" reason | |
+| `test_pooled.py` | 7 | five hospitals, 20% per hospital, stratified, reproducible, stage hospital sets, **Cleveland split = v1's exactly (no leakage)**, Iran cholesterol not used | no |
+| **Total** | **140** | 123 run without models; 17 skip with a "trained models missing" reason | |
 
 Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; format: `uv run ruff format src tests app tools`; audit: `uv run pip-audit --skip-editable`.
 
@@ -275,6 +279,10 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-17 | Progressive result rendering instead of speeding up inference | threads, all-core forests, fewer replicas | Measured: per-call overhead dominates, parallelism was slower; changing replicas/background would alter validated outputs |
 | ADR-18 | Sliders for measurements | number inputs | Streamlit's number input calls `preventDefault()` on wheel events (`NumberInput.js`), blocking page scroll; sliders don't, and show the valid range |
 | ADR-16 | ~~Constraints file instead of hash lockfile~~ (superseded by ADR-24) | `pip-compile --generate-hashes` | Was: cross-platform pinning without per-platform hash maintenance |
+| ADR-27 | v2: pool stage 1 only; stages 2–3 stay Cleveland | pool all stages; keep v1 | LOHO: pooling helps modern patients (Iran) at a small cost elsewhere; no clear gain for stage 2; stage 3 data exists only at Cleveland |
+| ADR-28 | Treat Iran's estimated cholesterol as not measured | keep the estimate; adjust by hospital | The estimate confounds era and medication with risk (learned a backwards effect); training-data evidence only |
+| ADR-29 | Logistic regression over the LOHO-preferred random forest, with automatic sanity checks | follow the rule strictly | Gap within noise; the forest learned a missing-value shortcut and a non-monotonic cholesterol curve |
+| ADR-30 | Report the first and second look at the sealed test separately | silently replace the first result | The first look prompted changes; transparency about test reuse |
 | ADR-25 | Host the public app on Streamlit Community Cloud (free) | Hugging Face Spaces (needs PRO since Streamlit runs as a paid Docker Space); in-browser rewrite | Free, made for Streamlit, deploys from the repo and `uv.lock`; trade-offs (forced telemetry, settings overrides, no custom headers) accepted and disclosed by the owner |
 | ADR-26 | skops models split per range copy, shipped as one SHA-pinned release archive | one skops file per stage; pickles + manifest; Git LFS | One-file conversion was pathologically slow (40+ min, unfinished); split files take ~6 s each; one archive keeps the release to a single upload; release assets avoid LFS bandwidth limits and keep Git history small |
 | ADR-24 | `uv` lockfile with checksums; actions pinned to commit SHAs | pip-tools per-platform hashed files; keep constraints | One cross-platform lock with hashes for every wheel; `--locked` installs fail on drift; a hashed `requirements.txt` export keeps plain-pip installs (and hosting platforms) working; SHAs can't be re-pointed like tags |
@@ -305,6 +313,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | Version 2.0: `pooled.py`, `v2_stage1.py`, `v2_final.py`; models/stage1.joblib = v2 (v1 kept as `v1_stage1.joblib`); manifest covers both; Results 'Version 2' tab; site Version 2 section; ADR-27–30; 140 tests |
 | 2026-11-24 | External test on Iran (`external_iran.py`, `data/raw/external/`), known-weakness cautions in the engine (`known_cautions`), external CSVs kept byte-exact via `.gitattributes`; 132 tests |
 | 2026-11-24 | Public deployment: Streamlit Community Cloud (§8A), consent screen, `model_store` (skops, release archive, SHA-pinned manifest), shared rate limit, error-detail override, Host-based public detection; ADR-25/26 |
 | 2026-11-23 | Supply chain (SEC-07 ✅): `uv.lock` with checksums replaces `constraints.txt`; dependencies moved to `pyproject.toml`; hashed `requirements.txt` export; CI on `uv sync --locked`; all actions pinned to commit SHAs; Dependabot on uv; `requires-python >=3.12`; ADR-24 |

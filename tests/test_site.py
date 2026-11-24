@@ -138,3 +138,16 @@ def test_external_hospitals_match_reports():
     for h in DATA["external"]:
         row = ext[(ext["stage"] == 1) & (ext["hospital"] == h["hospital"])].iloc[0]
         assert h["stage1"]["value"] == pytest.approx(row["auc_value"])
+
+
+def test_version2_numbers_match_reports():
+    second = pd.read_csv(config.REPORTS_DIR / "v2_final_second_look_stage1.csv")
+    v2 = DATA["v2"]
+    assert v2["hospitals"] == ["Cleveland", "Hungary", "Switzerland", "VA Long Beach", "Iran"]
+    for r in v2["sealed_test_second_look"]:
+        row = second[(second.hospital == r["hospital"]) & (second.version == r["version"])].iloc[0]
+        assert r["cleared_but_sick"] == row["cleared_but_sick"]
+        assert r["auc"]["value"] == pytest.approx(row["auc_value"], abs=5e-4)
+    ta = pd.read_csv(config.REPORTS_DIR / "v2_final_second_look_typical_angina.csv")
+    iran = ta[ta.group == "Iran"].iloc[0]
+    assert v2["typical_angina_iran"]["v2"] == pytest.approx(iran["predicted_v2"])

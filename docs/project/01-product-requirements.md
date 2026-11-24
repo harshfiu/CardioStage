@@ -100,6 +100,9 @@ It is a **portfolio and learning project**, not a medical device.
 | FR37 | Public online version of the full screener (all stages, range, explanation) at a stable URL, on free hosting | ✅ https://cardiostage.streamlit.app (verified end to end, 2026-11-24) |
 | FR38 | Consent screen before any use: educational-only, emergency advice, how inputs are handled (incl. the host's own statistics) | ✅ |
 | FR39 | Online models loaded only from the skops format with a reviewed trusted-types list, downloaded over HTTPS and verified against committed fingerprints | ✅ (code) |
+| FR41 | Version 2: stage 1 learned from five hospitals, chosen by unseen-hospital performance, with automatic medical sanity checks | ✅ |
+| FR42 | v2 evaluated on a sealed test set prepared before any v2 decision, with the exam script committed before opening; any re-run labelled as a second look | ✅ |
+| FR43 | Known-weakness warnings kept until completely unnecessary (owner rule); v2 wording updated to v2's numbers | ✅ |
 | FR40 | A shared rate limit across all visitors so a public server stays responsive | ✅ |
 
 ### 7.3 Pipeline and evaluation
@@ -119,7 +122,7 @@ It is a **portfolio and learning project**, not a medical device.
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
 | NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off; site and app fonts/libraries self-hosted (no CDN or Google Fonts) |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`; every package locked with checksums (`uv.lock`) |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 122 tests (run in CI) |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 140 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes; WCAG AA contrast; reduced-motion support; usable at phone width | ✅ see [Design system](03-design-system.md) §7 (measured contrast) |
@@ -185,6 +188,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | Learning guides for security and the website, `v1.0` release, README screenshots, dark Results charts; cloud deployment, new data and remaining hardening deferred | Owner's choice (items 1–4 now, 5–7 later) |
 | 2026-11-23 | Items 5–7 started in order 7 → 5 → 6: uv lock + actions pinned to SHAs; full app online on Hugging Face Spaces (free tier first, consent gate, no login, no tracking, skops models, host URL); free public datasets, test then retrain as v2.0 with a new sealed test | Owner's answers; owner asked to be asked for consent wherever it might be needed |
 | 2026-11-24 | Host on **Streamlit Community Cloud** (free) instead of Hugging Face (Streamlit there now needs the $9/month PRO plan); keep the plausible range online; skops for all model files | Owner's choices; HF free tier no longer hosts Streamlit |
+| 2026-11-24 | v2: pool stage 1 only (LOHO evidence); investigate VA before shipping; treat Iran cholesterol as not measured; logistic regression over random forest; report both exam looks; keep the typical-angina warning ("don't drop the warning until it's COMPLETELY unnecessary") with updated wording | Owner's decisions |
 | 2026-11-24 | After the Iran external test: warn now on typical angina in the live app; build v2.0 by pooling all five hospitals with leave-one-hospital-out testing and a new sealed test; exclude the India dataset | Owner's choices; v1 caught only ~68% of sick Iranian patients |
 | 2026-11-24 | Accept Streamlit Cloud's forced usage statistics and anonymous viewer count, disclosed clearly on the consent screen | Owner's choice (free hosting) |
 
@@ -220,6 +224,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | FR41–43 (version 2.0) and v2 decisions logged |
 | 2026-11-24 | Iran external test logged; typical-angina warning; v2.0 plan decided |
 | 2026-11-24 | FR37 live (Streamlit Community Cloud), FR38–40 done; hosting and privacy decisions logged |
 | 2026-11-23 | NFR4/NFR8: uv lock with checksums; Python ≥ 3.12 stated honestly (was ≥ 3.10, which pandas 3 can't run on); decisions for items 5–7 logged |

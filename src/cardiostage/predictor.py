@@ -95,12 +95,13 @@ class ModelsNotFoundError(FileNotFoundError):
 
 # Known weaknesses found by external testing, shown with any matching estimate.
 # Each entry: (which patients, plain-language caution). Evidence lives in
-# reports/phase10_iran_external.csv and docs/learning/14-new-data.md.
+# reports/phase10_iran_external.csv (v1), reports/v2_final_second_look_typical_angina.csv
+# (v2) and docs/learning/14-new-data-and-v2.md. Kept until it is completely unnecessary (owner).
 TYPICAL_ANGINA_CAUTION = (
-    "**Known weakness: this estimate is probably too low.** In an external test on 303 "
-    "modern patients (Iran, 2010s), 94% of people with typical angina had coronary artery "
-    "disease, but CardioStage estimated only about 23% on average: it learned the opposite "
-    "pattern from its 1980s training data. Typical angina is a classic warning sign. Please "
+    "**Known weakness: this estimate may still be too low.** Version 2 learned from five "
+    "hospitals and now treats typical angina as a strong warning sign, but in a test on modern "
+    "patients (Iran, 2010s) 97% of people with typical angina had coronary artery disease, while "
+    "CardioStage estimated about 81% on average. Typical angina is a classic warning sign. Please "
     "treat it as a reason to see a doctor, whatever this number says."
 )
 

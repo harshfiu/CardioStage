@@ -57,7 +57,7 @@
 | Transport | HTTPS only: plain HTTP is redirected to HTTPS by the platform | `curl http://cardiostage.streamlit.app` → 303 to an `https://` URL |
 | Consent | Nothing runs until the visitor ticks "I understand…" (educational only, emergency advice, data handling, host statistics) | `app/consent.py`; `test_public.py`; verified live |
 | Public detection | `CARDIOSTAGE_DEPLOYMENT=public` (a Community Cloud secret) **or** a `*.streamlit.app` Host header (safety net if the secret is missing) | `consent.is_public_deployment`; tested |
-| Models | Never pickles online: skops files from the `models-v1` release, archive + all 63 files pinned by SHA-256 in `deploy/models.json`, HTTPS only, size-capped, only manifest names extracted, everything verified before anything loads, reviewed trusted-types list | `model_store.py`; `test_model_store.py` (9); live download verified 63/63 |
+| Models | Never pickles online: skops files from the `models-v2` release, archive + all 63 files pinned by SHA-256 in `deploy/models.json`, HTTPS only, size-capped, only manifest names extracted, everything verified before anything loads, reviewed trusted-types list | `model_store.py`; `test_model_store.py` (9); live download verified 63/63 |
 | Error details | Community Cloud forces `client.showErrorDetails=false` (= "stacktrace" in Streamlit 1.67); the app resets it to `"none"` at startup | `streamlit_app.py`; `test_error_details_forced_to_none` |
 | Abuse | Per-session limit (20/min) + shared limit across all visitors (40/min, thread-safe) | `ratelimit.SharedLimiter`; tests |
 | Patient data | Processed in memory only; never stored or logged by CardioStage; failures log no inputs | Code review; no file/DB writes in `app/` |

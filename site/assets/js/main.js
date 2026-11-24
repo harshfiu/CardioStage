@@ -39,7 +39,19 @@
       sealed_missed: test.sick_missed,
     };
     // Small number: shown directly (a 0→3 count-up reads "1 hospitals" mid-way).
-    setText('[data-bind="hospitals"]', String(D.external.filter(function (h) { return !h.internal; }).length));
+    setText('[data-bind="hospitals"]', String(D.v2 ? D.v2.hospitals.length : 5));
+    if (D.v2) {
+      var v2all = function (v) { return D.v2.sealed_test_second_look.filter(function (r) { return r.hospital === "All hospitals" && r.version === v; })[0]; };
+      setText('[data-bind="v1_auc"]', v2all("v1").auc.value.toFixed(2));
+      setText('[data-bind="v2_auc"]', v2all("v2").auc.value.toFixed(2));
+      setText('[data-bind="v1_cleared"]', String(v2all("v1").cleared_but_sick));
+      setText('[data-bind="v2_cleared"]', String(v2all("v2").cleared_but_sick));
+      var ta = D.v2.typical_angina_iran;
+      setText('[data-bind="ta_actual"]', pct(ta.actual)); setText('[data-bind="ta_v1"]', pct(ta.v1)); setText('[data-bind="ta_v2"]', pct(ta.v2));
+      var first = D.v2.first_look_all.filter(function (r) { return r.version === "v2"; })[0];
+      setText('[data-bind="first_auc"]', first.auc.value.toFixed(2));
+      setText('[data-bind="first_cleared"]', String(first.cleared_but_sick));
+    }
     document.querySelectorAll("[data-count]").forEach(function (n) {
       var v = counts[n.dataset.count];
       n.dataset.target = v;
@@ -174,6 +186,41 @@
     host.appendChild(axis);
   }
 
+  function chartV2() {
+    var host = document.querySelector('[data-chart="v2"]');
+    if (!host || !D || !D.v2) return;
+    var lo = 0.4, hi = 1.0;
+    function x(v) { return ((Math.max(lo, v) - lo) / (hi - lo) * 100).toFixed(2) + "%"; }
+    var rows = D.v2.sealed_test_second_look;
+    D.v2.hospitals.concat(["All hospitals"]).forEach(function (hname) {
+      var get = function (v) { return rows.filter(function (r) { return r.hospital === hname && r.version === v; })[0]; };
+      var a = get("v1"), b = get("v2");
+      if (!a || !b || !a.auc || !b.auc) return;
+      var row = el("div", "hosp__row");
+      var name = el("div", "hosp__name", hname);
+      name.appendChild(el("span", "", "n=" + b.n + " sealed-test patients"));
+      var plot = el("div", "hosp__plot");
+      plot.setAttribute("role", "img");
+      plot.setAttribute("aria-label", hname + ": version 2 AUC " + b.auc.value.toFixed(2) + " (" + b.auc.low.toFixed(2) + " to " + b.auc.high.toFixed(2) + "), version 1 AUC " + a.auc.value.toFixed(2) + " (" + a.auc.low.toFixed(2) + " to " + a.auc.high.toFixed(2) + ")");
+      [0.5, 0.6, 0.7, 0.8, 0.9].forEach(function (g) { var gl = el("span", "hosp__grid"); gl.style.left = x(g); plot.appendChild(gl); });
+      [["s1", b.auc], ["s2", a.auc]].forEach(function (s) {
+        var ci = el("span", "hosp__ci hosp__ci--" + s[0]);
+        ci.style.left = x(s[1].low); ci.style.width = "calc(" + x(s[1].high) + " - " + x(s[1].low) + ")";
+        var pt = el("span", "hosp__pt hosp__pt--" + s[0]);
+        pt.style.left = x(s[1].value);
+        plot.appendChild(ci); plot.appendChild(pt);
+      });
+      row.appendChild(name); row.appendChild(plot);
+      host.appendChild(row);
+    });
+    var axis = el("div", "hosp__axis");
+    axis.appendChild(el("span", "", "ROC-AUC"));
+    var ticks = el("div", "hosp__ticks");
+    [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].forEach(function (t) { var s = el("span", "", t.toFixed(1)); s.style.left = x(t); ticks.appendChild(s); });
+    axis.appendChild(ticks);
+    host.appendChild(axis);
+  }
+
   // Show the "open local app" button only when viewing the site on this computer.
   function localAppLink() {
     var local = location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -245,7 +292,7 @@
     gsap.from(".bar__fill", { scaleX: 0, duration: 1.2, ease: "power3.out", stagger: 0.2, scrollTrigger: { trigger: "#chart-compare", start: "top 80%", once: true } });
     gsap.from(".flow__seg", { scaleX: 0, duration: 0.8, ease: "power2.out", stagger: 0.08, scrollTrigger: { trigger: "#chart-flow", start: "top 80%", once: true } });
     gsap.from(".explain__bar", { scaleX: 0, duration: 0.9, ease: "power2.out", stagger: 0.08, scrollTrigger: { trigger: ".explain", start: "top 85%", once: true } });
-    gsap.from(".hosp__pt, .hosp__ci", { opacity: 0, duration: 0.6, stagger: 0.04, scrollTrigger: { trigger: ".hosp", start: "top 85%", once: true } });
+    gsap.utils.toArray(".hosp").forEach(function (hc) { gsap.from(hc.querySelectorAll(".hosp__pt, .hosp__ci"), { opacity: 0, duration: 0.6, stagger: 0.04, scrollTrigger: { trigger: hc, start: "top 85%", once: true } }); });
 
     // "How it works": pinned on wide screens; stages light up in turn while a dot travels.
     var mm = gsap.matchMedia();
@@ -288,7 +335,7 @@
   }
 
   // ---------- go ----------
-  try { fillNumbers(); chartCompare(); chartFlow(); chartExplain(); chartHospitals(); } catch (e) { /* static fallbacks stay */ }
+  try { fillNumbers(); chartCompare(); chartFlow(); chartExplain(); chartHospitals(); chartV2(); } catch (e) { /* static fallbacks stay */ }
   localAppLink();
   if (MOTION) {
     document.documentElement.classList.add("has-motion");

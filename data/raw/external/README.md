@@ -12,7 +12,7 @@
 
 ## ❌ Cardiovascular_Disease_Dataset, India (rejected)
 - **Source:** Mendeley Data, DOI 10.17632/dzz48mvjht.1 (2021), 1,000 rows, CC BY 4.0. Not stored in this repository.
-- **Why rejected** (checked on 2026-11-24; details in docs/learning/14-new-data.md):
+- **Why rejected** (checked on 2026-11-24; details in docs/learning/14-new-data-and-v2.md):
   1. Its own description contradicts the data: slope documented as 1–3 but 180 rows are 0 (all disease-free); cholesterol documented as 126–564 but 53 rows are 0 and the maximum is 602.
   2. Ages are uniformly spread (KS test p = 0.11), unlike any real clinical cohort (Cleveland p ≈ 1e-11).
   3. Classic predictors show no link to disease (age AUC 0.51, exercise angina 0.52), while slope codes determine the outcome almost completely (0 → 0%, 2 → 96%, 3 → 100%).

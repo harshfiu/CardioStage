@@ -166,25 +166,30 @@
   ],
   "example": {
     "stage": 1,
-    "risk": 0.3309797956145486,
-    "baseline": 0.4617251442200239,
+    "risk": 0.40308820380167504,
+    "baseline": 0.608797425983848,
     "zone": "uncertain",
     "headline": "Uncertain",
     "contributions": [
       {
         "label": "Chest pain type",
         "value": "non-anginal (chest pain unlikely to be heart-related)",
-        "points": -19.7
+        "points": -22.5
       },
       {
         "label": "Sex",
         "value": "male",
-        "points": 8.9
+        "points": 6.4
       },
       {
         "label": "Age",
         "value": "54 years",
-        "points": -2.5
+        "points": -2.9
+      },
+      {
+        "label": "Fasting blood sugar",
+        "value": "normal",
+        "points": -2.2
       },
       {
         "label": "Cholesterol",
@@ -192,16 +197,199 @@
         "points": 0.5
       },
       {
-        "label": "Fasting blood sugar",
-        "value": "normal",
-        "points": -0.1
-      },
-      {
         "label": "Resting blood pressure",
         "value": "135 mm Hg",
-        "points": -0.1
+        "points": 0.2
       }
     ]
+  },
+  "v2": {
+    "hospitals": [
+      "Cleveland",
+      "Hungary",
+      "Switzerland",
+      "VA Long Beach",
+      "Iran"
+    ],
+    "model": "logistic_regression",
+    "sealed_test_second_look": [
+      {
+        "hospital": "Cleveland",
+        "version": "v1",
+        "n": 61,
+        "auc": {
+          "value": 0.857,
+          "low": 0.756,
+          "high": 0.949
+        },
+        "ece": 0.1289203034754414,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "Cleveland",
+        "version": "v2",
+        "n": 61,
+        "auc": {
+          "value": 0.82,
+          "low": 0.707,
+          "high": 0.918
+        },
+        "ece": 0.16158526886575625,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "Hungary",
+        "version": "v1",
+        "n": 58,
+        "auc": {
+          "value": 0.813,
+          "low": 0.689,
+          "high": 0.919
+        },
+        "ece": 0.08210054613834569,
+        "cleared_but_sick": 1
+      },
+      {
+        "hospital": "Hungary",
+        "version": "v2",
+        "n": 58,
+        "auc": {
+          "value": 0.83,
+          "low": 0.719,
+          "high": 0.924
+        },
+        "ece": 0.09655736396535478,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "Switzerland",
+        "version": "v1",
+        "n": 25,
+        "auc": {
+          "value": 0.761,
+          "low": 0.571,
+          "high": 0.917
+        },
+        "ece": 0.30796966026687556,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "Switzerland",
+        "version": "v2",
+        "n": 25,
+        "auc": {
+          "value": 0.848,
+          "low": 0.684,
+          "high": 0.981
+        },
+        "ece": 0.2738949711684395,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "VA Long Beach",
+        "version": "v1",
+        "n": 40,
+        "auc": {
+          "value": 0.833,
+          "low": 0.685,
+          "high": 0.944
+        },
+        "ece": 0.07229399125312,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "VA Long Beach",
+        "version": "v2",
+        "n": 40,
+        "auc": {
+          "value": 0.713,
+          "low": 0.508,
+          "high": 0.88
+        },
+        "ece": 0.11759782234681102,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "Iran",
+        "version": "v1",
+        "n": 61,
+        "auc": {
+          "value": 0.734,
+          "low": 0.577,
+          "high": 0.872
+        },
+        "ece": 0.4200975895241742,
+        "cleared_but_sick": 8
+      },
+      {
+        "hospital": "Iran",
+        "version": "v2",
+        "n": 61,
+        "auc": {
+          "value": 0.932,
+          "low": 0.833,
+          "high": 0.995
+        },
+        "ece": 0.09764235927086046,
+        "cleared_but_sick": 0
+      },
+      {
+        "hospital": "All hospitals",
+        "version": "v1",
+        "n": 245,
+        "auc": {
+          "value": 0.777,
+          "low": 0.716,
+          "high": 0.835
+        },
+        "ece": 0.1415090928848041,
+        "cleared_but_sick": 9
+      },
+      {
+        "hospital": "All hospitals",
+        "version": "v2",
+        "n": 245,
+        "auc": {
+          "value": 0.841,
+          "low": 0.789,
+          "high": 0.891
+        },
+        "ece": 0.04019992513823093,
+        "cleared_but_sick": 0
+      }
+    ],
+    "first_look_all": [
+      {
+        "hospital": "All hospitals",
+        "version": "v1",
+        "n": 245,
+        "auc": {
+          "value": 0.767,
+          "low": 0.707,
+          "high": 0.827
+        },
+        "ece": 0.1479970591721242,
+        "cleared_but_sick": 10
+      },
+      {
+        "hospital": "All hospitals",
+        "version": "v2",
+        "n": 245,
+        "auc": {
+          "value": 0.836,
+          "low": 0.782,
+          "high": 0.887
+        },
+        "ece": 0.05283571224843831,
+        "cleared_but_sick": 1
+      }
+    ],
+    "typical_angina_iran": {
+      "n": 33,
+      "actual": 0.9696969696969697,
+      "v1": 0.28325143013869764,
+      "v2": 0.8135488177185323
+    }
   },
   "targets": {
     "screening_recall": 0.97

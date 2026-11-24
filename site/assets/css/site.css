@@ -233,3 +233,6 @@ section { scroll-margin-top: 80px; }
 .notices .lead { margin-bottom: 28px; }
 .notices .limits__list { margin-bottom: 36px; }
 .notices a { color: var(--warm); }
+
+/* Version 2 notes under the comparison chart */
+.v2__notes { margin-top: 24px; }

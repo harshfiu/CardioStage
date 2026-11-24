@@ -146,7 +146,7 @@ def test_typical_angina_caution_rule():
     assert known_cautions({"cp": "typical angina"}) == [TYPICAL_ANGINA_CAUTION]
     for other in ("atypical angina", "non-anginal", "asymptomatic", None):
         assert known_cautions({"cp": other}) == []
-    assert "probably too low" in TYPICAL_ANGINA_CAUTION and "94%" in TYPICAL_ANGINA_CAUTION
+    assert "may still be too low" in TYPICAL_ANGINA_CAUTION and "97%" in TYPICAL_ANGINA_CAUTION
 
 
 @needs_models

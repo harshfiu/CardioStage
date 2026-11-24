@@ -54,8 +54,16 @@ c3.metric(
     delta_color="off",
 )
 
-tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
+st.info(
+    "**Stage 1 is now version 2**, learned from five hospitals (Cleveland, Hungary, "
+    "Switzerland, VA Long Beach, Iran). Stages 2-3 are unchanged. The first tab shows the v2 "
+    "evidence; the other tabs document the original v1 analysis (Cleveland only).",
+    icon="🆕",
+)
+
+tabv2, tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
+        "Version 2",
         "Sealed test set",
         "Staged screening",
         "Calibration",
@@ -64,6 +72,75 @@ tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
         "Explanations",
     ]
 )
+
+with tabv2:
+    st.markdown("#### Version 2: learning from five hospitals")
+    st.markdown(
+        "Tested on 303 modern patients from Iran, v1 (trained on 1980s Cleveland) missed about "
+        "a third of sick patients, mainly because it had learned that *typical angina* means "
+        "low risk. Version 2's check-up model learned from all five hospitals instead."
+    )
+    second = pd.read_csv(REP / "v2_final_second_look_stage1.csv")
+    chart(
+        charts.v2_vs_v1(second),
+        caption="Same 245 sealed-test patients for both versions (20% of every hospital; "
+        "Cleveland's are v1's original test patients).",
+    )
+    show = second[second["hospital"] == "All hospitals"].set_index("version")
+    c1, c2, c3 = st.columns(3)
+    c1.metric(
+        "Ranking quality (AUC)",
+        f"{show.loc['v2', 'auc_value']:.2f}",
+        f"{show.loc['v2', 'auc_value'] - show.loc['v1', 'auc_value']:+.2f} vs v1",
+        delta_color="off",
+    )
+    c2.metric(
+        "Calibration error (ECE)",
+        f"{show.loc['v2', 'ece']:.3f}",
+        f"{show.loc['v2', 'ece'] - show.loc['v1', 'ece']:+.3f} vs v1",
+        delta_color="inverse",
+    )
+    c3.metric(
+        "Sick patients wrongly cleared",
+        f"{int(show.loc['v2', 'cleared_but_sick'])} of 145",
+        f"v1: {int(show.loc['v1', 'cleared_but_sick'])}",
+        delta_color="off",
+    )
+    per = second[second["hospital"] != "All hospitals"].pivot(
+        index="hospital", columns="version", values="cleared_but_sick"
+    )
+    per.columns = ["Sick wrongly cleared (v1)", "Sick wrongly cleared (v2)"]
+    st.dataframe(per, width="stretch")
+    ta = pd.read_csv(REP / "v2_final_second_look_typical_angina.csv").set_index("group")
+    ta = ta.rename(
+        columns={
+            "n": "Patients",
+            "actual": "Actually sick",
+            "predicted_v1": "v1 predicted",
+            "predicted_v2": "v2 predicted",
+        }
+    )
+    st.markdown("##### Typical angina: actual vs predicted")
+    st.dataframe(
+        ta.style.format(
+            {"Actually sick": "{:.0%}", "v1 predicted": "{:.0%}", "v2 predicted": "{:.0%}"}
+        ),
+        width="stretch",
+    )
+    st.markdown(
+        "- **Honest weak spot: VA Long Beach.** v2 ranks its 40 sealed patients worse than v1 "
+        "(0.71 vs 0.83). v1 was unusually lucky there (0.69 on VA's other 159 patients); on "
+        "hospitals it never saw, both versions score about 0.70 at VA.\n"
+        "- **A flaw found and fixed:** pooling first taught the model that *lower* cholesterol "
+        "means more risk, because Iran's cholesterol is estimated and low in a modern population. "
+        "Iran's estimated cholesterol is now treated as not measured.\n"
+        "- **Typical angina is still underestimated** in modern patients (Iran: 97% sick, v2 "
+        "predicts ~81%), so the app keeps its warning.\n"
+        "- **Two looks at the sealed test:** the first look is the unbiased exam of the first v2 "
+        "(AUC 0.84, 1 sick patient wrongly cleared). The numbers above are a **second look** at "
+        "the fixed model, slightly optimistic because the first look prompted the fix. The cost "
+        "of v2: at Cleveland, 92% of patients need the treadmill test (v1: 69%)."
+    )
 
 with tab0:
     st.markdown("#### The final exam: 61 patients never used during development")

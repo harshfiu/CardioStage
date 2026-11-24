@@ -216,6 +216,9 @@ Shown once per browser session before any page runs: title → "Before you start
 ### 5.5 Contribution chart (`ui.contribution_chart`, Plotly)
 Horizontal bars, labels `Measurement = value`, coral `#FF8A65` positive / blue `#5B8FE8` negative (same as the site), values `+12.3` outside bars, symmetric x-range (≥ ±5 pts), hover shows "percentage points", no mode bar, transparent background, grid `rgba(243,238,230,0.08)`. **Text:** measurement labels 15 px in warm ink `#F3EEE6` (they're content, not axis decoration); value labels 14 px warm ink; axis ticks/title 13–14 px `#A9A196`; 44 px per row, bar gap 0.35.
 
+### 5.5a Results page, Version 2 tab
+First tab (🆕 info box above the tabs: stage 1 is now v2): `charts.v2_vs_v1` (stage-1 AUC per hospital with 95% CIs; v1 orange `#D95926`, v2 blue `#5B8FE8`; same sealed patients), 3 metrics (AUC, ECE, sick wrongly cleared), per-hospital table, typical-angina table, notes (VA weak spot, cholesterol fix, warning kept, first vs second look, cost in extra tests). Website: matching "Version 2" section after the hospitals chart (same colours via `.hosp__pt--s1` blue = v2, `--s2` peach = v1).
+
 ### 5.6 Results charts (`app/charts.py`, Plotly)
 Nine charts, one per figure the page used to show (sealed test, patient flow, AUC by stage, calibration, external AUC, external calibration, fairness, global importance, case study), drawn from committed data only (`reports/*.csv`, `reports/chart_data.json`).
 
@@ -257,6 +260,7 @@ Nine charts, one per figure the page used to show (sealed test, patient flow, AU
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | Version 2 tab and site section; typical-angina warning reworded for v2 ("may still be too low… 97% vs ~81%") |
 | 2026-11-24 | Known-weakness callout (⚠️ `st.error`, above the risk number) for typical angina, after the Iran external test |
 | 2026-11-23 | Results page charts redrawn in Plotly (§5.6): dark categorical palette validated, labels beyond whiskers, legend row above panel titles, statistics in captions |
 | 2026-11-23 | **Premium redesign:** new dark warm palette (§2.4–2.5), Fraunces + Inter self-hosted typography (§2A), illustrations and motion rules (§2B), landing site (§3A), app restyle (dark theme, coral/blue contribution chart, secondary submit buttons for contrast), measured contrast ratios |
