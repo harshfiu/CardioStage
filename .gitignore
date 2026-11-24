@@ -24,3 +24,6 @@ Thumbs.db
 
 # Streamlit local secrets
 .streamlit/secrets.toml
+
+# Rejected external dataset (see data/raw/external/README.md); not redistributed
+data/raw/external/Cardiovascular_Disease_Dataset.zip

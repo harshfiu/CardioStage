@@ -1,0 +1,28 @@
+{
+  "chest_pain": [
+    {
+      "cp": "typical angina",
+      "n": 164,
+      "disease_rate": 0.939,
+      "mean_predicted": 0.232
+    },
+    {
+      "cp": "atypical angina",
+      "n": 93,
+      "disease_rate": 0.43,
+      "mean_predicted": 0.162
+    },
+    {
+      "cp": "non-anginal",
+      "n": 16,
+      "disease_rate": 0.188,
+      "mean_predicted": 0.13
+    },
+    {
+      "cp": "asymptomatic",
+      "n": 30,
+      "disease_rate": 0.633,
+      "mean_predicted": 0.667
+    }
+  ]
+}
