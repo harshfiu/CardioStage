@@ -1,0 +1,10 @@
+{
+  "n_test": 245,
+  "hospitals": {
+    "Cleveland": 61,
+    "Hungary": 58,
+    "Iran": 61,
+    "Switzerland": 25,
+    "VA Long Beach": 40
+  }
+}
