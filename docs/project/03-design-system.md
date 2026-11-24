@@ -246,7 +246,7 @@ Nine charts, one per figure the page used to show (sealed test, patient flow, AU
 | Tone | Calm, factual, second person sparingly | Alarmist or overconfident |
 
 **Canonical disclaimer** (`ui.DISCLAIMER`):
-> **Educational project, not a medical device.** CardioStage was trained on 243 patients from a single 1980s US hospital dataset. It must not be used to diagnose, treat, or make decisions about any real person. If you have chest pain or heart concerns, contact a doctor or emergency services.
+> **Educational project, not a medical device.** CardioStage was trained on patients referred for heart testing at five hospitals (1980s-2010s); its treadmill and imaging stages on 243 patients from one 1980s US hospital. It must not be used to diagnose, treat, or make decisions about any real person. If you have chest pain or heart concerns, contact a doctor or emergency services.
 
 **Value formatting** (`explain.format_value`): age "58 years"; sex "male"/"female"; BP "136 mm Hg"; cholesterol "319 mg/dl"; blood sugar "above 120 mg/dl"/"normal"; heart rate "152 bpm"; ST depression "1.2 mm"; missing → "not measured"; categories → descriptive text (e.g. "reversible defect (reduced blood flow under stress)").
 

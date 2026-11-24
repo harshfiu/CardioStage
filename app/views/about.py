@@ -45,7 +45,8 @@ set to catch 97% of sick patients.
   it caught only ~68% of sick patients instead of 97%, mainly because 94% of people with
   typical angina had heart disease while it estimated ~23%. Its 1980s training data showed the
   opposite pattern. The app now shows a warning for typical angina; a multi-hospital v2.0 is in progress.
-- **Small, old data:** 243 training patients from one US hospital in the 1980s.
+- **Small, mostly old data:** the check-up stage learned from 976 patients at five hospitals
+  (1980s-2010s); the treadmill and imaging stages from 243 patients at one US hospital in the 1980s.
   Medicine, populations and equipment have changed.
 - **Referral population:** all patients were already sent for heart testing, so
   patterns (e.g. "no chest pain → higher risk") don't apply to the general public.

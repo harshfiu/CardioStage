@@ -6,7 +6,7 @@ CardioStage estimates heart-disease risk in three stages: a basic check-up, then
 
 ![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-140%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-> ⚕️ **Educational project, not a medical device.** Trained on 243 patients from a 1980s dataset. Not for diagnosis or treatment decisions.
+> ⚕️ **Educational project, not a medical device.** Trained on patients referred for heart testing at five hospitals (1980s–2010s; the later stages on 243 patients from one 1980s US hospital). Not for diagnosis or treatment decisions.
 
 🩺 **Try the screener online:** [cardiostage.streamlit.app](https://cardiostage.streamlit.app/) (a short privacy notice comes first; it can take a minute or two to wake up after a quiet period).
 
@@ -90,7 +90,7 @@ Probabilities under-predict at high-disease hospitals, and a one-number **prior 
 
 ## Limitations
 - **Doesn't transfer well to modern patients (external test, Iran, 2010s):** stage-1 AUC 0.68 vs 0.84 at home; it caught ~68% of sick patients instead of 97%. Main cause: 94% of patients with typical angina had disease, but the model estimated ~23%. Cleveland's 1980s data showed the opposite. The app shows a warning for typical angina; a multi-hospital v2.0 is in progress.
-- **Small, old, single-site training data:** 243 patients from one US hospital in the 1980s.
+- **Small, mostly old training data:** stage 1 learned from 976 patients at five hospitals (1980s–2010s); stages 2–3 from 243 patients at one US hospital in the 1980s.
 - **Referral population:** everyone was already sent for heart testing, so patterns like "no chest pain → higher risk" don't apply to the general public.
 - **Thresholds are local:** at Hungary the stage-1 clear zone was less safe (NPV 90% vs 96%).
 - **Stage 3 not externally validated:** other hospitals lacked invasive test data.

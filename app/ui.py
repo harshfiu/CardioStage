@@ -13,8 +13,9 @@ from cardiostage.predictor import CardioStagePredictor, ModelsNotFoundError
 from charts import DOWN, TEXT_PRIMARY, TEXT_SECONDARY, UP, signed  # shared colour tokens
 
 DISCLAIMER = (
-    "**Educational project, not a medical device.** CardioStage was trained on 243 patients "
-    "from a single 1980s US hospital dataset. It must not be used to diagnose, treat, or "
+    "**Educational project, not a medical device.** CardioStage was trained on patients "
+    "referred for heart testing at five hospitals (1980s-2010s); its treadmill and imaging "
+    "stages on 243 patients from one 1980s US hospital. It must not be used to diagnose, treat, or "
     "make decisions about any real person. If you have chest pain or heart concerns, "
     "contact a doctor or emergency services."
 )

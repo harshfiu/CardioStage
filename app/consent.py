@@ -73,7 +73,8 @@ def require_consent() -> None:
     st.markdown("#### Before you start")
     st.warning(
         "**This is an educational project, not a medical device.** CardioStage gives an "
-        "*estimate* learned from 243 patients in a 1980s US hospital dataset. It can be wrong, "
+        "*estimate* learned from patients referred for heart testing at five hospitals "
+        "(1980s-2010s; the later stages from one 1980s US hospital). It can be wrong, "
         "it is not a diagnosis, and it must not be used to make decisions about anyone's "
         "health. **If you have chest pain or think you may be having a heart attack, call "
         "your local emergency number now.**",
