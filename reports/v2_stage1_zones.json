@@ -1,8 +1,10 @@
 {
   "chosen": "logistic_regression",
-  "calibration": "sigmoid",
+  "loho_rule_pick": "random_forest",
+  "reason": "LOHO rule preferred random_forest (0.769 vs 0.758, within noise); forest failed sanity checks (missing-value shortcut, non-monotonic cholesterol); logistic regression chosen.",
+  "calibration": "uncalibrated",
   "zones": {
-    "rule_out_below": 0.1693691119609713,
-    "rule_in_from": 0.8960711522847741
+    "rule_out_below": 0.14443032897826882,
+    "rule_in_from": 0.9462039548384286
   }
 }

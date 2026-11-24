@@ -77,3 +77,9 @@ def test_cleveland_split_is_exactly_v1s(data, split):
     pd.testing.assert_frame_equal(  # ...with the same values
         v2_cle.loc[v1_test.index, cols], v1_test[cols], check_dtype=False
     )
+
+
+def test_iran_cholesterol_is_not_used(data):
+    """Iran's cholesterol is estimated, not measured: kept out of v2 (see load_pooled)."""
+    assert data.loc[data[config.HOSPITAL_COLUMN] == "Iran", "chol"].isna().all()
+    assert data.loc[data[config.HOSPITAL_COLUMN] == "Cleveland", "chol"].notna().all()

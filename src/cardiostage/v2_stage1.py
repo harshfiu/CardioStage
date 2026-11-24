@@ -49,6 +49,46 @@ from cardiostage.uncertainty import NoveltyDetector, SubsampleEnsemble
 STAGE = 1
 CANDIDATES = MODEL_NAMES + ["ensemble"]
 V2_OOF_PATH = config.MODELS_DIR / "v2_stage1_oof.joblib"
+
+# Owner decision (2026-11-24), made on TRAINING-data checks, not the sealed
+# test: after the cholesterol fix the leave-one-hospital-out rule preferred
+# random forest (mean AUC 0.769) over logistic regression (0.758), a gap
+# within noise, but the forest showed a small missing-value shortcut (missing
+# cholesterol +~3 points) and a non-medical cholesterol curve (risk falling
+# above ~250). Logistic regression is monotonic, shortcut-free and explainable.
+MODEL_CHOICE = "logistic_regression"
+MODEL_CHOICE_REASON = (
+    "LOHO rule preferred random_forest (0.769 vs 0.758, within noise); forest failed sanity "
+    "checks (missing-value shortcut, non-monotonic cholesterol); logistic regression chosen."
+)
+
+
+def sanity_checks(model) -> dict:
+    """Medical-direction checks on a fitted stage-1 model (raise if any fails)."""
+    from cardiostage.predictor import CardioStagePredictor
+
+    base = dict(age=55, sex=1.0, cp="non-anginal", trestbps=130, fbs=0.0)
+
+    def risk(**kw):
+        X = CardioStagePredictor.to_frame({**base, **kw}, config.STAGES[STAGE])
+        return float(model.predict_proba(X)[0, 1])
+
+    chol_curve = [risk(chol=c) for c in (150, 200, 250, 300, 350)]
+    neighbours = [risk(chol=c) for c in (230, 235, 245, 250)]
+    checks = {
+        "cholesterol never lowers risk": all(
+            b >= a - 1e-9 for a, b in zip(chol_curve, chol_curve[1:])
+        ),
+        "missing cholesterol is not a shortcut": risk(chol=None) <= max(neighbours) + 0.01,
+        "typical angina above non-anginal": risk(cp="typical angina", chol=240) > risk(chol=240),
+        "older is riskier": risk(age=70, chol=240) > risk(age=40, chol=240),
+    }
+    failed = [k for k, ok in checks.items() if not ok]
+    if failed:
+        raise AssertionError(f"stage-1 sanity checks failed: {failed}")
+    return checks
+
+
 V1_BACKUP = config.MODELS_DIR / "v1_stage1.joblib"  # distinct name: the manifest keys by file name
 
 
@@ -143,11 +183,13 @@ def main():
 
     print("1. Leave-one-hospital-out model choice", flush=True)
     loho = loho_candidates(train)
-    name = choose_candidate(loho)
+    rule_pick = choose_candidate(loho)
+    name = MODEL_CHOICE
     loho.to_csv(config.REPORTS_DIR / "v2_stage1_candidates.csv", index=False)
+    means = loho.groupby("candidate")["auc"].mean()
     print(
-        f"   chosen: {name} (mean unseen-hospital AUC "
-        f"{loho.groupby('candidate')['auc'].mean()[name]:.3f})",
+        f"   LOHO rule pick: {rule_pick} ({means[rule_pick]:.3f}); used: {name} "
+        f"({means[name]:.3f}). {MODEL_CHOICE_REASON}",
         flush=True,
     )
 
@@ -169,7 +211,16 @@ def main():
     table = per_hospital_table(train, y, p, zones)
     table.to_csv(config.REPORTS_DIR / "v2_stage1_by_hospital.csv", index=False)
     (config.REPORTS_DIR / "v2_stage1_zones.json").write_text(
-        json.dumps({"chosen": name, "calibration": method, "zones": zones}, indent=2),
+        json.dumps(
+            {
+                "chosen": name,
+                "loho_rule_pick": rule_pick,
+                "reason": MODEL_CHOICE_REASON,
+                "calibration": method,
+                "zones": zones,
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
     print(f"   zones {zones}\n{table.round(3).to_string(index=False)}", flush=True)
@@ -177,8 +228,10 @@ def main():
     print("4. Final bundle (all pooled training patients)", flush=True)
     X = train[config.STAGES[STAGE]]
     base = fit_final_model(name, STAGE, X, y)
+    final_model = make_variant(base, method).fit(X, y)
+    print(f"   sanity checks passed: {list(sanity_checks(final_model))}", flush=True)
     bundle = {
-        "model": make_variant(base, method).fit(X, y),
+        "model": final_model,
         "uncertainty": SubsampleEnsemble(make_variant(base, method)).fit(X, y),
         "novelty": NoveltyDetector(STAGE).fit(X),
         "model_name": name,

@@ -128,7 +128,10 @@ def cleveland_policy(test: pd.DataFrame, bundles1: dict) -> pd.DataFrame:
     return pd.DataFrame(rows).T
 
 
-def main():
+def main(label: str = "first_look"):
+    """label: "first_look" (the official, unbiased exam of the model as first
+    trained) or "second_look" (a re-run after changes the first look prompted;
+    informative but slightly optimistic, and always reported as such)."""
     _, test = split_v2(load_pooled())
     bundles = load_stage1()
     assert bundles["v2"].get("version") == "v2", "models/stage1.joblib must be the v2 bundle"
@@ -140,10 +143,11 @@ def main():
     s1 = stage1_rows(test, bundles)
     ta = typical_angina_rows(test, bundles)
     pol = cleveland_policy(test, bundles)
-    s1.to_csv(config.REPORTS_DIR / "v2_final_stage1.csv", index=False)
-    ta.to_csv(config.REPORTS_DIR / "v2_final_typical_angina.csv", index=False)
-    pol.to_csv(config.REPORTS_DIR / "v2_final_policy_cleveland.csv")
-    (config.REPORTS_DIR / "v2_final_meta.json").write_text(
+    prefix = "v2_final" if label == "first_look" else f"v2_final_{label}"
+    s1.to_csv(config.REPORTS_DIR / f"{prefix}_stage1.csv", index=False)
+    ta.to_csv(config.REPORTS_DIR / f"{prefix}_typical_angina.csv", index=False)
+    pol.to_csv(config.REPORTS_DIR / f"{prefix}_policy_cleveland.csv")
+    (config.REPORTS_DIR / f"{prefix}_meta.json").write_text(
         json.dumps(
             {
                 "n_test": len(test),
@@ -173,4 +177,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1] if len(sys.argv) > 1 else "first_look")

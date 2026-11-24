@@ -57,6 +57,14 @@ def load_pooled() -> pd.DataFrame:
     uci = load_clean()
     iran = to_cardiostage(load_iran())
     iran[config.HOSPITAL_COLUMN] = "Iran"
+    # Iran's cholesterol was never measured directly: it's ESTIMATED from LDL,
+    # HDL and triglycerides, in a modern population (lipid-lowering drugs are
+    # common). Its median (~170) is far below the 1980s hospitals (~240) while
+    # its disease rate is high, so pooling taught a false "lower cholesterol =
+    # more risk" rule (coefficient -0.06; v1 +0.22). Treated as not measured,
+    # the model learns cholesterol only where it was measured (+0.14), with
+    # equal or better unseen-hospital ranking (reports/v2_cholesterol_check.csv).
+    iran["chol"] = float("nan")
     keep = config.STAGES[3] + [config.TARGET_COLUMN, config.HOSPITAL_COLUMN]
     return pd.concat([uci[keep], iran[keep]], ignore_index=True)
 
