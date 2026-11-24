@@ -92,7 +92,7 @@ with tabv2:
         "Ranking quality (AUC)",
         f"{show.loc['v2', 'auc_value']:.2f}",
         f"{show.loc['v2', 'auc_value'] - show.loc['v1', 'auc_value']:+.2f} vs v1",
-        delta_color="off",
+        delta_color="normal",  # higher is better: green when up
     )
     c2.metric(
         "Calibration error (ECE)",
@@ -103,8 +103,9 @@ with tabv2:
     c3.metric(
         "Sick patients wrongly cleared",
         f"{int(show.loc['v2', 'cleared_but_sick'])} of 145",
-        f"v1: {int(show.loc['v1', 'cleared_but_sick'])}",
-        delta_color="off",
+        # Fewer is better: show the change from v1 so the arrow points the right way.
+        f"{int(show.loc['v2', 'cleared_but_sick']) - int(show.loc['v1', 'cleared_but_sick']):+d} vs v1",
+        delta_color="inverse",
     )
     per = second[second["hospital"] != "All hospitals"].pivot(
         index="hospital", columns="version", values="cleared_but_sick"
