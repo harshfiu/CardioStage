@@ -132,6 +132,9 @@ def render_assessment(result, predictor):
     """
     with st.container(border=True):
         st.subheader(f"Stage {result.stage} result · {config.STAGE_NAMES[result.stage]}")
+        # Known weaknesses come first, before anyone reads the number.
+        for caution in result.cautions:
+            st.error(caution, icon="⚠️")
         c1, c2, c3 = st.columns([1, 1, 2])
         c1.metric(
             "Estimated risk",

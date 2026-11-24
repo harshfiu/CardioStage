@@ -41,6 +41,10 @@ set to catch 97% of sick patients.
   validation at three unseen hospitals, and a fairness analysis by sex and age.
 
 ### Known limitations
+- **Underestimates typical angina in modern patients:** tested on 303 patients from Iran (2010s),
+  it caught only ~68% of sick patients instead of 97%, mainly because 94% of people with
+  typical angina had heart disease while it estimated ~23%. Its 1980s training data showed the
+  opposite pattern. The app now shows a warning for typical angina; a multi-hospital v2.0 is in progress.
 - **Small, old data:** 243 training patients from one US hospital in the 1980s.
   Medicine, populations and equipment have changed.
 - **Referral population:** all patients were already sent for heart testing, so

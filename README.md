@@ -76,6 +76,7 @@ Probabilities under-predict at high-disease hospitals, and a one-number **prior 
 **Model choice:** logistic regression, random forest and XGBoost were statistically tied (ROC-AUC 0.89–0.90). On small data, the simple model is at least as good. A [from-scratch numpy logistic regression](src/cardiostage/from_scratch.py) reproduces scikit-learn's weights to 6 decimal places.
 
 ## Limitations
+- **Doesn't transfer well to modern patients (external test, Iran, 2010s):** stage-1 AUC 0.68 vs 0.84 at home; it caught ~68% of sick patients instead of 97%. Main cause: 94% of patients with typical angina had disease, but the model estimated ~23%. Cleveland's 1980s data showed the opposite. The app shows a warning for typical angina; a multi-hospital v2.0 is in progress.
 - **Small, old, single-site training data:** 243 patients from one US hospital in the 1980s.
 - **Referral population:** everyone was already sent for heart testing, so patterns like "no chest pain → higher risk" don't apply to the general public.
 - **Thresholds are local:** at Hungary the stage-1 clear zone was less safe (NPV 90% vs 96%).

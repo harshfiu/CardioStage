@@ -93,6 +93,26 @@ class ModelsNotFoundError(FileNotFoundError):
     pass
 
 
+# Known weaknesses found by external testing, shown with any matching estimate.
+# Each entry: (which patients, plain-language caution). Evidence lives in
+# reports/phase10_iran_external.csv and docs/learning/14-new-data.md.
+TYPICAL_ANGINA_CAUTION = (
+    "**Known weakness: this estimate is probably too low.** In an external test on 303 "
+    "modern patients (Iran, 2010s), 94% of people with typical angina had coronary artery "
+    "disease, but CardioStage estimated only about 23% on average: it learned the opposite "
+    "pattern from its 1980s training data. Typical angina is a classic warning sign. Please "
+    "treat it as a reason to see a doctor, whatever this number says."
+)
+
+
+def known_cautions(patient: dict) -> list:
+    """Plain-language cautions for patient groups where the model is known to be wrong."""
+    cautions = []
+    if patient.get("cp") == "typical angina":
+        cautions.append(TYPICAL_ANGINA_CAUTION)
+    return cautions
+
+
 def load_bundles() -> dict:
     """
     The three stage bundles, from the safest source available.
@@ -131,6 +151,7 @@ class Assessment:
     headline: str
     recommendation: str
     unusual: list = field(default_factory=list)  # reasons this patient is atypical
+    cautions: list = field(default_factory=list)  # known model weaknesses that apply here
     not_measured: list = field(default_factory=list)
     thresholds: dict = field(default_factory=dict)
     # The validated one-row input, kept so the slower parts below can be
@@ -250,6 +271,7 @@ class CardioStagePredictor:
             headline=headline,
             recommendation=recommendation,
             unusual=b["novelty"].check(X)[0],
+            cautions=known_cautions(patient),
             not_measured=[f for f in b["features"] if pd.isna(X.iloc[0][f])],
             thresholds=dict(b["zones"]),
             frame=X,

@@ -185,6 +185,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-23 | Learning guides for security and the website, `v1.0` release, README screenshots, dark Results charts; cloud deployment, new data and remaining hardening deferred | Owner's choice (items 1–4 now, 5–7 later) |
 | 2026-11-23 | Items 5–7 started in order 7 → 5 → 6: uv lock + actions pinned to SHAs; full app online on Hugging Face Spaces (free tier first, consent gate, no login, no tracking, skops models, host URL); free public datasets, test then retrain as v2.0 with a new sealed test | Owner's answers; owner asked to be asked for consent wherever it might be needed |
 | 2026-11-24 | Host on **Streamlit Community Cloud** (free) instead of Hugging Face (Streamlit there now needs the $9/month PRO plan); keep the plausible range online; skops for all model files | Owner's choices; HF free tier no longer hosts Streamlit |
+| 2026-11-24 | After the Iran external test: warn now on typical angina in the live app; build v2.0 by pooling all five hospitals with leave-one-hospital-out testing and a new sealed test; exclude the India dataset | Owner's choices; v1 caught only ~68% of sick Iranian patients |
 | 2026-11-24 | Accept Streamlit Cloud's forced usage statistics and anonymous viewer count, disclosed clearly on the consent screen | Owner's choice (free hosting) |
 
 ## 13. Risks and mitigations
@@ -219,6 +220,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | Iran external test logged; typical-angina warning; v2.0 plan decided |
 | 2026-11-24 | FR37 live (Streamlit Community Cloud), FR38–40 done; hosting and privacy decisions logged |
 | 2026-11-23 | NFR4/NFR8: uv lock with checksums; Python ≥ 3.12 stated honestly (was ≥ 3.10, which pandas 3 can't run on); decisions for items 5–7 logged |
 | 2026-11-23 | FR15 (interactive Results charts), NFR5 106 tests, NFR9 (11 guides, screenshots), decision logged |

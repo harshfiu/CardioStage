@@ -200,6 +200,7 @@ Shown once per browser session before any page runs: title → "Before you start
 | Callout | Component | Icon |
 |---|---|---|
 | Disclaimer (main) | `st.warning` | ⚕️ |
+| Known weakness (e.g. typical angina: "Known weakness: this estimate is probably too low…"): shown **first in the result card, above the risk number** | `st.error` | ⚠️ |
 | Unusual patient | `st.warning` | 🧭 |
 | Known-limitation example note | `st.info` (sidebar) | 🧪 |
 | Screening complete | `st.success` | 🏁 |
@@ -256,6 +257,7 @@ Nine charts, one per figure the page used to show (sealed test, patient flow, AU
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | Known-weakness callout (⚠️ `st.error`, above the risk number) for typical angina, after the Iran external test |
 | 2026-11-23 | Results page charts redrawn in Plotly (§5.6): dark categorical palette validated, labels beyond whiskers, legend row above panel titles, statistics in captions |
 | 2026-11-23 | **Premium redesign:** new dark warm palette (§2.4–2.5), Fraunces + Inter self-hosted typography (§2A), illustrations and motion rules (§2B), landing site (§3A), app restyle (dark theme, coral/blue contribution chart, secondary submit buttons for contrast), measured contrast ratios |
 | 2026-11-23 | UI polish: sliders for measurements, short example names + description, reset clears example, progressive result card, larger/darker chart text, Results figure widths |

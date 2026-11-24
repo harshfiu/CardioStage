@@ -137,3 +137,22 @@ def test_reset_clears_example_and_inputs():
     assert at.session_state.example == "(enter my own)"
     assert at.session_state.age == 55
     assert not any("known weakness" in i.value for i in at.info)
+
+
+def test_typical_angina_caution_rule():
+    """Known weakness (external test, Iran): typical angina is underestimated."""
+    from cardiostage.predictor import TYPICAL_ANGINA_CAUTION, known_cautions
+
+    assert known_cautions({"cp": "typical angina"}) == [TYPICAL_ANGINA_CAUTION]
+    for other in ("atypical angina", "non-anginal", "asymptomatic", None):
+        assert known_cautions({"cp": other}) == []
+    assert "probably too low" in TYPICAL_ANGINA_CAUTION and "94%" in TYPICAL_ANGINA_CAUTION
+
+
+@needs_models
+@pytest.mark.parametrize("stage", [1, 2, 3])
+def test_typical_angina_assessments_carry_the_caution(predictor, stage):
+    typical = {**PATIENT, "cp": "typical angina"}
+    assert predictor.assess(typical, stage, explain=False, with_range=False).cautions
+    other = {**PATIENT, "cp": "non-anginal"}
+    assert not predictor.assess(other, stage, explain=False, with_range=False).cautions

@@ -100,6 +100,7 @@ CardioStage/
 | `stats.py` | Bootstrap CIs, exact proportion CIs, prior shift | `bootstrap_ci`, `exact_proportion_ci`, `prior_shift` | scipy, numpy |
 | `explain.py` | SHAP permutation explainer on original features, text formatting | `StageExplainer`, `explanation_text`, `format_value` | shap |
 | `predictor.py` | **App decision engine** (no UI code): integrity-checked loading, strict input validation, assessment in a fast core + optional add-ons | `CardioStagePredictor.load()`, `.assess(patient, stage, explain=, with_range=)` → `Assessment`; `.add_range()`, `.add_explanation()`; `InvalidInputError` | data, explain, integrity |
+| `external_iran.py` | External test on the Iranian Z-Alizadeh Sani cohort: column mapping (documented assumptions), stage-1 evaluation with `external_validation.evaluate` | `load_iran`, `to_cardiostage`, `main` | external_validation, predictor, stats |
 | `external_validation.py` | Phase 6a analysis | `main` | stats, calibration, integrity |
 | `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging, integrity |
 | `explanations.py` | Phase 7 analysis | `main` | explain, integrity |
@@ -190,13 +191,14 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_uncertainty.py` | 7 | ECE, calibration wrapper, intervals, novelty detection | no |
 | `test_stats.py` | 7 | bootstrap CI, exact CI, prior shift, fairness helpers | no |
 | `test_explain.py` | 5 | encode/decode, SHAP additivity, baseline, text | no |
-| `test_predictor.py` | 10 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example | yes |
+| `test_predictor.py` | 14 | assessments, zones, missing/unusual input, invalid input, **full app flow via AppTest**, fast path + progressive add-ons, reproducible explanations, reset clears example, typical-angina caution rule + carried at every stage | yes (rule test: no) |
 | `test_security.py` | 25 | config hardening, rate limiter, integrity (tamper/unlisted/missing manifest, refuse-before-unpickle, real bundles), input validation (11 attack values), app shows friendly errors without tracebacks | 3 need models |
 | `test_site.py` | 11 | site CSP is strict, no inline scripts/styles, nothing loaded from other origins, vendored libs + licences present, `app/static` holds fonts only, site numbers match reports/split, patient flow adds up, JS data = JSON | no (site data is committed) |
 | `test_charts.py` | 8 | chart data matches the reports (12 ECE values, flow, case study cleared by out-of-fold risk), all 9 Results charts build, no `-0.0` labels, Results page renders 9 Plotly charts and no PNGs (AppTest) | no (chart data is committed) |
 | `test_public.py` | 7 | nothing runs before consent, `*.streamlit.app` counts as public (safety net), consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
 | `test_model_store.py` | 9 | verified archive download extracted (archive not kept, nothing re-fetched), tampered archive / tampered member / oversized download rejected with no leftovers, plain HTTP and path-traversal names refused, mismatched local file refused before anything loads, trusted-types list unchanged, **skops models give identical results to the trained originals** (risk, range, zone, flags, explanation) | 1 (equivalence) |
-| **Total** | **122** | 108 run without models; 14 skip with a "trained models missing" reason | |
+| `test_external_iran.py` | 6 | published data fingerprint, shape/outcome, chest-pain/cholesterol/other mappings, every mapped patient passes the app's input validation | no |
+| **Total** | **132** | 115 run without models; 17 skip with a "trained models missing" reason | |
 
 Run `uv run pytest` (~1 min). Lint: `uv run ruff check src tests app tools`; format: `uv run ruff format src tests app tools`; audit: `uv run pip-audit --skip-editable`.
 
@@ -303,6 +305,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-24 | External test on Iran (`external_iran.py`, `data/raw/external/`), known-weakness cautions in the engine (`known_cautions`), external CSVs kept byte-exact via `.gitattributes`; 132 tests |
 | 2026-11-24 | Public deployment: Streamlit Community Cloud (§8A), consent screen, `model_store` (skops, release archive, SHA-pinned manifest), shared rate limit, error-detail override, Host-based public detection; ADR-25/26 |
 | 2026-11-23 | Supply chain (SEC-07 ✅): `uv.lock` with checksums replaces `constraints.txt`; dependencies moved to `pyproject.toml`; hashed `requirements.txt` export; CI on `uv sync --locked`; all actions pinned to commit SHAs; Dependabot on uv; `requires-python >=3.12`; ADR-24 |
 | 2026-11-23 | Results page: native Plotly charts (`app/charts.py`, `chart_data.py` → `reports/chart_data.json`), README screenshots + `tools/screenshots.py`, learning guides 10–11; 106 tests; ADR-23 |
