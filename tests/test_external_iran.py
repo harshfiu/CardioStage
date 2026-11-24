@@ -26,7 +26,7 @@ def mapped(raw):
 
 def test_data_file_is_the_published_conversion():
     digest = hashlib.sha256(external_iran.IRAN_DATA_PATH.read_bytes()).hexdigest()
-    assert digest == "88a89ea916f6e2f62617d033a46fbd782e2e710f26569e53185679edcdcaca2b"
+    assert digest == "bc90f8dec1388e38a4d608d6015941c0460d0924541fee1c43279498d3a60c67"
 
 
 def test_shape_and_outcome(raw, mapped):

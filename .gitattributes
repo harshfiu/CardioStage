@@ -3,3 +3,6 @@
 *.png binary
 *.jpg binary
 *.joblib binary
+*.zip binary
+# External datasets are fingerprinted (sha256): keep their bytes exactly as committed
+data/raw/external/*.csv -text

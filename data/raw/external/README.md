@@ -7,7 +7,7 @@
 - **Contents:** 303 patients, 56 columns (54 features + angiography result), no missing values. Outcome `Cath`: "CAD" if diameter narrowing ≥ 50%, otherwise "Normal" (same definition as the UCI Heart Disease data).
 - **Files:**
   - `z+alizadeh+sani.zip`: as downloaded (sha256 `48210a6623fa6112423d9bc357f72fe3fca12ae77866e63e08632e15d95b724e`), containing `Z-Alizadeh sani dataset.xlsx`.
-  - `z_alizadeh_sani.csv`: the same table converted once to CSV (sha256 `88a89ea916f6e2f62617d033a46fbd782e2e710f26569e53185679edcdcaca2b`); a round-trip check confirmed it identical to the spreadsheet. The project reads the CSV, so no Excel library is needed.
+  - `z_alizadeh_sani.csv`: the same table converted once to CSV with Unix line endings (sha256 `bc90f8dec1388e38a4d608d6015941c0460d0924541fee1c43279498d3a60c67`); a round-trip check confirmed it identical to the spreadsheet. The project reads the CSV, so no Excel library is needed.
 - **Mapping to CardioStage:** see `src/cardiostage/external_iran.py` (cholesterol estimated as LDL + HDL + TG/5; no exercise test or fluoroscopy, so only stage 1 is a fair test).
 
 ## ❌ Cardiovascular_Disease_Dataset, India (rejected)
