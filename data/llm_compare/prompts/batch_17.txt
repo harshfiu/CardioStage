@@ -1,0 +1,28 @@
+I'm working on a student research project that compares heart-disease risk estimates. Below are 14 anonymised patients from research data (nobody's care depends on your answer).
+
+All of them were referred for coronary angiography because a doctor suspected coronary artery disease.
+
+For each patient, estimate the probability (0-100%) that their angiography shows significant coronary artery disease (at least 50% narrowing of a major coronary artery), using only the information given. "not recorded" means the value is unknown.
+
+Reply with ONLY one line per patient, in exactly this format, inside a code block, and nothing else:
+```
+P232: <number>
+P233: <number>
+...
+```
+
+Patients:
+P232: age 49, female, chest pain: typical angina, resting blood pressure: 120 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P233: age 62, male, chest pain: non-anginal chest pain, resting blood pressure: 130 mm Hg, total cholesterol: 231 mg/dL, fasting blood sugar above 120 mg/dL: no
+P234: age 45, female, chest pain: atypical angina, resting blood pressure: 180 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P235: age 52, female, chest pain: typical angina, resting blood pressure: 140 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: yes
+P236: age 49, male, chest pain: atypical angina, resting blood pressure: 100 mm Hg, total cholesterol: 253 mg/dL, fasting blood sugar above 120 mg/dL: no
+P237: age 34, male, chest pain: typical angina, resting blood pressure: 140 mm Hg, total cholesterol: 156 mg/dL, fasting blood sugar above 120 mg/dL: no
+P238: age 47, male, chest pain: typical angina, resting blood pressure: 100 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P239: age 61, male, chest pain: no chest pain (asymptomatic), resting blood pressure: 138 mm Hg, total cholesterol: 166 mg/dL, fasting blood sugar above 120 mg/dL: no
+P240: age 53, female, chest pain: atypical angina, resting blood pressure: 140 mm Hg, total cholesterol: 216 mg/dL, fasting blood sugar above 120 mg/dL: no
+P241: age 29, male, chest pain: atypical angina, resting blood pressure: 140 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P242: age 53, male, chest pain: atypical angina, resting blood pressure: 140 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P243: age 71, female, chest pain: no chest pain (asymptomatic), resting blood pressure: 112 mm Hg, total cholesterol: 149 mg/dL, fasting blood sugar above 120 mg/dL: no
+P244: age 49, male, chest pain: typical angina, resting blood pressure: 130 mm Hg, total cholesterol: not recorded, fasting blood sugar above 120 mg/dL: no
+P245: age 41, male, chest pain: atypical angina, resting blood pressure: 135 mm Hg, total cholesterol: 203 mg/dL, fasting blood sugar above 120 mg/dL: no
