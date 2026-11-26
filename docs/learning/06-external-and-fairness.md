@@ -27,7 +27,7 @@ Everything so far was measured on Cleveland patients. Even with careful cross-va
 
 Our models never saw a single patient from Hungary, Switzerland or VA Long Beach.
 
-**Only stages 1–2 can be tested.** Stage 3's tests (`ca`, `thal`) are 83–99% missing outside Cleveland, so "results" would mostly measure our gap-filling.
+**Only stages 1–2 can be tested.** Stage 3's tests are largely missing outside Cleveland (blocked vessels `ca`: 96–99%; thallium scan `thal`: 42–90%), so "results" would mostly measure our gap-filling.
 
 ### Ranking: who generalises?
 

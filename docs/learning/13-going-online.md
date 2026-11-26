@@ -73,7 +73,7 @@ A model in a new format is only acceptable if it gives the **same answers**. For
 
 ## 4. Downloading safely
 
-At its first start, the online app downloads `cardiostage-models.zip` (267 MB) from the `models-v1` GitHub release. `model_store.download()` is careful at every step:
+At its first start, the online app downloads `cardiostage-models.zip` (267 MB) from the `models-v1` GitHub release (`models-v2` since version 2.0, also 267 MB). `model_store.download()` is careful at every step:
 
 ```
 HTTPS only ─► stop if larger than the recorded size ─► SHA-256 of the archive must match deploy/models.json

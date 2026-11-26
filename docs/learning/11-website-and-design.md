@@ -18,7 +18,7 @@ This phase is mostly front-end (HTML, CSS, JavaScript), which is new territory f
 | `app/charts.py` | The Results page's charts, redrawn in Plotly (dark, interactive) |
 | `src/cardiostage/chart_data.py` | Exports the extra data those charts need |
 | `tools/screenshots.py` | Regenerates the README screenshots with headless Chrome |
-| `tests/test_site.py`, `tests/test_charts.py` | 19 tests: security of the site, numbers vs reports, every chart builds |
+| `tests/test_site.py`, `tests/test_charts.py` | 21 tests (19 when this guide was written): security of the site, numbers vs reports, every chart builds |
 
 ```bash
 python -m cardiostage.site_data                       # refresh the website's numbers

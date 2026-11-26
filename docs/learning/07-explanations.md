@@ -97,7 +97,7 @@ In Phase 6 a sick 58-year-old woman with atypical chest pain was cleared at the 
 - Female: **−21 pts**
 - Cholesterol 319: +4 pts
 
-Two features, each pulling hard in the same direction, pushed her below the clear-zone cutoff. Each is a reasonable average pattern (atypical angina had a 14% disease rate; women 23%), but **combined, they compounded into false reassurance.** This is exactly how the real-world under-diagnosis of women plays out.
+Two features, each pulling hard in the same direction, pushed her below the clear-zone cutoff. Each is a reasonable average pattern (among the Cleveland training patients, atypical angina had a 17% disease rate; women 23%), but **combined, they compounded into false reassurance.** This is exactly how the real-world under-diagnosis of women plays out.
 
 **Stage 3:** baseline 48% → **30%**
 - **2 blocked vessels: +14 pts** (the decisive evidence)

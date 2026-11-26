@@ -121,6 +121,8 @@ We compared three targets for the staged policy:
 | 95% | 8 | 59 | 57% |
 | **97% (chosen)** | **4** | **74** | **63%** |
 
+*Each row also moves the rule-out level with the target (it keeps 97%, 98% and 99% of sick patients above it, respectively); the rule-in level stays at 90% precision.*
+
 **97% was chosen** because in screening, a false alarm costs an extra test, while a missed patient can cost a life. The price: more healthy people get flagged for follow-up. That's an acceptable trade for a *screening* tool, whose job is to make sure sick patients don't slip through. The final diagnosis comes from a doctor.
 
 ## 8. Honest limitations
