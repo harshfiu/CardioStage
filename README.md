@@ -4,7 +4,7 @@
 
 CardioStage estimates heart-disease risk in three stages: a basic check-up, then a treadmill stress test, then invasive imaging. At each stage it decides whether the patient can be **cleared**, should be **referred**, or needs the **next test**. Every estimate is calibrated, explained in plain English, and flagged when the patient is unlike anyone the model has seen.
 
-![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-140%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Python](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-150%20passing-brightgreen) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 > ⚕️ **Educational project, not a medical device.** Trained on patients referred for heart testing at five hospitals (1980s–2010s; the later stages on 243 patients from one 1980s US hospital). Not for diagnosis or treatment decisions.
 
@@ -49,6 +49,8 @@ Paid Claude ranks patients as well as CardioStage, free ChatGPT doesn't, and bot
 | Everyone gets every test | 0 | 1.000 [0.877, 1.000] | 0.455 | 100% |
 | **CardioStage staged policy** | **0** | **1.000 [0.877, 1.000]** | **0.515** | **49%** |
 
+These are the original **version 1** results. With v2's check-up stage, Cleveland's same 61 sealed patients: still 0 of 28 sick missed (recall 1.000 [0.877, 1.000]), specificity 0.515, invasive tests for 54%.
+
 **Cross-validation** (243 training patients, honest out-of-fold predictions, the more stable estimate): the staged policy matched all-tests recall (0.964 vs 0.973; difference −0.009 [−0.029, 0.000]) while needing **40% fewer invasive tests [33%, 46%]**.
 
 **In one sentence:** CardioStage catches sick patients as reliably as testing everyone fully, while sparing roughly half of patients invasive imaging.
@@ -76,11 +78,13 @@ At stages 1–2, risk below a **rule-out** level (keeps ≥99% of sick patients 
 | **Staged screening** | Measures what each test actually adds, and gives expensive tests only to patients who need them |
 | **Honest probabilities** | Calibrated risk (average error 3–5 points), a plausible range from 20 resampled models, and an unusual-patient warning |
 | **Explanations** | Per-patient SHAP breakdown that adds up exactly to the risk shown. All 12 medical sanity checks pass |
-| **External validation** | Tested unchanged at three hospitals it never saw |
+| **External validation** | v1 tested unchanged at three hospitals it never saw and at a modern Iranian cohort; v2 tested hospital by hospital (leave-one-hospital-out) and on a new sealed test |
 | **Fairness analysis** | Performance by sex and age, with an honest account of the cases it misses |
-| **Rigour** | Sealed test set, nested cross-validation, bootstrap and exact confidence intervals, 140 automated tests, CI |
+| **Rigour** | Sealed test set, nested cross-validation, bootstrap and exact confidence intervals, 150 automated tests, CI |
 
 ## Key findings
+
+*From the original v1 analysis (stage 1 learned from Cleveland only); v2's results are above.*
 
 **Each test's value:** ROC-AUC (cross-validation) rises from **0.84** (check-up) → **0.86** (+ treadmill) → **0.90** (+ invasive). Invasive imaging adds the most.
 
@@ -97,15 +101,16 @@ At stages 1–2, risk below a **rule-out** level (keeps ≥99% of sick patients 
 
 Probabilities under-predict at high-disease hospitals, and a one-number **prior shift** fixes it (Switzerland ECE 0.26 → 0.04). Decision cutoffs need local re-validation.
 
-**Model choice:** logistic regression, random forest and XGBoost were statistically tied (ROC-AUC 0.89–0.90). On small data, the simple model is at least as good. A [from-scratch numpy logistic regression](src/cardiostage/from_scratch.py) reproduces scikit-learn's weights to 6 decimal places.
+**Model choice:** logistic regression, random forest and XGBoost were statistically tied (ROC-AUC 0.89–0.90). On small data, the simple model is at least as good. A [from-scratch numpy logistic regression](src/cardiostage/from_scratch.py) reproduces scikit-learn's weights to 5 decimal places.
 
 ## Limitations
-- **Doesn't transfer well to modern patients (external test, Iran, 2010s):** stage-1 AUC 0.68 vs 0.84 at home; it caught ~68% of sick patients instead of 97%. Main cause: 94% of patients with typical angina had disease, but the model estimated ~23%. Cleveland's 1980s data showed the opposite. The app shows a warning for typical angina; a multi-hospital v2.0 is in progress.
+- **Typical angina is still underestimated in modern patients:** v1 transferred badly to a modern Iranian cohort (stage-1 AUC 0.68 vs 0.84 at home; it caught ~68% of sick patients instead of 97%), mainly because 94% of patients with typical angina had disease but v1 estimated ~23%. Version 2 fixes most of this (Iran sealed-test AUC 0.93) but still predicts ~81% where 97% were sick, so the app warns for typical angina.
+- **VA Long Beach is v2's weak spot:** sealed-test AUC 0.71 (v1: 0.83, which was partly luck).
 - **Small, mostly old training data:** stage 1 learned from 976 patients at five hospitals (1980s–2010s); stages 2–3 from 243 patients at one US hospital in the 1980s.
 - **Referral population:** everyone was already sent for heart testing, so patterns like "no chest pain → higher risk" don't apply to the general public.
-- **Thresholds are local:** at Hungary the stage-1 clear zone was less safe (NPV 90% vs 96%).
+- **Thresholds are local:** tuned on the training hospitals (stage 1 on all five, stages 2–3 on Cleveland); in v1's test at Hungary the stage-1 clear zone was less safe (NPV 90% vs 96%).
 - **Stage 3 not externally validated:** other hospitals lacked invasive test data.
-- **Atypical presentations:** a woman with atypical chest pain was cleared at stage 1 in testing, mirroring real-world under-diagnosis of women. Documented rather than "fixed" with a rule fitted to 2 patients.
+- **Atypical presentations:** in v1's testing, a woman with atypical chest pain was cleared at stage 1, mirroring real-world under-diagnosis of women. Documented rather than "fixed" with a rule fitted to 2 patients. (v2 no longer clears the app's matching example patient at the check-up; it sends her on, and the imaging stage flags her.)
 - **Explanations describe the model, not biology.**
 
 ## The app
@@ -114,13 +119,13 @@ Probabilities under-predict at high-disease hospitals, and a one-number **prior 
 streamlit run app/streamlit_app.py
 ```
 
-- **Screener:** enter check-up details, get risk + range + recommendation + explanation, then add test results stage by stage. Four example patients, including one that deliberately shows a known limitation.
+- **Screener:** enter check-up details, get risk + range + recommendation + explanation, then add test results stage by stage. Four example patients, including the "known limitation" case from v1's testing (a woman with atypical chest pain).
 - **Results:** the evidence, with charts.
 - **About:** method, data and limitations.
 
 | Screener: a stage-1 result with its explanation | Results: the evidence, as interactive charts |
 |---|---|
-| ![Stage 1 result: estimated risk 32%, plausible range 27–35%, "Uncertain" with a suggested treadmill test, and a chart of what raised or lowered the estimate](docs/images/app-screener.png) | ![Results page, calibration tab: predicted risk vs actual disease rate at each stage, close to the diagonal](docs/images/app-results.png) |
+| ![Stage 1 result: estimated risk 40%, plausible range 39–42%, "Uncertain" with a suggested treadmill test, and a chart of what raised or lowered the estimate](docs/images/app-screener.png) | ![Results page, calibration tab: predicted risk vs actual disease rate at each stage, close to the diagonal](docs/images/app-results.png) |
 
 ## The website
 
@@ -144,7 +149,7 @@ uv sync                                      # exact, checksum-verified environm
 uv run python -m cardiostage.train_all       # build all models (~10 minutes, once)
 #   ...or download the released ones instead (~270 MB, fingerprint-checked):
 #   uv run python -m cardiostage.model_store download
-uv run pytest                                # 140 tests
+uv run pytest                                # 150 tests
 uv run streamlit run app/streamlit_app.py
 ```
 
@@ -156,8 +161,8 @@ Reproduce any phase's analysis, e.g. `python -m cardiostage.external_validation`
 
 ```
 ├── app/                    Streamlit app: entry point, views/, shared ui.py
-├── data/raw/               original UCI dataset (never edited)
-├── docs/learning/          14 step-by-step guides: how and why every part was built
+├── data/raw/               original UCI dataset + the Iranian external cohort (never edited)
+├── docs/learning/          15 step-by-step guides: how and why every part was built
 ├── docs/project/           PRD, models, design system and architecture documents
 ├── brain/security/         threat model, secrets, attack surface, security checklist
 ├── models/                 trained models (generated by train_all, not in Git)
@@ -176,7 +181,7 @@ Reproduce any phase's analysis, e.g. `python -m cardiostage.external_validation`
 │   ├── predictor.py        the app's decision engine
 │   ├── site_data.py        exports the website's numbers from the reports
 │   └── from_scratch.py     logistic regression in pure numpy
-├── tests/                  140 automated tests (incl. security, website and charts)
+├── tests/                  150 automated tests (incl. security, website and charts)
 └── tools/                  screenshots.py: regenerates the README screenshots
 ```
 
@@ -189,10 +194,10 @@ The app runs **on your computer only** (it listens on `localhost`), validates ev
 [`docs/project/`](docs/project/README.md) holds the full reference, kept up to date with every change: the [product requirements](docs/project/01-product-requirements.md), [models](docs/project/02-models.md) (every hyperparameter, threshold and metric), [design system](docs/project/03-design-system.md) and [architecture](docs/project/04-architecture.md).
 
 ## Learning guides
-New to ML? [`docs/learning/`](docs/learning/README.md) walks through every phase: setup, data leakage, nested cross-validation, thresholds, calibration, external validation, fairness, SHAP, the app, final evaluation, security hardening, the website, locking the supply chain, going online, and new data with version 2. Each guide ends with questions and answers.
+New to ML? [`docs/learning/`](docs/learning/README.md) walks through every phase: setup, data leakage, nested cross-validation, thresholds, calibration, external validation, fairness, SHAP, the app, final evaluation, security hardening, the website, locking the supply chain, going online, new data with version 2, and the comparison with chatbots. Each guide ends with questions and answers.
 
 ## Data & licence
-**Data:** [UCI Heart Disease dataset](https://archive.ics.uci.edu/dataset/45/heart+disease) (Janosi, Steinbrunn, Pfisterer & Detrano, 1988), CC BY 4.0, via the [Kaggle mirror](https://www.kaggle.com/datasets/redwankarimsony/heart-disease-data). See [`data/README.md`](data/README.md).
+**Data:** [UCI Heart Disease dataset](https://archive.ics.uci.edu/dataset/45/heart+disease) (Janosi, Steinbrunn, Pfisterer & Detrano, 1988), CC BY 4.0, via the [Kaggle mirror](https://www.kaggle.com/datasets/redwankarimsony/heart-disease-data), and the [Z-Alizadeh Sani dataset](https://archive.ics.uci.edu/dataset/412/z+alizadeh+sani) (Iran, 303 patients), CC BY 4.0. See [`data/README.md`](data/README.md) and [`data/raw/external/README.md`](data/raw/external/README.md).
 **Code:** [MIT License](LICENSE). **Website libraries and fonts:** Lenis, three.js and Vanta (MIT), Fraunces and Inter (SIL OFL), GSAP (standard "no charge" licence); see [`site/licenses/`](site/licenses/).
 
 ## Disclaimer

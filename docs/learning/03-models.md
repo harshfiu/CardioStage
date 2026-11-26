@@ -147,7 +147,7 @@ Training a model means solving: *which weights make the predictions match realit
 
 The loss falls from 0.693 (coin flip) to about 0.42 within ~30 steps, then fine-tunes. It converges after about 1,700 steps.
 
-**The result: our 60 lines of numpy learn the same weights as scikit-learn, to 6 decimal places** (largest difference 0.000002). A test (`test_scratch_matches_scikit_learn`) guarantees it stays that way.
+**The result: our 60 lines of numpy learn the same weights as scikit-learn, to 5 decimal places** (largest weight difference 0.000002; the bias differs by 0.000009). A test (`test_scratch_matches_scikit_learn`) guarantees they stay within 0.0001 of each other.
 
 ### What the model learned (the weights)
 Features are standardised, so weights are comparable in size:

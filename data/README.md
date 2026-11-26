@@ -14,6 +14,8 @@ created by Janosi, Steinbrunn, Pfisterer and Detrano (1988), licensed CC BY 4.0.
 | VA Medical Center, Long Beach (USA) | 200 |
 | University Hospitals, Zurich & Basel (Switzerland) | 123 |
 
+Since version 2, the check-up model also learns from the **Z-Alizadeh Sani** cohort (Tehran, Iran, 303 patients, 2010s, CC BY 4.0); see [`raw/external/README.md`](raw/external/README.md).
+
 ## Folders
 - `raw/`: the original file, **never edited**. All cleaning happens in code.
 - `processed/`: cleaned output created by the pipeline (not committed to Git).

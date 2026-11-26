@@ -107,8 +107,9 @@ EXAMPLES = {
         ca=2,
         thal="reversable defect",
     ),
-    # Deliberately included: reproduces the known limitation from Phase 6. She's
-    # cleared at the check-up, yet imaging would show 2 blocked vessels.
+    # Deliberately included: the known limitation from Phase 6. Version 1 cleared
+    # her at the check-up, yet imaging would show 2 blocked vessels. Version 2
+    # gives ~30% (uncertain) and sends her on; stage 3 refers her.
     "Known limitation": dict(
         age=57,
         sex="Female",
@@ -184,10 +185,11 @@ with st.sidebar:
         st.caption(EXAMPLE_DESCRIPTIONS[st.session_state.example])
     if st.session_state.example == "Known limitation":
         st.info(
-            "This example shows a known weakness. At the basic check-up, 'female' and "
-            "'atypical chest pain' both lower the estimate, so she's cleared, but "
-            "imaging would reveal 2 blocked vessels. Open the optional later stages "
-            "to see it. (See the About page.)",
+            "This example comes from a known weakness. At the basic check-up, 'female' and "
+            "'atypical chest pain' both lower the estimate: version 1 cleared her there, "
+            "although imaging would reveal 2 blocked vessels. Version 2 no longer clears "
+            "her (about 30%, uncertain); open the optional later stages to see imaging "
+            "flag her. (See the About page.)",
             icon="🧪",
         )
     st.button("Reset all inputs", width="stretch", on_click=reset_all)

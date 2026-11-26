@@ -161,8 +161,8 @@
     <div class="card feature reveal"><h3>It's open about its limits</h3><p>It flags patients unlike anyone it learned from, and says plainly where it can go wrong.</p></div>
   </div>
   <figure class="card chart reveal" aria-labelledby="explain-title">
-    <figcaption><h3 class="chart__title" id="explain-title">An example: why <span data-bind="example_risk">33%</span>?</h3>
-      <span class="chart__caption">A 54-year-old man at the check-up stage. Starting from a typical patient's <span data-bind="example_base">46%</span>, each measurement nudges the estimate. Contributions in percentage points; they describe the model, not causes of disease.</span></figcaption>
+    <figcaption><h3 class="chart__title" id="explain-title">An example: why <span data-bind="example_risk">40%</span>?</h3>
+      <span class="chart__caption">A 54-year-old man at the check-up stage. Starting from a typical patient's <span data-bind="example_base">61%</span>, each measurement nudges the estimate. Contributions in percentage points; they describe the model, not causes of disease.</span></figcaption>
     <div class="explain" data-chart="explain"></div>
   </figure>
 </section>
@@ -230,9 +230,9 @@
       <li><strong>Version 1 missed about a third of sick patients in a modern test (Iran).</strong> Version 2 learns from five hospitals and fixes most of that, but still somewhat underestimates "typical angina" (the app warns about it) and did worse than version 1 at VA Long Beach.</li>
       <li>Small, mostly old data: the check-up stage learned from 976 patients at five hospitals (1980s–2010s), the later stages from 243 patients at one US hospital in the 1980s.</li>
       <li>Everyone in the data was already referred for heart tests, so its patterns don't apply to the general public.</li>
-      <li>Its decision thresholds were tuned in Cleveland; any new setting would need to check them again.</li>
+      <li>Its decision thresholds were tuned on its training hospitals (the check-up stage on all five, the later stages in Cleveland); any new setting would need to check them again.</li>
       <li>The imaging stage couldn't be checked at other hospitals, which lacked that data.</li>
-      <li>A woman with atypical chest pain was reassured too early in testing, mirroring how heart disease in women is often under-recognised.</li>
+      <li>In version 1's testing, a woman with atypical chest pain was reassured too early, mirroring how heart disease in women is often under-recognised.</li>
     </ul>
   </div>
 </section>

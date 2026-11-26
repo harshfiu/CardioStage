@@ -93,6 +93,8 @@ A `@dataclass` is a Python class that mainly holds data. You list the fields and
 | High risk (63-year-old man) | 92% high | 91% high | 94% refer |
 | **Known limitation** (57-year-old woman, atypical pain) | 8% **low (cleared)** | 17% uncertain | **25% refer** |
 
+> **Since version 2** (stage 1 learned from five hospitals), the check-up numbers changed: Low risk 7% low · Uncertain, then cleared 40% uncertain · High risk 95% high · Known limitation **30% uncertain** (no longer cleared; stage 3 still refers her). Stages 2–3 are unchanged. The table above is the original v1 record.
+
 The "uncertain" example was **checked, not assumed**. My first candidate turned out to be cleared at stage 1, reproducing the Phase 6 limitation. Rather than hide that, it became a fourth, clearly labelled example, with a sidebar note explaining the weakness. Showing a tool's failure modes builds more trust than hiding them.
 
 ## 6. Testing the app itself

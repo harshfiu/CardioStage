@@ -134,6 +134,12 @@ async def click_text(b, selector, text):
         )
 
 
+CONSENT_TEXT = (
+    "I understand that this is an educational estimate, not medical advice, "
+    "and how my answers are handled."
+)
+
+
 async def main(out, which):
     os.makedirs(out, exist_ok=True)
     b = Browser()
@@ -161,6 +167,11 @@ async def _capture(b, out, which):
         )
     if "app" in which:
         await b.goto("http://localhost:8501/", wait=10)
+        # The consent screen comes first (once per browser session).
+        await click_text(b, "label, p, span", CONSENT_TEXT)
+        await asyncio.sleep(1)
+        await click_text(b, "button", "Continue")
+        await asyncio.sleep(8)  # the first run after start-up is slow
         await click_text(b, "button", "Assess risk")
         for _ in range(90):  # first assessment also loads the models (~15 s)
             await asyncio.sleep(1)
@@ -176,7 +187,9 @@ async def _capture(b, out, which):
         )
         await asyncio.sleep(1.5)
         await b.shot(f"{out}/app-screener.png")
-        await b.goto("http://localhost:8501/results", wait=8)
+        # Navigate inside the same session (a fresh page load would ask for consent again).
+        await click_text(b, "[data-testid=stSidebarNav] span", "Results")
+        await asyncio.sleep(6)
         await click_text(b, "[role=tab]", "Calibration")
         await asyncio.sleep(2)
         await b.js(

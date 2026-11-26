@@ -219,21 +219,21 @@ Angiography-confirmed CAD (same definition), 71% prevalence. Only stage 1 is a f
 |---|---|---|
 | ROC-AUC | 0.837 | **0.675 [0.605, 0.746]** |
 | Recall at the 97% threshold | 0.973 | **0.681** |
-| Sick patients cleared at stage 1 | 3 / 111 | **43 / 216** |
+| Sick patients in the stage-1 clear zone | 1 / 111 | **43 / 216** |
 | Mean predicted vs actual rate | 0.46 vs 0.46 | 0.25 vs 0.71 (ECE 0.47; 0.32 after prior shift) |
 | Flagged unusual | ~1% | 39% |
 
-**Main cause: chest-pain type means something different.** Typical angina: 94% CAD in Iran but predicted 23% on average (Cleveland: 30% CAD). Asymptomatic: 63% vs predicted 67%. The model learned Cleveland's referral-population pattern. Response: a caution on every typical-angina estimate (`predictor.known_cautions`), and a multi-hospital v2.0 (owner decision, 2026-11-24).
+**Main cause: chest-pain type means something different.** Typical angina: 94% CAD in Iran but predicted 23% on average (Cleveland: 30% CAD). Asymptomatic: 63% vs predicted 67%. The model learned Cleveland's referral-population pattern. Response: a caution on every typical-angina estimate (`predictor.known_cautions`), and a multi-hospital v2.0 (owner decision, 2026-11-24; built, §11A).
 
 A second candidate (Mendeley "Cardiovascular_Disease_Dataset", India, 1,000 rows) was **rejected** after checks: documentation contradicts the data, uniform ages, no age–disease link, near-deterministic slope codes (`data/raw/external/README.md`).
 
 ## 11. Limitations
-0. **Does not transfer well to modern patients** (§10.4): it underestimates typical angina; stage-1 recall 0.68 in Iran.
-1. 243 training patients, one hospital, 1980s.
+0. **Typical angina is underestimated in modern patients:** v1's stage-1 recall was 0.68 in Iran (§10.4); v2 fixes most of it but still predicts ~81% where 97% were sick (§11A), so the caution stays.
+1. Small, mostly old data: stage 1 (v2) from 976 patients at five hospitals (1980s–2010s); stages 2–3 from 243 patients at one hospital (1980s).
 2. Referral population: associations such as "asymptomatic → higher risk" are selection effects.
-3. Thresholds are population-specific (Hungary clear zone less safe).
+3. Thresholds are population-specific (v1's Hungary clear zone was less safe); v2's weak spot is VA Long Beach (sealed-test AUC 0.71).
 4. Stage 3 not externally validated.
-5. Atypical presentations, especially in women, may be cleared early.
+5. Atypical presentations, especially in women, may be cleared early (v1 cleared the documented case; v2 sends the matching example on to the treadmill).
 6. SHAP explains the model, not causation; tree components create step-shaped effects (age ~57, chol ~230).
 7. The plausible range is not a validated error detector.
 
@@ -334,6 +334,7 @@ python -m cardiostage.chart_data           # Results-page chart data (reports/ch
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | Number audit: Cleveland's stage-1 clear-zone count in §10.4 corrected (1 / 111, was 3 / 111, which was the count at the 97% threshold); §11 limitations updated for v2 |
 | 2026-11-26 | §11B: pre-registered comparison with free ChatGPT and paid Claude on the 245 sealed patients; header updated to v2.0 |
 | 2026-11-24 | §11A: version 2.0 (pooled stage 1, cholesterol fix, LR + sanity checks, first and second look) |
 | 2026-11-24 | §10.4: external test on Iran (Z-Alizadeh Sani): stage-1 AUC 0.675, recall 0.68; typical-angina underestimation; India dataset rejected; limitation 0 added |

@@ -123,7 +123,7 @@ It is a **portfolio and learning project**, not a medical device.
 | NFR2 | Performance | Model loading cached; once per server process | ~15 s first load, then instant |
 | NFR3 | Privacy | No patient data leaves the machine; no third-party network calls | ✅ app listens on localhost only; no startup IP lookup; telemetry off; site and app fonts/libraries self-hosted (no CDN or Google Fonts) |
 | NFR4 | Reproducibility | Fixed seeds; pinned dependency versions; same split every run | ✅ `RANDOM_SEED = 42`; every package locked with checksums (`uv.lock`) |
-| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 140 tests (run in CI) |
+| NFR5 | Quality | Automated tests for data, models, thresholds, uncertainty, explanations, predictor, app flow, security controls and the landing site | ✅ 150 tests (run in CI) |
 | NFR6 | Quality | Lint-clean code (`ruff check`) and consistent formatting (`ruff format`) | ✅ enforced in CI |
 | NFR10 | Security | Security posture documented and maintained in `brain/security/` (threat model, secrets, attack surface, checklist) | ✅ |
 | NFR7 | Accessibility | Colour never the only signal; colour-blind-safe palette; text labels on all status boxes; WCAG AA contrast; reduced-motion support; usable at phone width | ✅ see [Design system](03-design-system.md) §7 (measured contrast) |
@@ -226,6 +226,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | Number audit: NFR5 test count 150 |
 | 2026-11-26 | FR44 (chatbot comparison) and its decisions logged |
 | 2026-11-24 | FR41–43 (version 2.0) and v2 decisions logged |
 | 2026-11-24 | Iran external test logged; typical-angina warning; v2.0 plan decided |

@@ -64,7 +64,7 @@ Instead of assuming "more data is better", we ran a **leave-one-hospital-out** (
 | Iran | 0.67 | **0.74** |
 | Cleveland | **0.84** | 0.80 |
 | Hungary | **0.85** | 0.83 |
-| Average | 0.76 | 0.76 |
+| Average (5 hospitals) | 0.75 | 0.76 |
 
 Pooling was a **trade-off, not a free gain**: much better for modern patients, slightly worse for the 1980s hospitals. Because the populations genuinely differ, a model can't fit all of them perfectly. The owner chose pooling for stage 1 (it agrees with modern medicine and serves today's visitors) and kept v1's stages 2–3, where pooling showed no clear benefit.
 
@@ -111,7 +111,7 @@ The cost: v2 reassures fewer people early, so at Cleveland 92% need the treadmil
 ## 8. Check your understanding
 1. Why is testing on the Kaggle 918-patient dataset a mistake, even though it's "external"?
 2. Name two signs that suggested the Indian dataset wasn't real clinical data.
-3. The LOHO experiment showed both strategies averaging 0.76. Why choose pooling anyway, and what did it cost?
+3. The LOHO experiment showed both strategies averaging about the same (0.75 vs 0.76). Why choose pooling anyway, and what did it cost?
 4. Why must v2's Cleveland test patients be exactly v1's test patients?
 5. Why couldn't the cholesterol fix be chosen by re-checking the sealed test?
 6. What is a "second look", and why report it at all?
