@@ -89,6 +89,7 @@ def test_all_results_charts_build():
         ),
         charts.case_study(DATA["case_study"]),
         charts.v2_vs_v1(pd.read_csv(REP / "v2_final_second_look_stage1.csv")),
+        charts.chatbots(pd.read_csv(REP / "llm_compare.csv")),
     ]
     for fig in figs:
         assert fig.data, "chart has no traces"
@@ -106,5 +107,5 @@ def test_results_page_renders_without_models():
 
     at = AppTest.from_file(str(ROOT / "app" / "views" / "results.py"), default_timeout=60).run()
     assert not at.exception
-    assert len(at.get("plotly_chart")) == 10  # 9 v1 charts + the Version 2 comparison
+    assert len(at.get("plotly_chart")) == 11  # 9 v1 charts + Version 2 + vs chatbots
     assert not at.get("imgs")  # no static PNGs on the Results page any more

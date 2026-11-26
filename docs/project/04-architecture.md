@@ -4,7 +4,7 @@ How the code is organised, how data flows from the raw CSV to an on-screen expla
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-23 (premium redesign: landing site + app restyle) |
+| **Last updated** | 2026-11-26 (chatbot comparison) |
 | **Stack** | Landing site: static HTML/CSS/JS with vendored GSAP 3 (ScrollTrigger, DrawSVG, SplitText), Lenis 1.3.27, three.js r134 + Vanta 0.5.24 NET, self-hosted Fraunces/Inter · App: Python 3.12 · pandas 3.1 · scikit-learn 1.9 · XGBoost 3.4 · SHAP 0.54 · Streamlit 1.67 (Starlette/Uvicorn server) · Plotly 7.1 · matplotlib/seaborn · pytest 9.2 · ruff 0.17 · pip-audit 2.10 |
 | **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Design system](03-design-system.md) · Security: [`brain/security/`](../../brain/security/threat-model.md) |
 
@@ -103,6 +103,7 @@ CardioStage/
 | `pooled.py` | v2 data: five hospitals in one table (Iran cholesterol not used), `split_v2` (Cleveland = v1's exact split; others 20%), stage hospital sets, leave-one-hospital-out comparison | `load_pooled`, `split_v2`, `stage_data`, `loho` | data, external_iran, staging |
 | `v2_stage1.py` | Trains v2 stage 1: LOHO candidate comparison, calibration, zones, sanity checks, bundle (v1 backup `v1_stage1.joblib`) | `main`, `sanity_checks`, `MODEL_CHOICE` | pooled, calibration, staging, uncertainty, integrity |
 | `v2_final.py` | v2 final exam, v1 vs v2 on the sealed test; `first_look` / `second_look` labels | `main(label)` | pooled, staging, stats |
+| `llm_compare.py` | CardioStage vs free chatbots: paste-ready prompts (`data/llm_compare/prompts/`), strict reply parsing, scoring with paired bootstrap → `reports/llm_compare.csv`. No network access: chatbot replies are pasted by hand into `data/llm_compare/responses/` | `write_prompts`, `parse_reply`, `score` | pooled, stats, calibration |
 | `external_iran.py` | External test on the Iranian Z-Alizadeh Sani cohort: column mapping (documented assumptions), stage-1 evaluation with `external_validation.evaluate` | `load_iran`, `to_cardiostage`, `main` | external_validation, predictor, stats |
 | `external_validation.py` | Phase 6a analysis | `main` | stats, calibration, integrity |
 | `fairness.py` | Phase 6b analysis | `main`, `age_band` | stats, staging, integrity |
@@ -201,6 +202,7 @@ Changing model-related values requires re-running `train_all` (and evaluations) 
 | `test_public.py` | 7 | nothing runs before consent, `*.streamlit.app` counts as public (safety net), consent unlocks the app, local/public wording, error details forced to "none" despite a host override, shared limiter caps all sessions and is thread-safe | no |
 | `test_model_store.py` | 9 | verified archive download extracted (archive not kept, nothing re-fetched), tampered archive / tampered member / oversized download rejected with no leftovers, plain HTTP and path-traversal names refused, mismatched local file refused before anything loads, trusted-types list unchanged, **skops models give identical results to the trained originals** (risk, range, zone, flags, explanation) | 1 (equivalence) |
 | `test_external_iran.py` | 6 | published data fingerprint, shape/outcome, chest-pain/cholesterol/other mappings, every mapped patient passes the app's input validation | no |
+| `test_llm_compare.py` | 9 | every patient in exactly one batch, fixed order, batches mix hospitals, prompts leak no hospital or outcome, committed prompts = code, strict parsing, scoring on fake replies | scoring only |
 | `test_pooled.py` | 7 | five hospitals, 20% per hospital, stratified, reproducible, stage hospital sets, **Cleveland split = v1's exactly (no leakage)**, Iran cholesterol not used | no |
 | **Total** | **140** | 123 run without models; 17 skip with a "trained models missing" reason | |
 
@@ -283,6 +285,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 | ADR-28 | Treat Iran's estimated cholesterol as not measured | keep the estimate; adjust by hospital | The estimate confounds era and medication with risk (learned a backwards effect); training-data evidence only |
 | ADR-29 | Logistic regression over the LOHO-preferred random forest, with automatic sanity checks | follow the rule strictly | Gap within noise; the forest learned a missing-value shortcut and a non-monotonic cholesterol curve |
 | ADR-30 | Report the first and second look at the sealed test separately | silently replace the first result | The first look prompted changes; transparency about test reuse |
+| ADR-31 | Compare with chatbots by hand-pasted, pre-registered prompts, not an API integration | API calls (cost, keys, a network dependency in the repo) | Free; measures what people actually use; no secrets or outbound calls in the codebase; the sealed test stays unseen by CardioStage |
 | ADR-25 | Host the public app on Streamlit Community Cloud (free) | Hugging Face Spaces (needs PRO since Streamlit runs as a paid Docker Space); in-browser rewrite | Free, made for Streamlit, deploys from the repo and `uv.lock`; trade-offs (forced telemetry, settings overrides, no custom headers) accepted and disclosed by the owner |
 | ADR-26 | skops models split per range copy, shipped as one SHA-pinned release archive | one skops file per stage; pickles + manifest; Git LFS | One-file conversion was pathologically slow (40+ min, unfinished); split files take ~6 s each; one archive keeps the release to a single upload; release assets avoid LFS bandwidth limits and keep Git history small |
 | ADR-24 | `uv` lockfile with checksums; actions pinned to commit SHAs | pip-tools per-platform hashed files; keep constraints | One cross-platform lock with hashes for every wheel; `--locked` installs fail on drift; a hashed `requirements.txt` export keeps plain-pip installs (and hosting platforms) working; SHAs can't be re-pointed like tags |
@@ -313,6 +316,7 @@ Full assessment: [`brain/security/`](../../brain/security/threat-model.md). Cont
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | Chatbot comparison: `llm_compare.py`, `data/llm_compare/` (prompts, replies, log), `reports/llm_compare.csv`, `charts.chatbots`, Results 'vs chatbots' tab, site section, `site_data.chatbots`; ADR-31; 150 tests |
 | 2026-11-24 | Version 2.0: `pooled.py`, `v2_stage1.py`, `v2_final.py`; models/stage1.joblib = v2 (v1 kept as `v1_stage1.joblib`); manifest covers both; Results 'Version 2' tab; site Version 2 section; ADR-27–30; 140 tests |
 | 2026-11-24 | External test on Iran (`external_iran.py`, `data/raw/external/`), known-weakness cautions in the engine (`known_cautions`), external CSVs kept byte-exact via `.gitattributes`; 132 tests |
 | 2026-11-24 | Public deployment: Streamlit Community Cloud (§8A), consent screen, `model_store` (skops, release archive, SHA-pinned manifest), shared rate limit, error-detail override, Host-based public detection; ADR-25/26 |

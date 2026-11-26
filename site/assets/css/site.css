@@ -192,6 +192,10 @@ section { scroll-margin-top: 80px; }
 .hosp__ci--s2, .hosp__pt--s2 { background: var(--warm); }
 .hosp__ci--s1 { top: 13px; } .hosp__pt--s1 { top: 8px; }
 .hosp__ci--s2 { top: 29px; } .hosp__pt--s2 { top: 24px; }
+.hosp__ci--s3, .hosp__pt--s3 { background: var(--ink-3); }
+.hosp--three .hosp__plot { height: 56px; }
+.hosp__ci--s3 { top: 45px; } .hosp__pt--s3 { top: 40px; }
+.swatch--grey { background: var(--ink-3); border-radius: 50%; }
 .hosp__axis { display: grid; grid-template-columns: 230px 1fr; gap: 16px; font-size: 12px; color: var(--ink-3); }
 .hosp__ticks { position: relative; height: 16px; }
 .hosp__ticks span { position: absolute; transform: translateX(-50%); }

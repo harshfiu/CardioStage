@@ -29,6 +29,17 @@ Tested on 303 modern patients from Iran, v1 (trained on 1980s Cleveland) missed 
 
 These are a **second look** at the sealed test after a fix it prompted, so slightly optimistic; the first, unbiased look gave 0.84 and 1 sick patient wrongly reassured. Typical angina is still somewhat underestimated in modern patients (97% sick vs ~81% predicted), so the app keeps its warning. Full story: [learning guide 14](docs/learning/14-new-data-and-v2.md).
 
+## 🤖 Why not just ask a chatbot?
+We tested it. The same 245 sealed-test patients and six check-up facts were pasted, 14–15 per fresh chat, into **free ChatGPT** and **paid Claude (Opus 5.5)**, with the prompt and every metric committed before any patient was sent.
+
+| 245 sealed patients | CardioStage v2 | ChatGPT, free | Claude, paid |
+|---|---|---|---|
+| Ranking quality (AUC) | 0.84 | 0.76 (clearly worse) | 0.85 (no clear difference) |
+| Calibration error | **0.040** | 0.118 | 0.109 |
+| Sick patients among those reassured | **0** of 11% reassured | 3 of 3% | 1 of 7% |
+
+Paid Claude ranks patients as well as CardioStage, free ChatGPT doesn't, and both chatbots' percentages run too low. The chatbots do better on typical angina, CardioStage's known weak spot. One try each, free vs paid tiers; details and caveats in [learning guide 15](docs/learning/15-vs-chatbots.md).
+
 ## Headline results
 
 **Sealed test set:** 61 Cleveland patients, locked away from all development and opened once at the end, with thresholds frozen:

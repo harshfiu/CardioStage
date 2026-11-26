@@ -6,7 +6,7 @@
 | **Owner** | Harsh Gupta |
 | **Status** | v1.0 complete (Phases 1–9 delivered) |
 | **Repository** | https://github.com/harshfiu/CardioStage |
-| **Last updated** | 2026-11-23 |
+| **Last updated** | 2026-11-26 |
 | **Related docs** | [Models](02-models.md) · [Design system](03-design-system.md) · [Architecture](04-architecture.md) |
 
 ---
@@ -104,6 +104,7 @@ It is a **portfolio and learning project**, not a medical device.
 | FR42 | v2 evaluated on a sealed test set prepared before any v2 decision, with the exam script committed before opening; any re-run labelled as a second look | ✅ |
 | FR43 | Known-weakness warnings kept until completely unnecessary (owner rule); v2 wording updated to v2's numbers | ✅ |
 | FR40 | A shared rate limit across all visitors so a public server stays responsive | ✅ |
+| FR44 | Answer "why not just ask a chatbot?" with evidence: a pre-registered comparison with free ChatGPT and paid Claude on the sealed test, reported with its limits (Results tab, site section) | ✅ |
 
 ### 7.3 Pipeline and evaluation
 | ID | Requirement | Status |
@@ -190,6 +191,7 @@ It is a **portfolio and learning project**, not a medical device.
 | 2026-11-24 | Host on **Streamlit Community Cloud** (free) instead of Hugging Face (Streamlit there now needs the $9/month PRO plan); keep the plausible range online; skops for all model files | Owner's choices; HF free tier no longer hosts Streamlit |
 | 2026-11-24 | v2: pool stage 1 only (LOHO evidence); investigate VA before shipping; treat Iran cholesterol as not measured; logistic regression over random forest; report both exam looks; keep the typical-angina warning ("don't drop the warning until it's COMPLETELY unnecessary") with updated wording | Owner's decisions |
 | 2026-11-24 | After the Iran external test: warn now on typical angina in the live app; build v2.0 by pooling all five hospitals with leave-one-hospital-out testing and a new sealed test; exclude the India dataset | Owner's choices; v1 caught only ~68% of sick Iranian patients |
+| 2026-11-26 | Chatbot comparison via the free chat websites, pasted by hand (Option A: no API cost); prompt approved before the pre-registration commit; free ChatGPT vs the owner's paid Claude (Opus 5.5), labelled as such | Owner's choices; the API route would have cost ~$10–20 |
 | 2026-11-24 | Accept Streamlit Cloud's forced usage statistics and anonymous viewer count, disclosed clearly on the consent screen | Owner's choice (free hosting) |
 
 ## 13. Risks and mitigations
@@ -224,6 +226,7 @@ It is a **portfolio and learning project**, not a medical device.
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | FR44 (chatbot comparison) and its decisions logged |
 | 2026-11-24 | FR41–43 (version 2.0) and v2 decisions logged |
 | 2026-11-24 | Iran external test logged; typical-angina warning; v2.0 plan decided |
 | 2026-11-24 | FR37 live (Streamlit Community Cloud), FR38–40 done; hosting and privacy decisions logged |

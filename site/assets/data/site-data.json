@@ -391,6 +391,527 @@
       "v2": 0.8135488177185323
     }
   },
+  "chatbots": {
+    "sources": {
+      "CardioStage v2": "CardioStage v2",
+      "claude": "Claude, paid (Opus 5.5)",
+      "chatgpt": "ChatGPT, free"
+    },
+    "groups": [
+      "All hospitals",
+      "Cleveland",
+      "Hungary",
+      "Switzerland",
+      "VA Long Beach",
+      "Iran"
+    ],
+    "rows": [
+      {
+        "group": "All hospitals",
+        "source": "CardioStage v2",
+        "n": 245,
+        "auc": {
+          "value": 0.841,
+          "low": 0.79,
+          "high": 0.89
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.040199925138230855,
+        "mean_predicted": 0.5901834077978949,
+        "disease_rate": 0.5918367346938775,
+        "share_cleared": 0.10612244897959183,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "All hospitals",
+        "source": "chatgpt",
+        "n": 245,
+        "auc": {
+          "value": 0.756,
+          "low": 0.698,
+          "high": 0.813
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.085,
+          "low": -0.142,
+          "high": -0.029
+        },
+        "ece": 0.11767346938775514,
+        "mean_predicted": 0.4846122448979592,
+        "disease_rate": 0.5918367346938775,
+        "share_cleared": 0.02857142857142857,
+        "cleared_but_sick": 3
+      },
+      {
+        "group": "All hospitals",
+        "source": "claude",
+        "n": 245,
+        "auc": {
+          "value": 0.847,
+          "low": 0.792,
+          "high": 0.899
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.006,
+          "low": -0.025,
+          "high": 0.037
+        },
+        "ece": 0.1093469387755102,
+        "mean_predicted": 0.5173469387755103,
+        "disease_rate": 0.5918367346938775,
+        "share_cleared": 0.0653061224489796,
+        "cleared_but_sick": 1
+      },
+      {
+        "group": "Cleveland",
+        "source": "CardioStage v2",
+        "n": 61,
+        "auc": {
+          "value": 0.82,
+          "low": 0.709,
+          "high": 0.924
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.16158526886575628,
+        "mean_predicted": 0.5415232452298154,
+        "disease_rate": 0.45901639344262296,
+        "share_cleared": 0.06557377049180328,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Cleveland",
+        "source": "chatgpt",
+        "n": 61,
+        "auc": {
+          "value": 0.715,
+          "low": 0.582,
+          "high": 0.84
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.106,
+          "low": -0.228,
+          "high": 0.018
+        },
+        "ece": 0.05196721311475409,
+        "mean_predicted": 0.4132786885245901,
+        "disease_rate": 0.45901639344262296,
+        "share_cleared": 0.03278688524590164,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Cleveland",
+        "source": "claude",
+        "n": 61,
+        "auc": {
+          "value": 0.839,
+          "low": 0.734,
+          "high": 0.938
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.018,
+          "low": -0.03,
+          "high": 0.085
+        },
+        "ece": 0.13508196721311472,
+        "mean_predicted": 0.44131147540983606,
+        "disease_rate": 0.45901639344262296,
+        "share_cleared": 0.09836065573770492,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Hungary",
+        "source": "CardioStage v2",
+        "n": 58,
+        "auc": {
+          "value": 0.83,
+          "low": 0.721,
+          "high": 0.923
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.09655736396535484,
+        "mean_predicted": 0.4586263294825962,
+        "disease_rate": 0.3620689655172414,
+        "share_cleared": 0.22413793103448276,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Hungary",
+        "source": "chatgpt",
+        "n": 58,
+        "auc": {
+          "value": 0.62,
+          "low": 0.453,
+          "high": 0.78
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.21,
+          "low": -0.356,
+          "high": -0.065
+        },
+        "ece": 0.10327586206896552,
+        "mean_predicted": 0.41396551724137925,
+        "disease_rate": 0.3620689655172414,
+        "share_cleared": 0.05172413793103448,
+        "cleared_but_sick": 1
+      },
+      {
+        "group": "Hungary",
+        "source": "claude",
+        "n": 58,
+        "auc": {
+          "value": 0.815,
+          "low": 0.696,
+          "high": 0.926
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.015,
+          "low": -0.075,
+          "high": 0.04
+        },
+        "ece": 0.0453448275862069,
+        "mean_predicted": 0.3970689655172414,
+        "disease_rate": 0.3620689655172414,
+        "share_cleared": 0.15517241379310345,
+        "cleared_but_sick": 1
+      },
+      {
+        "group": "Switzerland",
+        "source": "CardioStage v2",
+        "n": 25,
+        "auc": {
+          "value": 0.848,
+          "low": 0.682,
+          "high": 0.985
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.2738949711684395,
+        "mean_predicted": 0.6461050288315604,
+        "disease_rate": 0.92,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Switzerland",
+        "source": "chatgpt",
+        "n": 25,
+        "auc": {
+          "value": 0.522,
+          "low": 0.286,
+          "high": 0.75
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.326,
+          "low": -0.547,
+          "high": -0.121
+        },
+        "ece": 0.4016,
+        "mean_predicted": 0.5184000000000001,
+        "disease_rate": 0.92,
+        "share_cleared": 0.08,
+        "cleared_but_sick": 2
+      },
+      {
+        "group": "Switzerland",
+        "source": "claude",
+        "n": 25,
+        "auc": {
+          "value": 0.87,
+          "low": 0.717,
+          "high": 0.989
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.022,
+          "low": -0.043,
+          "high": 0.095
+        },
+        "ece": 0.22840000000000005,
+        "mean_predicted": 0.6916,
+        "disease_rate": 0.92,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "VA Long Beach",
+        "source": "CardioStage v2",
+        "n": 40,
+        "auc": {
+          "value": 0.713,
+          "low": 0.513,
+          "high": 0.878
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.11759782234681102,
+        "mean_predicted": 0.7857905758900542,
+        "disease_rate": 0.75,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "VA Long Beach",
+        "source": "chatgpt",
+        "n": 40,
+        "auc": {
+          "value": 0.688,
+          "low": 0.473,
+          "high": 0.867
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.025,
+          "low": -0.198,
+          "high": 0.17
+        },
+        "ece": 0.231,
+        "mean_predicted": 0.5525,
+        "disease_rate": 0.75,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "VA Long Beach",
+        "source": "claude",
+        "n": 40,
+        "auc": {
+          "value": 0.803,
+          "low": 0.622,
+          "high": 0.94
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.09,
+          "low": -0.077,
+          "high": 0.275
+        },
+        "ece": 0.07825000000000006,
+        "mean_predicted": 0.6992499999999999,
+        "disease_rate": 0.75,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Iran",
+        "source": "CardioStage v2",
+        "n": 61,
+        "auc": {
+          "value": 0.932,
+          "low": 0.816,
+          "high": 0.995
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.0976423592708605,
+        "mean_predicted": 0.6127449358210447,
+        "disease_rate": 0.7049180327868853,
+        "share_cleared": 0.14754098360655737,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Iran",
+        "source": "chatgpt",
+        "n": 61,
+        "auc": {
+          "value": 0.897,
+          "low": 0.816,
+          "high": 0.967
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.034,
+          "low": -0.124,
+          "high": 0.062
+        },
+        "ece": 0.1401639344262295,
+        "mean_predicted": 0.5647540983606557,
+        "disease_rate": 0.7049180327868853,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Iran",
+        "source": "claude",
+        "n": 61,
+        "auc": {
+          "value": 0.862,
+          "low": 0.721,
+          "high": 0.969
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.069,
+          "low": -0.152,
+          "high": -0.006
+        },
+        "ece": 0.2567213114754098,
+        "mean_predicted": 0.517049180327869,
+        "disease_rate": 0.7049180327868853,
+        "share_cleared": 0.01639344262295082,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Typical angina",
+        "source": "CardioStage v2",
+        "n": 45,
+        "auc": {
+          "value": 0.598,
+          "low": 0.295,
+          "high": 0.858
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.11774591456903274,
+        "mean_predicted": 0.7980242157673118,
+        "disease_rate": 0.8222222222222222,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Typical angina",
+        "source": "chatgpt",
+        "n": 45,
+        "auc": {
+          "value": 0.775,
+          "low": 0.553,
+          "high": 0.941
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.177,
+          "low": 0.045,
+          "high": 0.358
+        },
+        "ece": 0.14,
+        "mean_predicted": 0.6822222222222222,
+        "disease_rate": 0.8222222222222222,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Typical angina",
+        "source": "claude",
+        "n": 45,
+        "auc": {
+          "value": 0.75,
+          "low": 0.506,
+          "high": 0.945
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.152,
+          "low": 0.008,
+          "high": 0.306
+        },
+        "ece": 0.2828888888888889,
+        "mean_predicted": 0.5393333333333333,
+        "disease_rate": 0.8222222222222222,
+        "share_cleared": 0.0,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Women",
+        "source": "CardioStage v2",
+        "n": 63,
+        "auc": {
+          "value": 0.865,
+          "low": 0.766,
+          "high": 0.944
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.06718030811185832,
+        "mean_predicted": 0.4127608125071174,
+        "disease_rate": 0.42857142857142855,
+        "share_cleared": 0.30158730158730157,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Women",
+        "source": "chatgpt",
+        "n": 63,
+        "auc": {
+          "value": 0.719,
+          "low": 0.584,
+          "high": 0.854
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.146,
+          "low": -0.282,
+          "high": -0.019
+        },
+        "ece": 0.10555555555555551,
+        "mean_predicted": 0.38619047619047614,
+        "disease_rate": 0.42857142857142855,
+        "share_cleared": 0.07936507936507936,
+        "cleared_but_sick": 2
+      },
+      {
+        "group": "Women",
+        "source": "claude",
+        "n": 63,
+        "auc": {
+          "value": 0.858,
+          "low": 0.746,
+          "high": 0.944
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.007,
+          "low": -0.091,
+          "high": 0.073
+        },
+        "ece": 0.12079365079365076,
+        "mean_predicted": 0.328095238095238,
+        "disease_rate": 0.42857142857142855,
+        "share_cleared": 0.1746031746031746,
+        "cleared_but_sick": 1
+      },
+      {
+        "group": "Men",
+        "source": "CardioStage v2",
+        "n": 182,
+        "auc": {
+          "value": 0.82,
+          "low": 0.752,
+          "high": 0.882
+        },
+        "auc_vs_cardiostage": null,
+        "ece": 0.06914830580038887,
+        "mean_predicted": 0.6515989215523947,
+        "disease_rate": 0.6483516483516484,
+        "share_cleared": 0.038461538461538464,
+        "cleared_but_sick": 0
+      },
+      {
+        "group": "Men",
+        "source": "chatgpt",
+        "n": 182,
+        "auc": {
+          "value": 0.741,
+          "low": 0.662,
+          "high": 0.809
+        },
+        "auc_vs_cardiostage": {
+          "value": -0.079,
+          "low": -0.151,
+          "high": -0.01
+        },
+        "ece": 0.12967032967032974,
+        "mean_predicted": 0.5186813186813187,
+        "disease_rate": 0.6483516483516484,
+        "share_cleared": 0.01098901098901099,
+        "cleared_but_sick": 1
+      },
+      {
+        "group": "Men",
+        "source": "claude",
+        "n": 182,
+        "auc": {
+          "value": 0.831,
+          "low": 0.761,
+          "high": 0.893
+        },
+        "auc_vs_cardiostage": {
+          "value": 0.011,
+          "low": -0.03,
+          "high": 0.052
+        },
+        "ece": 0.1046153846153846,
+        "mean_predicted": 0.5828571428571429,
+        "disease_rate": 0.6483516483516484,
+        "share_cleared": 0.027472527472527472,
+        "cleared_but_sick": 0
+      }
+    ]
+  },
   "targets": {
     "screening_recall": 0.97
   }

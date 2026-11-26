@@ -558,3 +558,56 @@ def v2_vs_v1(table) -> go.Figure:
         title_text="Stage-1 ROC-AUC on the sealed test (95% CI) · dashed = coin flip",
     )
     return _style(fig, 420)
+
+
+CHATBOT_SERIES = (  # (source in reports/llm_compare.csv, label, colour)
+    ("CardioStage v2", "CardioStage v2", SERIES[0]),
+    ("claude", "Claude, paid (Opus 5.5)", SERIES[1]),
+    ("chatgpt", "ChatGPT, free", NEUTRAL),
+)
+
+
+def chatbots(table, groups=None) -> go.Figure:
+    """ROC-AUC (95% CI) per group on the v2 sealed test: CardioStage vs two chatbots."""
+    groups = groups or [
+        "All hospitals",
+        "Cleveland",
+        "Hungary",
+        "Switzerland",
+        "VA Long Beach",
+        "Iran",
+        "Typical angina",
+        "Women",
+    ]
+    fig = go.Figure()
+    for (source, name, color), offset in zip(CHATBOT_SERIES, (-0.22, 0.0, 0.22)):
+        sub = table[table["source"] == source].set_index("group").loc[groups]
+        ci = [parse_ci(s) for s in sub["roc_auc"]]
+        fig.add_trace(
+            go.Scatter(
+                x=[c["value"] for c in ci],
+                y=[i + offset for i in range(len(groups))],
+                mode="markers",
+                marker=dict(size=10, color=color, line=dict(color=SURFACE, width=2)),
+                name=name,
+                customdata=[[c["low"], c["high"], g] for c, g in zip(ci, groups)],
+                hovertemplate=(
+                    f"{name}<br>%{{customdata[2]}}: AUC %{{x:.3f}} "
+                    "[%{customdata[0]:.3f}, %{customdata[1]:.3f}]<extra></extra>"
+                ),
+                **_ci_error(ci, "x"),
+            )
+        )
+    fig.add_vline(x=0.5, line=dict(color=REFERENCE, dash="dash", width=1))
+    fig.update_yaxes(
+        tickvals=list(range(len(groups))),
+        ticktext=groups,
+        autorange="reversed",
+        tickfont=dict(size=13, color=TEXT_PRIMARY),
+        showgrid=False,
+    )
+    fig.update_xaxes(
+        range=[0.25, 1.02],
+        title_text="ROC-AUC on the sealed test (95% CI) · dashed = coin flip",
+    )
+    return _style(fig, 520)

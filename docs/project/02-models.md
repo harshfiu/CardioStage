@@ -4,8 +4,8 @@ Everything about the data, models, thresholds and evaluation: enough to understa
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-23 |
-| **Model version** | v1.0 (built by `python -m cardiostage.train_all`) |
+| **Last updated** | 2026-11-26 |
+| **Model version** | v2.0 (stage 1 from five hospitals, §11A; stages 2–3 from v1, built by `python -m cardiostage.train_all`) |
 | **Related docs** | [PRD](01-product-requirements.md) · [Design system](03-design-system.md) · [Architecture](04-architecture.md) |
 
 ---
@@ -264,6 +264,21 @@ A second candidate (Mendeley "Cardiovascular_Disease_Dataset", India, 1,000 rows
 
 VA investigation: v1 was lucky on VA's 40 test patients (0.69 on VA's other 159); both strategies score about 0.69–0.70 at VA on unseen-hospital tests. Typical angina (Iran test, 33 patients, 97% sick): v1 28%, v2 81%, so the **warning stays** (owner: until completely unnecessary). Cleveland 3-stage policy: recall 100% for both; treadmill 69% → 92%, invasive 49% → 54%.
 
+## 11B. CardioStage vs free chatbots (ChatGPT, Claude.ai)
+**Why:** a faculty member asked why anyone would use CardioStage instead of a chatbot. **Method (`llm_compare.py`, pre-registered in `df96179`):** the 245 v2 sealed-test patients, shuffled (seed 2026) into 17 batches of 14–15 with anonymous IDs, six stage-1 facts in plain English, context "referred for coronary angiography", outcome ≥50% narrowing; hospital names hidden; Iran cholesterol "not recorded" (as in v2). Pasted by the owner into a fresh chat per batch (memory and search off): **free ChatGPT** (model name not shown) and **paid Claude (Opus 5.5)**. One try per batch; 245/245 usable answers each; no re-asks (`data/llm_compare/log.md`). CardioStage's numbers are its second look (§11A).
+
+| 245 sealed patients (59% sick) | CardioStage v2 | ChatGPT, free | Claude, paid (Opus 5.5) |
+|---|---|---|---|
+| AUC [95% CI] | 0.841 [0.790, 0.890] | 0.756 [0.698, 0.813] | 0.847 [0.792, 0.899] |
+| AUC − CardioStage (paired bootstrap) | | **−0.085 [−0.142, −0.029]** | +0.006 [−0.025, 0.037] |
+| ECE (5 bins) | **0.040** | 0.118 | 0.109 |
+| Mean predicted | 59% | 49% | 52% |
+| Reassured (< 14.4%) / sick among them | 11% / **0** | 3% / 3 | 7% / 1 |
+
+By group (AUC, CardioStage / ChatGPT / Claude): Cleveland 0.82 / 0.72 / 0.84; Hungary 0.83 / 0.62 / 0.82; Switzerland 0.85 / 0.52 / 0.87; VA 0.71 / 0.69 / 0.80; Iran 0.93 / 0.90 / 0.86 (Claude −0.07 [−0.15, −0.01]); typical angina (45) 0.60 / 0.78 / 0.75 (both chatbots better; Claude's mean 54% vs 82% actual); women 0.87 / 0.72 / 0.86.
+
+**Reading:** paid Claude ranks as well as CardioStage; free ChatGPT is clearly worse. Both chatbots under-predict (ECE ~3× CardioStage's). Claude's relative edge at Cleveland (famous public data) vs its deficit at Iran is *consistent with* memorisation; not proven (small groups). Limits: free vs paid tiers, one try, several patients per message, chatbots not told CardioStage's cut-off. Full table: `reports/llm_compare.csv`.
+
 ## 12. Artefacts
 | File | Size | Contents |
 |---|---|---|
@@ -319,6 +334,7 @@ python -m cardiostage.chart_data           # Results-page chart data (reports/ch
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | §11B: pre-registered comparison with free ChatGPT and paid Claude on the 245 sealed patients; header updated to v2.0 |
 | 2026-11-24 | §11A: version 2.0 (pooled stage 1, cholesterol fix, LR + sanity checks, first and second look) |
 | 2026-11-24 | §10.4: external test on Iran (Z-Alizadeh Sani): stage-1 AUC 0.675, recall 0.68; typical-angina underestimation; India dataset rejected; limitation 0 added |
 | 2026-11-24 | §12: skops export for the public app (identical results verified); models and metrics unchanged |

@@ -52,6 +52,20 @@
       setText('[data-bind="first_auc"]', first.auc.value.toFixed(2));
       setText('[data-bind="first_cleared"]', String(first.cleared_but_sick));
     }
+    if (D.chatbots) {
+      var bot = function (s) { return D.chatbots.rows.filter(function (r) { return r.group === "All hospitals" && r.source === s; })[0]; };
+      var cs = bot("CardioStage v2"), cl = bot("claude"), gp = bot("chatgpt");
+      setText('[data-bind="bot_cs_auc"]', cs.auc.value.toFixed(2));
+      setText('[data-bind="bot_claude_auc"]', cl.auc.value.toFixed(2));
+      setText('[data-bind="bot_gpt_auc"]', gp.auc.value.toFixed(2));
+      setText('[data-bind="bot_pred"]', pct((cl.mean_predicted + gp.mean_predicted) / 2));
+      setText('[data-bind="bot_actual"]', pct(cs.disease_rate));
+      setText('[data-bind="bot_cs_ece"]', cs.ece.toFixed(3));
+      setText('[data-bind="bot_llm_ece"]', ((cl.ece + gp.ece) / 2).toFixed(2));
+      setText('[data-bind="bot_cs_cleared"]', pct(cs.share_cleared));
+      setText('[data-bind="bot_claude_missed"]', String(cl.cleared_but_sick));
+      setText('[data-bind="bot_gpt_missed"]', String(gp.cleared_but_sick));
+    }
     document.querySelectorAll("[data-count]").forEach(function (n) {
       var v = counts[n.dataset.count];
       n.dataset.target = v;
@@ -221,6 +235,45 @@
     host.appendChild(axis);
   }
 
+  function chartBots() {
+    var host = document.querySelector('[data-chart="chatbots"]');
+    if (!host || !D || !D.chatbots) return;
+    var lo = 0.4, hi = 1.0;
+    function x(v) { return ((Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * 100).toFixed(2) + "%"; }
+    var C = D.chatbots;
+    var order = [["s1", "CardioStage v2"], ["s2", "claude"], ["s3", "chatgpt"]];
+    C.groups.forEach(function (g) {
+      var get = function (s) { return C.rows.filter(function (r) { return r.group === g && r.source === s; })[0]; };
+      var rows = order.map(function (o) { return get(o[1]); });
+      if (rows.some(function (r) { return !r || !r.auc; })) return;
+      var row = el("div", "hosp__row");
+      var name = el("div", "hosp__name", g);
+      name.appendChild(el("span", "", "n=" + rows[0].n + " sealed-test patients"));
+      var plot = el("div", "hosp__plot");
+      plot.setAttribute("role", "img");
+      plot.setAttribute("aria-label", g + ": " + order.map(function (o, i) {
+        var a = rows[i].auc; return C.sources[o[1]] + " AUC " + a.value.toFixed(2) + " (" + a.low.toFixed(2) + " to " + a.high.toFixed(2) + ")";
+      }).join(", "));
+      [0.5, 0.6, 0.7, 0.8, 0.9].forEach(function (v) { var gl = el("span", "hosp__grid"); gl.style.left = x(v); plot.appendChild(gl); });
+      order.forEach(function (o, i) {
+        var a = rows[i].auc;
+        var ci = el("span", "hosp__ci hosp__ci--" + o[0]);
+        ci.style.left = x(a.low); ci.style.width = "calc(" + x(a.high) + " - " + x(a.low) + ")";
+        var pt = el("span", "hosp__pt hosp__pt--" + o[0]);
+        pt.style.left = x(a.value);
+        plot.appendChild(ci); plot.appendChild(pt);
+      });
+      row.appendChild(name); row.appendChild(plot);
+      host.appendChild(row);
+    });
+    var axis = el("div", "hosp__axis");
+    axis.appendChild(el("span", "", "ROC-AUC (intervals below 0.4 are cut off)"));
+    var ticks = el("div", "hosp__ticks");
+    [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].forEach(function (t) { var s = el("span", "", t.toFixed(1)); s.style.left = x(t); ticks.appendChild(s); });
+    axis.appendChild(ticks);
+    host.appendChild(axis);
+  }
+
   // Show the "open local app" button only when viewing the site on this computer.
   function localAppLink() {
     var local = location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -335,7 +388,7 @@
   }
 
   // ---------- go ----------
-  try { fillNumbers(); chartCompare(); chartFlow(); chartExplain(); chartHospitals(); chartV2(); } catch (e) { /* static fallbacks stay */ }
+  try { fillNumbers(); chartCompare(); chartFlow(); chartExplain(); chartHospitals(); chartV2(); chartBots(); } catch (e) { /* static fallbacks stay */ }
   localAppLink();
   if (MOTION) {
     document.documentElement.classList.add("has-motion");

@@ -112,6 +112,7 @@ None.
 | img.shields.io | Viewing the README on GitHub | Viewer's browser fetches badges | Not part of the app |
 | GitHub Pages | Visiting the landing site | Standard web request logs at GitHub | Static site only; it loads nothing from other origins |
 | Google Fonts / CDNs | – | – | **Not used**: site and app fonts/libraries are self-hosted |
+| ChatGPT (free) and Claude.ai (owner's paid account) | One-off research comparison, 2026-11-26, pasted **by hand** by the owner | The 245 sealed-test patients' six check-up facts (public research data: UCI and Z-Alizadeh Sani), anonymous IDs, no hospital names; **no visitor data, no API keys, no code integration** | Not part of the app or the repo's runtime; `llm_compare.py` makes no network calls (ADR-31) |
 
 ## 10. Admin surfaces
 None in the app. Streamlit developer options are shown to localhost viewers only. The "Deploy" toolbar button links to Streamlit Community Cloud (no deployment config or credentials exist). Retraining needs shell access.

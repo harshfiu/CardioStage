@@ -18,5 +18,6 @@ A step-by-step record of how CardioStage was built, written for someone starting
 | 12 | [Locking the supply chain](12-supply-chain.md) | Version pins vs checksums, `uv` lockfiles, generated vs hand-edited files, pinning CI actions to commits |
 | 13 | [Going online](13-going-online.md) | Choosing a host from current facts, consent screens, failing safe, skops vs pickle, measuring a slowdown, verified downloads, shared rate limits, CI-only failures |
 | 14 | [New data and version 2](14-new-data-and-v2.md) | Spotting re-uploaded and suspicious datasets, external validation, leave-one-hospital-out, leakage-aware splits, pre-registered exams, first vs second look, confounding, sanity checks |
+| 15 | [CardioStage vs chatbots](15-vs-chatbots.md) | Fair comparisons, matching the method to the question, pre-registration, paired bootstrap, run logs, memorisation in large models |
 
 **Suggested reading order:** in sequence. Each guide builds on the previous ones. Every guide lists the files it covers and the commands to reproduce its results.

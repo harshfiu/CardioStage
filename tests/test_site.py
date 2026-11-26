@@ -151,3 +151,17 @@ def test_version2_numbers_match_reports():
     ta = pd.read_csv(config.REPORTS_DIR / "v2_final_second_look_typical_angina.csv")
     iran = ta[ta.group == "Iran"].iloc[0]
     assert v2["typical_angina_iran"]["v2"] == pytest.approx(iran["predicted_v2"])
+
+
+def test_chatbot_numbers_match_reports():
+    table = pd.read_csv(config.REPORTS_DIR / "llm_compare.csv")
+    bots = DATA["chatbots"]
+    assert set(bots["sources"]) == {"CardioStage v2", "claude", "chatgpt"}
+    for r in bots["rows"]:
+        row = table[(table.group == r["group"]) & (table.source == r["source"])].iloc[0]
+        assert r["auc"]["value"] == pytest.approx(row["auc_value"], abs=5e-4)
+        assert r["cleared_but_sick"] == row["cleared_but_sick"]
+        assert r["ece"] == pytest.approx(row["ece"])
+    # The page names three series and the chart container exists.
+    html = (SITE / "index.html").read_text(encoding="utf-8")
+    assert 'data-chart="chatbots"' in html and "ChatGPT, free" in html

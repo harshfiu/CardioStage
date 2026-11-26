@@ -200,6 +200,27 @@
   </ul>
 </section>
 
+<!-- VS CHATBOTS -->
+<section class="container section" id="chatbots" aria-labelledby="chatbots-title">
+  <div class="section-head reveal">
+    <span class="eyebrow">Why not just ask a chatbot?</span>
+    <h2 id="chatbots-title">We asked two, on the same patients.</h2>
+    <p class="lead lead--sm">The same 245 sealed-test patients and the same six check-up facts went to free ChatGPT and paid Claude (Opus 5.5), 14–15 patients per fresh chat, one try each. The prompt and every measure were published before any patient was sent.</p>
+  </div>
+  <figure class="card chart reveal" aria-label="ROC-AUC per hospital on the sealed test: CardioStage, paid Claude and free ChatGPT">
+    <div class="hosp hosp--three" data-chart="chatbots"></div>
+    <ul class="legend" aria-label="Legend"><li><span class="swatch swatch--blue"></span>CardioStage v2</li><li><span class="swatch swatch--warm"></span>Claude, paid (Opus 5.5)</li><li><span class="swatch swatch--grey"></span>ChatGPT, free</li></ul>
+    <figcaption class="chart__caption">Ranking quality (ROC-AUC) with 95% intervals. Overall: CardioStage <strong data-bind="bot_cs_auc">0.84</strong>, Claude <strong data-bind="bot_claude_auc">0.85</strong>, ChatGPT <strong data-bind="bot_gpt_auc">0.76</strong>.</figcaption>
+  </figure>
+  <ul class="limits__list v2__notes reveal">
+    <li><strong>Ranking:</strong> paid Claude ranked patients about as well as CardioStage (no clear difference). Free ChatGPT was clearly worse.</li>
+    <li><strong>Honest percentages:</strong> both chatbots guessed too low across the board, about <span data-bind="bot_pred">50%</span> on average where <span data-bind="bot_actual">59%</span> were sick. CardioStage's calibration error was <span data-bind="bot_cs_ece">0.040</span>, the chatbots' about <span data-bind="bot_llm_ece">0.11</span>.</li>
+    <li><strong>Safety:</strong> CardioStage reassured <span data-bind="bot_cs_cleared">11%</span> of patients and none were sick. Claude reassured fewer and included <span data-bind="bot_claude_missed">1</span> sick patient, ChatGPT <span data-bind="bot_gpt_missed">3</span>. Small numbers, but a chatbot's percentages come with no tested cut-off at all.</li>
+    <li><strong>Where the chatbots win:</strong> on typical angina, CardioStage's known weak spot, both chatbots told sick from healthy better. Textbook knowledge helps exactly where 1980s data misled.</li>
+    <li><strong>Read with care:</strong> free ChatGPT vs paid Claude, one try each, several patients per message. Claude did slightly better on Cleveland, a famous public dataset, than on Iran's: possibly memorised, not proven.</li>
+  </ul>
+</section>
+
 <!-- LIMITATIONS -->
 <section class="container" id="limits" aria-labelledby="limits-title">
   <div class="card limits reveal">

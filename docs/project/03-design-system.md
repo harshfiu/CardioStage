@@ -4,7 +4,7 @@ The visual and content rules for CardioStage's charts, app and written outputs. 
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-23 |
+| **Last updated** | 2026-11-26 |
 | **Applies to** | the landing site (`site/`), the Streamlit app (`app/`), `reports/figures/*`, README and docs |
 | **Related docs** | [PRD](01-product-requirements.md) · [Models](02-models.md) · [Architecture](04-architecture.md) |
 
@@ -219,6 +219,9 @@ Horizontal bars, labels `Measurement = value`, coral `#FF8A65` positive / blue `
 ### 5.5a Results page, Version 2 tab
 First tab (🆕 info box above the tabs: stage 1 is now v2): `charts.v2_vs_v1` (stage-1 AUC per hospital with 95% CIs; v1 orange `#D95926`, v2 blue `#5B8FE8`; same sealed patients), 3 metrics (AUC, ECE, sick wrongly cleared), per-hospital table, typical-angina table, notes (VA weak spot, cholesterol fix, warning kept, first vs second look, cost in extra tests). Website: matching "Version 2" section after the hospitals chart (same colours via `.hosp__pt--s1` blue = v2, `--s2` peach = v1).
 
+### 5.5b Results page, "vs chatbots" tab
+Second tab: `charts.chatbots` (AUC per group with 95% CIs; CardioStage blue `#5B8FE8`, Claude orange `#D95926`, ChatGPT neutral `#A9A196`; x-axis from 0.25 so wide chatbot intervals fit), summary table (AUC, AUC vs CardioStage, ECE, mean predicted, reassured, sick among the reassured), five findings, a caption stating the limits. Website: "Why not just ask a chatbot?" section after Version 2 (`.hosp--three`, third series `.hosp__pt--s3` in `--ink-3` grey, `.swatch--grey`; intervals below 0.4 clipped and labelled). Wording rule: name the tiers ("free", "paid") every time a chatbot is named.
+
 ### 5.6 Results charts (`app/charts.py`, Plotly)
 Nine charts, one per figure the page used to show (sealed test, patient flow, AUC by stage, calibration, external AUC, external calibration, fairness, global importance, case study), drawn from committed data only (`reports/*.csv`, `reports/chart_data.json`).
 
@@ -260,6 +263,7 @@ Nine charts, one per figure the page used to show (sealed test, patient flow, AU
 ## Changelog
 | Date | Change |
 |---|---|
+| 2026-11-26 | "vs chatbots" Results tab and site section (§5.5b) |
 | 2026-11-24 | Version 2 tab and site section; typical-angina warning reworded for v2 ("may still be too low… 97% vs ~81%") |
 | 2026-11-24 | Known-weakness callout (⚠️ `st.error`, above the risk number) for typical angina, after the Iran external test |
 | 2026-11-23 | Results page charts redrawn in Plotly (§5.6): dark categorical palette validated, labels beyond whiskers, legend row above panel titles, statistics in captions |

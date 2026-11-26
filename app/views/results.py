@@ -61,9 +61,10 @@ st.info(
     icon="🆕",
 )
 
-tabv2, tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tabv2, tabllm, tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "Version 2",
+        "vs chatbots",
         "Sealed test set",
         "Staged screening",
         "Calibration",
@@ -141,6 +142,61 @@ with tabv2:
         "(AUC 0.84, 1 sick patient wrongly cleared). The numbers above are a **second look** at "
         "the fixed model, slightly optimistic because the first look prompted the fix. The cost "
         "of v2: at Cleveland, 92% of patients need the treadmill test (v1: 69%)."
+    )
+
+with tabllm:
+    st.markdown("#### Why not just ask a chatbot? We tested it.")
+    st.markdown(
+        "The same 245 sealed-test patients and the same six check-up facts were pasted, 14-15 "
+        "patients per fresh chat, into **free ChatGPT** and **paid Claude (Opus 5.5)**, asking "
+        "each for the chance of significant coronary artery disease. The prompt and every "
+        "metric were committed before any patient was sent, and each chatbot got one try."
+    )
+    llm = pd.read_csv(REP / "llm_compare.csv")
+    chart(
+        charts.chatbots(llm),
+        caption="Ranking quality (ROC-AUC) with 95% intervals, same patients for all three.",
+    )
+    allh = llm[llm["group"] == "All hospitals"].set_index("source")
+    names = {s: n for s, n, _ in charts.CHATBOT_SERIES}
+    table = pd.DataFrame(
+        {
+            "Ranking (AUC) [95% CI]": allh["roc_auc"],
+            "AUC vs CardioStage [95% CI]": allh["auc_vs_cardiostage"].fillna(""),
+            "Calibration error": allh["ece"].map("{:.3f}".format),
+            "Average predicted": allh["mean_predicted"].map("{:.0%}".format),
+            "Reassured (below 14.4%)": allh["share_cleared"].map("{:.0%}".format),
+            "Sick among the reassured": allh["cleared_but_sick"].astype(int),
+        }
+    ).loc[[s for s, _, _ in charts.CHATBOT_SERIES]]
+    table.index = [names[s] for s in table.index]
+    st.dataframe(table, width="stretch")
+    st.caption(
+        f"Actually sick: {allh.loc['CardioStage v2', 'disease_rate']:.0%} of the 245. "
+        "A confidence interval for a difference that includes 0 means no clear difference."
+    )
+    st.markdown(
+        "- **Ranking:** paid Claude ranked patients as well as CardioStage (no clear "
+        "difference); free ChatGPT was clearly worse, especially at Hungary and Switzerland.\n"
+        "- **Honest percentages:** both chatbots under-estimated risk across the board "
+        "(about 50% predicted where 59% were sick). CardioStage's calibration error was about "
+        "three times smaller.\n"
+        "- **Safety:** CardioStage reassured the most patients (11%) and none were sick; the "
+        "chatbots reassured fewer and included 1 (Claude) or 3 (ChatGPT) sick patients. "
+        "Small numbers, and the 14.4% cut-off was tuned for CardioStage, but a chatbot's "
+        "percentages come with no tested cut-off at all.\n"
+        "- **Where the chatbots win:** among typical-angina patients (CardioStage's known weak "
+        "spot) both chatbots told sick from healthy better, although Claude's average estimate "
+        "for them was far too low (54% vs 82% actually sick).\n"
+        "- **A memorisation hint:** Claude did slightly better than CardioStage on Cleveland, a "
+        "famous public dataset, and worse on the lesser-known Iranian data. Consistent with "
+        "having seen Cleveland in training, but the groups are small: a hint, not proof."
+    )
+    st.caption(
+        "What this is: what a person gets from these chatbots, not the best any AI can do. "
+        "Free ChatGPT vs paid Claude; one try each; several patients per message. "
+        "CardioStage's numbers are its labelled second look at the sealed test. "
+        "Prompts, replies and log: data/llm_compare/."
     )
 
 with tab0:
